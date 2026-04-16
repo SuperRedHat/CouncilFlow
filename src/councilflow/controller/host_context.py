@@ -50,7 +50,16 @@ def detect_controller(
         if env.get(key):
             return ControllerContext(controller=ControllerName.CLAUDE, source=key)
 
+    gemini_keys = (
+        "GEMINI_CLI",
+        "GEMINI_CLI_SESSION",
+        "GEMINI_CLI_IDE_PID",
+    )
+    for key in gemini_keys:
+        if env.get(key):
+            return ControllerContext(controller=ControllerName.GEMINI, source=key)
+
     raise HostContextError(
         "Unable to detect the current controller from the environment. "
-        "Set controller_override in config or run inside Codex / Claude Code."
+        "Set controller_override in config or run inside Codex / Claude Code / Gemini CLI."
     )

@@ -19,6 +19,13 @@ def test_detects_codex_from_environment() -> None:
     assert context.source == "CODEX_SHELL"
 
 
+def test_detects_gemini_from_environment() -> None:
+    context = detect_controller(environ={"GEMINI_CLI": "1"})
+
+    assert context.controller == ControllerName.GEMINI
+    assert context.source == "GEMINI_CLI"
+
+
 def test_config_override_wins_over_environment() -> None:
     config = CouncilConfig(controller_override=ControllerName.CLAUDE)
     context = detect_controller(environ={"CODEX_SHELL": "1"}, config=config)
@@ -30,4 +37,3 @@ def test_config_override_wins_over_environment() -> None:
 def test_raises_when_controller_cannot_be_detected() -> None:
     with pytest.raises(HostContextError):
         detect_controller(environ={})
-

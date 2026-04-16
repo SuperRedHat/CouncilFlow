@@ -144,3 +144,36 @@ def test_delegate_command_normalizes_aliases_for_local_execution(tmp_path: Path)
     assert payload["error"] is None
     assert payload["data"]["model"] == "claude"
     assert payload["data"]["status"] == "local_execution"
+
+
+def test_delegate_command_stays_local_for_gemini_controller(tmp_path: Path) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "delegate",
+            "--role",
+            "reviewer",
+            "--model",
+            "gemini-cli",
+            "--objective",
+            "Run locally for Gemini.",
+            "--task-summary",
+            "Alias should resolve to the Gemini controller.",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={
+            "GEMINI_CLI": "1",
+            "CODEX_SHELL": None,
+            "CODEX_THREAD_ID": None,
+            "CODEX_INTERNAL_ORIGINATOR_OVERRIDE": None,
+            "CLAUDE_CODE_SHELL": None,
+        },
+    )
+
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["error"] is None
+    assert payload["data"]["model"] == "gemini"
+    assert payload["data"]["status"] == "local_execution"

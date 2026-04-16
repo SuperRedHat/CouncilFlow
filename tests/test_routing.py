@@ -80,6 +80,16 @@ def test_resolve_discuss_models_normalizes_controller_aliases() -> None:
     assert resolution.ignored_models == ["claude"]
 
 
+def test_resolve_discuss_models_normalizes_gemini_aliases() -> None:
+    resolution = resolve_discuss_models(
+        requested_models=["gemini-cli", "codex"],
+        controller=ControllerName.GEMINI,
+    )
+
+    assert resolution.external_models == ["codex"]
+    assert resolution.ignored_models == ["gemini"]
+
+
 def test_route_role_runs_locally_when_target_matches_controller() -> None:
     decision = route_role(
         role=RoleName.PLANNER,

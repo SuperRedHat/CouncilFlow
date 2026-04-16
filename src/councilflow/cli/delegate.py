@@ -15,6 +15,7 @@ from councilflow.models.roles import RoleName, normalize_model_name
 from councilflow.providers.base import ProviderAdapter, ProviderError
 from councilflow.providers.claude_code_cli import ClaudeCodeCliAdapter
 from councilflow.providers.codex_cli import CodexCliAdapter
+from councilflow.providers.gemini_cli import GeminiCliAdapter
 from councilflow.state.store import CouncilStateStore
 from councilflow.utils.lang import emit_response, resolve_output_language
 
@@ -59,11 +60,13 @@ PROJECT_ROOT_OPTION = typer.Option(
 def get_provider_adapter(model: str) -> ProviderAdapter:
     """Resolve a provider adapter for the requested model."""
 
-    normalized = model.strip().lower()
+    normalized = normalize_model_name(model)
     if normalized == "codex":
         return CodexCliAdapter()
-    if normalized in {"claude", "claude-code"}:
+    if normalized == "claude":
         return ClaudeCodeCliAdapter()
+    if normalized == "gemini":
+        return GeminiCliAdapter()
     raise ProviderError(f"No provider adapter is registered for model '{model}'.")
 
 

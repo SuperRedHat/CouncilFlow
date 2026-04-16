@@ -16,9 +16,11 @@ from councilflow.controller.host_context import detect_controller
 from councilflow.controller.routing import resolve_discuss_models
 from councilflow.handoff.prompts import render_discussion_prompt
 from councilflow.models.discussion import DiscussionRequest, ParticipantResponse
-from councilflow.providers.base import ProviderError, ProviderRequest
+from councilflow.models.roles import normalize_model_name
+from councilflow.providers.base import ProviderAdapter, ProviderError, ProviderRequest
 from councilflow.providers.claude_code_cli import ClaudeCodeCliAdapter
 from councilflow.providers.codex_cli import CodexCliAdapter
+from councilflow.providers.gemini_cli import GeminiCliAdapter
 from councilflow.state.store import CouncilStateStore
 from councilflow.utils.lang import emit_response, resolve_output_language
 
@@ -48,7 +50,7 @@ PROJECT_ROOT_OPTION = typer.Option(
 class ProviderDiscussionParticipant:
     """Adapter that turns provider output into a structured discussion response."""
 
-    def __init__(self, model: str, adapter: CodexCliAdapter | ClaudeCodeCliAdapter) -> None:
+    def __init__(self, model: str, adapter: ProviderAdapter) -> None:
         self.model = model
         self.adapter = adapter
 
@@ -77,11 +79,13 @@ class ProviderDiscussionParticipant:
 def get_participant(model: str) -> DiscussionParticipant:
     """Resolve a participant implementation for a model name."""
 
-    normalized = model.strip().lower()
+    normalized = normalize_model_name(model)
     if normalized == "codex":
         return ProviderDiscussionParticipant(normalized, CodexCliAdapter())
-    if normalized in {"claude", "claude-code"}:
+    if normalized == "claude":
         return ProviderDiscussionParticipant("claude", ClaudeCodeCliAdapter())
+    if normalized == "gemini":
+        return ProviderDiscussionParticipant("gemini", GeminiCliAdapter())
     raise UnavailableParticipantError(
         f"No discussion participant is registered for model '{model}'."
     )

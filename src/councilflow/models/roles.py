@@ -10,6 +10,7 @@ class ControllerName(StrEnum):
 
     CODEX = "codex"
     CLAUDE = "claude"
+    GEMINI = "gemini"
 
 
 class RoleName(StrEnum):
@@ -40,6 +41,8 @@ MODEL_ALIASES: dict[str, str] = {
     "claude-code": ControllerName.CLAUDE.value,
     "claudecode": ControllerName.CLAUDE.value,
     "claude code": ControllerName.CLAUDE.value,
+    "gemini-cli": ControllerName.GEMINI.value,
+    "gemini cli": ControllerName.GEMINI.value,
 }
 
 

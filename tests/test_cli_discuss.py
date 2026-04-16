@@ -99,3 +99,31 @@ def test_discuss_command_normalizes_controller_aliases(tmp_path: Path) -> None:
     assert payload["error"] is None
     assert payload["data"]["external_models"] == []
     assert payload["data"]["ignored_models"] == ["claude"]
+
+
+def test_discuss_command_normalizes_gemini_controller_aliases(tmp_path: Path) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "discuss",
+            "Should Gemini alias stay local?",
+            "--models",
+            "gemini-cli",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={
+            "GEMINI_CLI": "1",
+            "CODEX_SHELL": None,
+            "CODEX_THREAD_ID": None,
+            "CODEX_INTERNAL_ORIGINATOR_OVERRIDE": None,
+            "CLAUDE_CODE_SHELL": None,
+        },
+    )
+
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["error"] is None
+    assert payload["data"]["external_models"] == []
+    assert payload["data"]["ignored_models"] == ["gemini"]

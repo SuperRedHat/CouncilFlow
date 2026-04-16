@@ -263,6 +263,30 @@
       "from_status": "auto_verified",
       "to_status": "done",
       "message": "TASK-010 auto_verified → done: Acceptance mode is auto, so Codex-first hardening is complete after verification passed."
+    },
+    {
+      "timestamp": "2026-04-16T08:37:42.965Z",
+      "type": "task_status_change",
+      "task_id": "TASK-011",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-011 todo → in_progress: Starting Gemini controller support by inspecting the installed Gemini CLI for environment signals and non-interactive invocation behavior, then wiring host detection, provider support, and tests."
+    },
+    {
+      "timestamp": "2026-04-16T08:54:34.731Z",
+      "type": "task_status_change",
+      "task_id": "TASK-011",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-011 in_progress → auto_verified: Verification passed: python -m ruff check . and python -m pytest. Gemini controller integration is fully implemented and verified."
+    },
+    {
+      "timestamp": "2026-04-16T08:54:34.754Z",
+      "type": "task_status_change",
+      "task_id": "TASK-011",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-011 auto_verified → done: Acceptance mode is auto, so TASK-011 is complete after successful verification."
     }
   ]
 }
