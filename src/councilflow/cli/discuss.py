@@ -85,7 +85,9 @@ def get_participant(model: str) -> DiscussionParticipant:
     if normalized == "claude":
         return ProviderDiscussionParticipant("claude", ClaudeCodeCliAdapter())
     if normalized == "gemini":
-        return ProviderDiscussionParticipant("gemini", GeminiCliAdapter())
+        # Use original model name if it's a specific version (e.g., gemini-1.5-flash)
+        specific_model = model if model.startswith("gemini-") and model != "gemini-cli" else None
+        return ProviderDiscussionParticipant("gemini", GeminiCliAdapter(model=specific_model))
     raise UnavailableParticipantError(
         f"No discussion participant is registered for model '{model}'."
     )

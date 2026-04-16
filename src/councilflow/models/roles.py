@@ -41,8 +41,12 @@ MODEL_ALIASES: dict[str, str] = {
     "claude-code": ControllerName.CLAUDE.value,
     "claudecode": ControllerName.CLAUDE.value,
     "claude code": ControllerName.CLAUDE.value,
+    "claude-3-5-sonnet": ControllerName.CLAUDE.value,
     "gemini-cli": ControllerName.GEMINI.value,
     "gemini cli": ControllerName.GEMINI.value,
+    "gemini-1.5-pro": ControllerName.GEMINI.value,
+    "gemini-1.5-flash": ControllerName.GEMINI.value,
+    "gemini-2.0-flash": ControllerName.GEMINI.value,
 }
 
 
