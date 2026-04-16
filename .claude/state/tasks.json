@@ -686,6 +686,73 @@
       "updated_at": "2026-04-16T20:23:06.631Z",
       "commit_hash": "",
       "notes": ""
+    },
+    {
+      "id": "TASK-018",
+      "title": "执行 Codex 主控真实开发烟测",
+      "description": "基于当前 .council/config.yaml 的角色映射，在 CouncilFlow 仓库内执行一次最小真实开发闭环：由 Codex 作为主控，使用 discuss/delegate 生成设计与实现/测试建议，在仓库中落地一个简易围棋网页小游戏示例，并验证前后端主路径可运行。该任务以低 token 消耗为约束，不追求完整围棋规则，只验证 Codex 主控下的真实工作流可跑通。",
+      "dependencies": [
+        "TASK-014"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "至少执行一次 cross-model discuss 或 delegate，并保留 .council 产物作为真实烟测记录",
+        "仓库内新增一个最小围棋网页小游戏示例，包含简易前端和后端",
+        "示例支持最基础的棋盘展示、落子、轮转与重置，不要求完整围棋规则引擎",
+        "存在自动化或命令行 smoke 验证，证明示例前后端主路径可运行"
+      ],
+      "files": [
+        "examples/go-web-smoke/",
+        "docs/"
+      ],
+      "module": "e2e-smoke",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m pytest",
+        "python -m ruff check ."
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "done",
+      "created_at": "2026-04-16T20:36:20.736Z",
+      "updated_at": "2026-04-16T20:46:08.592Z",
+      "commit_hash": "",
+      "notes": "Acceptance mode is auto, so the Codex-controller smoke task is complete after the real discuss/delegate run, the go-web-smoke example, the manual API smoke, and full verification passed."
+    },
+    {
+      "id": "TASK-019",
+      "title": "编写中文使用文档",
+      "description": "在真实烟测通过后，为 CouncilFlow 编写一份详细的中文使用文档，覆盖安装、配置、角色映射、discuss/delegate/status/synthesize 用法、三主控差异、常见工作流和排错建议，帮助用户独立上手使用该工具。",
+      "dependencies": [
+        "TASK-018"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "存在一份面向用户的中文文档，完整解释 CouncilFlow 的定位与适用场景",
+        "文档明确说明如何配置 .council/config.yaml 以及如何指定不同角色使用不同模型",
+        "文档覆盖 council discuss、delegate、status、synthesize 与 project-* 集成方式",
+        "文档包含三主控环境准备、常见问题与推荐使用流程"
+      ],
+      "files": [
+        "docs/user-guide.zh-CN.md"
+      ],
+      "module": "documentation",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "docs",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "done",
+      "created_at": "2026-04-16T20:36:20.736Z",
+      "updated_at": "2026-04-16T20:46:17.474Z",
+      "commit_hash": "",
+      "notes": "Acceptance mode is auto, so the Chinese user guide task is complete after the documentation landed and verification passed."
     }
   ]
 }

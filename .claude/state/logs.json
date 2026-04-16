@@ -495,6 +495,78 @@
       "from_status": null,
       "to_status": null,
       "message": "Change initiated on 2026-04-16: add a safe global workflow rollout that backs up current global project-* skills, installs the current confirmed workflow-core skills to Codex/Claude/Gemini, and ensures each model has the required project-manager MCP registration before final manual smoke."
+    },
+    {
+      "timestamp": "2026-04-16T20:36:23.737Z",
+      "type": "decision",
+      "task_id": "TASK-018",
+      "from_status": null,
+      "to_status": null,
+      "message": "Change initiated on 2026-04-16: before resuming the queued global rollout work, run a low-token Codex-controller end-to-end smoke using the current .council/config.yaml and then write a detailed Chinese user guide for CouncilFlow."
+    },
+    {
+      "timestamp": "2026-04-16T20:36:38.056Z",
+      "type": "task_status_change",
+      "task_id": "TASK-018",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-018 todo → in_progress: Starting a low-token Codex-controller end-to-end smoke on 2026-04-16 using the current .council/config.yaml before resuming the queued global rollout tasks."
+    },
+    {
+      "timestamp": "2026-04-16T20:46:02.907Z",
+      "type": "task_status_change",
+      "task_id": "TASK-018",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-018 in_progress → auto_verified: Codex-controller end-to-end smoke completed on 2026-04-16 using the current .council/config.yaml. A real discuss plus implementer/tester delegation was executed, a minimal go-web-smoke example was added, targeted manual API smoke passed, and full verification succeeded (ruff + pytest)."
+    },
+    {
+      "timestamp": "2026-04-16T20:46:08.612Z",
+      "type": "task_status_change",
+      "task_id": "TASK-018",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-018 auto_verified → done: Acceptance mode is auto, so the Codex-controller smoke task is complete after the real discuss/delegate run, the go-web-smoke example, the manual API smoke, and full verification passed."
+    },
+    {
+      "timestamp": "2026-04-16T20:46:11.382Z",
+      "type": "task_status_change",
+      "task_id": "TASK-019",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-019 todo → in_progress: Starting the detailed Chinese user guide after the Codex-controller smoke task completed successfully."
+    },
+    {
+      "timestamp": "2026-04-16T20:46:14.675Z",
+      "type": "task_status_change",
+      "task_id": "TASK-019",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-019 in_progress → auto_verified: Detailed Chinese user documentation was added after the Codex-controller smoke passed. The guide covers installation, configuration, role mapping, council commands, project-* integration, troubleshooting, and the go-web-smoke example. Full verification succeeded (ruff + pytest)."
+    },
+    {
+      "timestamp": "2026-04-16T20:46:17.492Z",
+      "type": "task_status_change",
+      "task_id": "TASK-019",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-019 auto_verified → done: Acceptance mode is auto, so the Chinese user guide task is complete after the documentation landed and verification passed."
+    },
+    {
+      "timestamp": "2026-04-16T20:46:21.592Z",
+      "type": "review_completed",
+      "task_id": "TASK-018",
+      "from_status": null,
+      "to_status": null,
+      "message": "TASK-018 completed on 2026-04-16. A real Codex-controller smoke was executed with the current .council/config.yaml, including discuss, implementer delegation to Claude, tester delegation to Gemini, a minimal go-web-smoke example, manual API smoke, and passing repo-wide verification."
+    },
+    {
+      "timestamp": "2026-04-16T20:46:26.734Z",
+      "type": "task_status_change",
+      "task_id": "TASK-019",
+      "from_status": null,
+      "to_status": null,
+      "message": "TASK-019 completed on 2026-04-16. A detailed Chinese user guide was added to docs/user-guide.zh-CN.md after the Codex-controller smoke passed, and repo-wide verification remained green."
     }
   ]
 }
