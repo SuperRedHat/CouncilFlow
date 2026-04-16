@@ -487,6 +487,14 @@
       "from_status": null,
       "to_status": null,
       "message": "TASK-014 manual acceptance passed on 2026-04-16. Claude Code controller smoke succeeded, Codex/Gemini controller smoke had already passed, and an additional Codex->Claude provider smoke completed successfully. The tri-controller release gate is now closed."
+    },
+    {
+      "timestamp": "2026-04-16T20:23:14.892Z",
+      "type": "decision",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "Change initiated on 2026-04-16: add a safe global workflow rollout that backs up current global project-* skills, installs the current confirmed workflow-core skills to Codex/Claude/Gemini, and ensures each model has the required project-manager MCP registration before final manual smoke."
     }
   ]
 }

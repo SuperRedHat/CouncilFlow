@@ -441,3 +441,26 @@ V1 完成时，至少满足：
 3. 等 `Claude Code` 配额恢复后，再执行三主控最终 gate 与共享 skill 全量同步验收。
 
 本节覆盖并 supersede 文中所有“仅支持 Codex 与 Claude Code 作为主控”的旧表述。
+
+## 19. 变更记录（2026-04-16，全局安装与备份）
+本次变更将 `CouncilFlow` 的交付范围从“仓库内完成并可手动同步”扩展为“可安全安装到三端全局环境”。
+
+新增产品要求：
+1. 在覆盖任意全局 `project-*` skill 或 MCP 配置之前，必须先生成可恢复备份。
+2. 备份范围至少包括：
+   - `C:\Users\David Zhai\.workflow-core\skills\project-*`
+   - `C:\Users\David Zhai\.codex\skills\project-*`
+   - `C:\Users\David Zhai\.claude\skills\project-*`
+   - `C:\Users\David Zhai\.gemini\skills\project-*`
+   - `C:\Users\David Zhai\.codex\config.toml`
+   - `Claude Code` 的用户级 MCP 配置来源
+   - `C:\Users\David Zhai\.gemini\settings.json`
+3. 必须提供一键化安装入口，把 `.workflow-core` 中当前确认版 `project-*` skills 安装到 `Codex`、`Claude Code` 与 `Gemini CLI` 的全局目录，而不是依赖手工复制。
+4. 必须为当前共享 workflow 所需的 MCP 提供统一安装与校验机制；现阶段至少覆盖 `project-manager`，并优先使用各模型官方 CLI 完成注册。
+5. 必须提供可读的安装与回滚说明，使用户在新机器、重装或回退时可以复用同一套流程。
+6. `.workflow-core\skills\project-*` 继续作为共享 skill 的唯一源，三端目标目录不再允许长期手工分叉维护。
+
+阶段策略：
+1. 先备份，再覆盖。
+2. 先完成自动化安装与校验，再进行真实会话 smoke。
+3. 任一安装步骤失败时，必须保留完整快照并停止后续覆盖。

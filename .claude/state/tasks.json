@@ -569,6 +569,123 @@
       "updated_at": "2026-04-16T13:18:09.674Z",
       "commit_hash": "",
       "notes": "Manual acceptance completed on 2026-04-16 after Claude Code controller smoke passed for status/discuss/delegate/local short-circuit/state recovery. Additional real Codex->Claude delegation smoke also passed, so the tri-controller release gate is complete."
+    },
+    {
+      "id": "TASK-015",
+      "title": "实现全局 workflow 备份与回滚脚本",
+      "description": "在 C:/Users/David Zhai/.workflow-core 中新增面向用户环境的备份与回滚脚本，为 project-* 共享 skills 的全局安装建立可恢复快照。备份范围需要覆盖 workflow-core 共享源、Codex/Claude/Gemini 三端全局 skill 目录，以及本次 workflow 所依赖的 MCP 相关配置文件或等效配置来源。",
+      "dependencies": [
+        "TASK-014"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "可生成带时间戳的全局 workflow 备份目录，且不会覆盖已有快照",
+        "备份至少覆盖 .workflow-core/skills/project-*、.codex/skills/project-*、.claude/skills/project-*、.gemini/skills/project-* 以及三端 project-manager MCP 配置来源",
+        "备份产物包含清晰的 manifest 或说明，指明每项来源与恢复目标",
+        "存在可执行的 restore/rollback 脚本或等效恢复入口，可基于指定快照执行回滚"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/scripts/backup-global-workflow.ps1",
+        "C:/Users/David Zhai/.workflow-core/scripts/restore-global-workflow.ps1",
+        "C:/Users/David Zhai/.workflow-core/docs/global-workflow-install.md"
+      ],
+      "module": "global-workflow-backup",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\backup-global-workflow.ps1' -OutputRoot \"$env:TEMP\\workflow-core-backup-test\"",
+        "Get-ChildItem \"$env:TEMP\\workflow-core-backup-test\" -Directory"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-16T20:23:06.631Z",
+      "updated_at": "2026-04-16T20:23:06.631Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-016",
+      "title": "实现三端全局 skills 与 MCP 安装脚本",
+      "description": "在 .workflow-core 中新增一键化全局安装入口，按“备份 -> 同步 project-* skills -> 注册或校验 project-manager MCP -> 输出结果摘要”的顺序为 Codex、Claude Code 和 Gemini CLI 安装当前确认版 workflow。优先通过各模型官方 CLI 注册 MCP，而不是手改配置文件。",
+      "dependencies": [
+        "TASK-015"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "安装脚本会先调用备份能力，再同步 .workflow-core/skills/project-* 到 .codex/.claude/.gemini 全局目录",
+        "安装脚本会优先使用 codex mcp add、claude mcp add --scope user、gemini mcp add --scope user 确保 project-manager MCP 可用",
+        "重复执行安装脚本不会生成重复 MCP 条目，也不会破坏已存在的 project-* skills",
+        "脚本输出会明确说明每个模型的 skills 同步结果、MCP 注册结果以及跳过项"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/scripts/install-global-workflow.ps1",
+        "C:/Users/David Zhai/.workflow-core/scripts/sync-skills.ps1",
+        "C:/Users/David Zhai/.workflow-core/docs/global-workflow-install.md"
+      ],
+      "module": "global-workflow-install",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\install-global-workflow.ps1'",
+        "codex mcp list",
+        "claude mcp list",
+        "gemini mcp list"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-16T20:23:06.631Z",
+      "updated_at": "2026-04-16T20:23:06.631Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-017",
+      "title": "验收三端全局 workflow 安装结果",
+      "description": "在备份与全局安装脚本完成后，使用真实的新会话验证 Codex、Claude Code 与 Gemini CLI 三端都能从全局 skills 目录使用 project-* 工作流，并能通过 project-manager MCP 读取项目状态。",
+      "dependencies": [
+        "TASK-016"
+      ],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "Codex、Claude Code、Gemini CLI 三端的新会话都能使用全局 project-* skills",
+        "三端都能通过 project-manager MCP 成功执行 project-status 或 project-resume 的最小 smoke",
+        "安装前生成的备份目录已记录，且文档中包含清晰回滚步骤",
+        "全局安装不会破坏三端现有的非 workflow MCP 条目"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/scripts/install-global-workflow.ps1",
+        "C:/Users/David Zhai/.workflow-core/scripts/backup-global-workflow.ps1",
+        "C:/Users/David Zhai/.workflow-core/docs/global-workflow-install.md",
+        "C:/Users/David Zhai/.codex/config.toml",
+        "C:/Users/David Zhai/.gemini/settings.json"
+      ],
+      "module": "global-workflow-gate",
+      "needs_manual_review": true,
+      "acceptance_mode": "manual",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\install-global-workflow.ps1'",
+        "codex mcp list",
+        "claude mcp list",
+        "gemini mcp list",
+        "Get-ChildItem 'C:\\Users\\David Zhai\\.workflow-core\\skills' -Directory -Filter 'project-*' | Select-Object -ExpandProperty Name"
+      ],
+      "review_checklist": [
+        "在新的 Codex 会话中调用 project-status 或 project-resume，确认 project-manager MCP 可用",
+        "在新的 Claude Code 会话中调用 project-status 或 project-resume，确认 project-manager MCP 可用",
+        "在新的 Gemini CLI 会话中调用 project-status 或 project-resume，确认 project-manager MCP 可用",
+        "确认备份目录路径已记录且可用于回滚，且未破坏现有非 workflow MCP 条目"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-16T20:23:06.631Z",
+      "updated_at": "2026-04-16T20:23:06.631Z",
+      "commit_hash": "",
+      "notes": ""
     }
   ]
 }
