@@ -9,6 +9,7 @@ from typing import Any, Protocol
 from pydantic import BaseModel, Field
 
 CommandRunner = Callable[[list[str], str], str]
+DEFAULT_PROVIDER_TIMEOUT_SECONDS = 120.0
 
 
 class ProviderRequest(BaseModel):
@@ -39,17 +40,29 @@ class ProviderAdapter(Protocol):
         """Send a prompt to the provider and return its response."""
 
 
-def run_command(command: list[str], prompt: str) -> str:
+def run_command(
+    command: list[str],
+    prompt: str,
+    timeout_seconds: float = DEFAULT_PROVIDER_TIMEOUT_SECONDS,
+) -> str:
     """Execute a CLI command with the prompt appended as the final argument."""
 
-    completed = subprocess.run(
-        [*command, prompt],
-        capture_output=True,
-        check=False,
-        text=True,
-    )
+    try:
+        completed = subprocess.run(
+            [*command, prompt],
+            capture_output=True,
+            check=False,
+            text=False,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise ProviderError(
+            f"Provider command timed out after {timeout_seconds:g}s."
+        ) from exc
+    except OSError as exc:
+        raise ProviderError(str(exc)) from exc
+    stdout = completed.stdout.decode("utf-8", errors="replace").strip()
+    stderr = completed.stderr.decode("utf-8", errors="replace").strip()
     if completed.returncode != 0:
-        stderr = completed.stderr.strip() or "unknown provider error"
-        raise ProviderError(stderr)
-    return completed.stdout.strip()
-
+        raise ProviderError(stderr or "unknown provider error")
+    return stdout

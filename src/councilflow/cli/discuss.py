@@ -2,17 +2,23 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import typer
 
 from councilflow.controller.discussion_orchestrator import (
     DiscussionOrchestrator,
+    DiscussionParticipant,
     UnavailableParticipantError,
 )
 from councilflow.controller.host_context import detect_controller
 from councilflow.controller.routing import resolve_discuss_models
+from councilflow.handoff.prompts import render_discussion_prompt
 from councilflow.models.discussion import DiscussionRequest, ParticipantResponse
+from councilflow.providers.base import ProviderError, ProviderRequest
+from councilflow.providers.claude_code_cli import ClaudeCodeCliAdapter
+from councilflow.providers.codex_cli import CodexCliAdapter
 from councilflow.state.store import CouncilStateStore
 from councilflow.utils.lang import emit_response, resolve_output_language
 
@@ -39,23 +45,46 @@ PROJECT_ROOT_OPTION = typer.Option(
 )
 
 
-class UnavailableParticipant:
-    """Placeholder participant used until provider adapters are wired in."""
+class ProviderDiscussionParticipant:
+    """Adapter that turns provider output into a structured discussion response."""
 
-    def __init__(self, model: str) -> None:
+    def __init__(self, model: str, adapter: CodexCliAdapter | ClaudeCodeCliAdapter) -> None:
         self.model = model
+        self.adapter = adapter
 
     def respond(self, request: DiscussionRequest) -> ParticipantResponse:
-        raise UnavailableParticipantError(
-            f"No discussion participant is registered for model '{self.model}'. "
-            "Wire a provider adapter before running real cross-model discussions."
+        prompt = render_discussion_prompt(request)
+        try:
+            response = self.adapter.ask(ProviderRequest(prompt=prompt))
+        except ProviderError as exc:
+            raise UnavailableParticipantError(str(exc)) from exc
+
+        parsed = _parse_participant_payload(response.content)
+        return ParticipantResponse(
+            model=self.model,
+            message=parsed["message"],
+            key_options=parsed["key_options"],
+            agreements=parsed["agreements"],
+            disagreements=parsed["disagreements"],
+            open_questions=parsed["open_questions"],
+            recommended_decision=parsed["recommended_decision"],
+            next_step=parsed["next_step"],
+            supports_current_direction=parsed["supports_current_direction"],
+            has_new_information=parsed["has_new_information"],
         )
 
 
-def get_participant(model: str) -> UnavailableParticipant:
+def get_participant(model: str) -> DiscussionParticipant:
     """Resolve a participant implementation for a model name."""
 
-    return UnavailableParticipant(model)
+    normalized = model.strip().lower()
+    if normalized == "codex":
+        return ProviderDiscussionParticipant(normalized, CodexCliAdapter())
+    if normalized in {"claude", "claude-code"}:
+        return ProviderDiscussionParticipant("claude", ClaudeCodeCliAdapter())
+    raise UnavailableParticipantError(
+        f"No discussion participant is registered for model '{model}'."
+    )
 
 
 def discuss(
@@ -131,3 +160,77 @@ def discuss(
             },
         )
     )
+
+
+def _parse_participant_payload(content: str) -> dict[str, object]:
+    """Parse provider output into the structured discussion response schema."""
+
+    parsed = _extract_json_object(content)
+    if parsed is None:
+        return {
+            "message": content.strip(),
+            "key_options": [],
+            "agreements": [],
+            "disagreements": [],
+            "open_questions": [],
+            "recommended_decision": content.strip().splitlines()[0] if content.strip() else None,
+            "next_step": "Controller should review the participant response and continue.",
+            "supports_current_direction": False,
+            "has_new_information": True,
+        }
+
+    return {
+        "message": str(parsed.get("message", "")).strip(),
+        "key_options": _normalize_string_list(parsed.get("key_options")),
+        "agreements": _normalize_string_list(parsed.get("agreements")),
+        "disagreements": _normalize_string_list(parsed.get("disagreements")),
+        "open_questions": _normalize_string_list(parsed.get("open_questions")),
+        "recommended_decision": _normalize_optional_string(parsed.get("recommended_decision")),
+        "next_step": _normalize_optional_string(parsed.get("next_step"))
+        or "Controller should review the participant response and continue.",
+        "supports_current_direction": bool(parsed.get("supports_current_direction", True)),
+        "has_new_information": bool(parsed.get("has_new_information", False)),
+    }
+
+
+def _extract_json_object(content: str) -> dict[str, object] | None:
+    stripped = content.strip()
+    candidates = [stripped]
+    if "```" in stripped:
+        for chunk in stripped.split("```"):
+            chunk = chunk.strip()
+            if chunk.startswith("json"):
+                candidates.append(chunk[4:].strip())
+            elif chunk.startswith("{"):
+                candidates.append(chunk)
+    start = stripped.find("{")
+    end = stripped.rfind("}")
+    if start != -1 and end != -1 and start < end:
+        candidates.append(stripped[start : end + 1])
+
+    for candidate in candidates:
+        try:
+            raw = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(raw, dict):
+            return raw
+    return None
+
+
+def _normalize_optional_string(value: object) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _normalize_string_list(value: object) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    result: list[str] = []
+    for item in value:
+        text = str(item).strip()
+        if text:
+            result.append(text)
+    return result

@@ -72,3 +72,30 @@ def test_discuss_command_warns_when_only_controller_is_requested(tmp_path: Path)
     assert payload["error"] is None
     assert payload["data"]["rounds_completed"] == 0
     assert payload["data"]["warning"] is not None
+
+
+def test_discuss_command_normalizes_controller_aliases(tmp_path: Path) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "discuss",
+            "Should Claude alias stay local?",
+            "--models",
+            "claude-code",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={
+            "CLAUDE_CODE_SHELL": "1",
+            "CODEX_SHELL": None,
+            "CODEX_THREAD_ID": None,
+            "CODEX_INTERNAL_ORIGINATOR_OVERRIDE": None,
+        },
+    )
+
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["error"] is None
+    assert payload["data"]["external_models"] == []
+    assert payload["data"]["ignored_models"] == ["claude"]

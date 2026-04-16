@@ -39,3 +39,22 @@ def test_status_reports_recent_discussion_and_delegation(tmp_path: Path) -> None
     assert payload["data"]["recent_delegation"]["kind"] == "delegation"
     assert payload["meta"]["command"] == "status"
 
+
+def test_status_recovers_from_corrupted_state_file(tmp_path: Path) -> None:
+    store = CouncilStateStore(tmp_path)
+    paths = store.initialize()
+    paths.state.write_text("", encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        ["status", "--project-root", str(tmp_path)],
+        env={"CODEX_SHELL": "1"},
+    )
+
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["error"] is None
+    assert payload["data"]["state"]["current_phase"] is None
+    assert payload["data"]["state"]["current_controller"] is None
+    assert json.loads(paths.state.read_text(encoding="utf-8"))["updated_at"] is not None

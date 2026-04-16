@@ -239,6 +239,30 @@
       "from_status": null,
       "to_status": null,
       "message": "TASK-008 remains the original Codex/Claude release-gate, but it is no longer the only path forward. New tasks TASK-010 through TASK-014 unblock Codex-first stability work and Gemini controller expansion while Claude quota is unavailable."
+    },
+    {
+      "timestamp": "2026-04-16T08:33:45.382Z",
+      "type": "task_status_change",
+      "task_id": "TASK-010",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-010 todo → in_progress: Starting Codex-first hardening by reviewing existing uncommitted provider and state-store fixes, then closing remaining stability gaps with focused tests."
+    },
+    {
+      "timestamp": "2026-04-16T08:37:07.563Z",
+      "type": "task_status_change",
+      "task_id": "TASK-010",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-010 in_progress → auto_verified: Codex-first hardening passed verification: python -m ruff check .; python -m pytest tests/test_state_store.py tests/test_cli_status.py tests/test_provider_adapters.py tests/test_cli_delegate.py tests/test_cli_discuss.py; python -m pytest. Verified Codex-host local status/discuss/delegate smoke on Windows."
+    },
+    {
+      "timestamp": "2026-04-16T08:37:07.604Z",
+      "type": "task_status_change",
+      "task_id": "TASK-010",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-010 auto_verified → done: Acceptance mode is auto, so Codex-first hardening is complete after verification passed."
     }
   ]
 }

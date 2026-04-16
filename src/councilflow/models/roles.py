@@ -36,9 +36,15 @@ DEFAULT_ROLE_MODELS: dict[RoleName, str] = {
     RoleName.SYNTHESIZER: ControllerName.CODEX.value,
 }
 
+MODEL_ALIASES: dict[str, str] = {
+    "claude-code": ControllerName.CLAUDE.value,
+    "claudecode": ControllerName.CLAUDE.value,
+    "claude code": ControllerName.CLAUDE.value,
+}
+
 
 def normalize_model_name(value: str) -> str:
     """Normalize model names for routing and discuss comparisons."""
 
-    return value.strip().lower()
-
+    normalized = value.strip().lower()
+    return MODEL_ALIASES.get(normalized, normalized)

@@ -13,6 +13,16 @@ from councilflow.config.schema import CouncilConfig
 from councilflow.state.paths import CouncilPaths, build_council_paths, ensure_council_paths
 
 
+def default_state_payload() -> dict[str, Any]:
+    """Return the empty state payload used for bootstrap and corruption recovery."""
+
+    return {
+        "current_phase": None,
+        "current_controller": None,
+        "updated_at": None,
+    }
+
+
 def utc_timestamp() -> str:
     """Return an ISO-8601 UTC timestamp."""
 
@@ -30,13 +40,13 @@ class CouncilStateStore:
 
         ensure_council_paths(self.paths)
         if not self.paths.state.exists():
-            self.write_state(
-                {
-                    "current_phase": None,
-                    "current_controller": None,
-                    "updated_at": utc_timestamp(),
-                }
-            )
+            self.write_state(default_state_payload())
+            return self.paths
+
+        try:
+            self._read_json(self.paths.state)
+        except (json.JSONDecodeError, OSError):
+            self.write_state(default_state_payload())
         return self.paths
 
     def load_config(self) -> CouncilConfig:
@@ -55,13 +65,12 @@ class CouncilStateStore:
         """Load state.json, returning the bootstrap payload when absent."""
 
         if not self.paths.state.exists():
-            return {
-                "current_phase": None,
-                "current_controller": None,
-                "updated_at": None,
-            }
+            return default_state_payload()
 
-        return self._read_json(self.paths.state)
+        try:
+            return self._read_json(self.paths.state)
+        except (json.JSONDecodeError, OSError):
+            return default_state_payload()
 
     def write_state(self, payload: Mapping[str, Any]) -> Path:
         """Persist the top-level workflow state as JSON."""
@@ -111,7 +120,6 @@ class CouncilStateStore:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
         return path
-
 
     @staticmethod
     def _read_json(path: Path) -> dict[str, Any]:

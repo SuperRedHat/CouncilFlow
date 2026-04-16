@@ -70,6 +70,16 @@ def test_resolve_discuss_models_warns_when_only_controller_is_requested() -> Non
     assert resolution.requires_sidecar is False
 
 
+def test_resolve_discuss_models_normalizes_controller_aliases() -> None:
+    resolution = resolve_discuss_models(
+        requested_models=["claude-code", "gpt"],
+        controller=ControllerName.CLAUDE,
+    )
+
+    assert resolution.external_models == ["gpt"]
+    assert resolution.ignored_models == ["claude"]
+
+
 def test_route_role_runs_locally_when_target_matches_controller() -> None:
     decision = route_role(
         role=RoleName.PLANNER,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from councilflow.config.schema import CouncilConfig
@@ -59,3 +60,17 @@ def test_snapshot_recovery_restores_latest_state_and_run(tmp_path: Path) -> None
     assert snapshot.latest_run["payload"]["summary_path"].endswith("summary.md")
     assert snapshot.latest_run_path is not None
     assert snapshot.latest_run_path.endswith(record_path.name)
+
+
+def test_initialize_recovers_from_corrupted_state_file(tmp_path: Path) -> None:
+    store = CouncilStateStore(tmp_path)
+    paths = store.initialize()
+    paths.state.write_text("", encoding="utf-8")
+
+    store.initialize()
+
+    recovered = json.loads(paths.state.read_text(encoding="utf-8"))
+
+    assert recovered["current_phase"] is None
+    assert recovered["current_controller"] is None
+    assert recovered["updated_at"] is not None

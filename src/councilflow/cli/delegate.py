@@ -11,7 +11,7 @@ from councilflow.controller.delegation_orchestrator import (
     DelegationOrchestrator,
 )
 from councilflow.controller.host_context import detect_controller
-from councilflow.models.roles import RoleName
+from councilflow.models.roles import RoleName, normalize_model_name
 from councilflow.providers.base import ProviderAdapter, ProviderError
 from councilflow.providers.claude_code_cli import ClaudeCodeCliAdapter
 from councilflow.providers.codex_cli import CodexCliAdapter
@@ -82,9 +82,30 @@ def delegate(
     store = CouncilStateStore(project_root)
     store.initialize()
     config = store.load_config()
-    controller = detect_controller(config=config).controller.value
-    target_model = (model or config.roles.for_role(role)).strip().lower()
+    controller_context = detect_controller(config=config)
+    controller = controller_context.controller.value
+    target_model = normalize_model_name(model or config.roles.for_role(role))
     output_language = resolve_output_language(config.output_language)
+    if target_model == controller:
+        typer.echo(
+            emit_response(
+                data={
+                    "role": role.value,
+                    "model": target_model,
+                    "status": "local_execution",
+                    "via_sidecar": False,
+                    "reason": (
+                        "Target model resolves to the active controller, so execution "
+                        "stays local and no sidecar is started."
+                    ),
+                },
+                meta={
+                    "command": "delegate",
+                    "output_language": output_language,
+                },
+            )
+        )
+        return
 
     orchestrator = DelegationOrchestrator(
         store=store,

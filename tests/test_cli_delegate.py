@@ -86,3 +86,61 @@ def test_delegate_command_returns_structured_error(monkeypatch, tmp_path: Path) 
     assert payload["data"] is None
     assert payload["error"]["message"] == "mock delegation failure"
     assert payload["error"]["handoff_path"].endswith("handoff.yaml")
+
+
+def test_delegate_command_stays_local_when_role_maps_to_controller(tmp_path: Path) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "delegate",
+            "--role",
+            "reviewer",
+            "--objective",
+            "Review local output.",
+            "--task-summary",
+            "This should stay on the controller.",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={"CODEX_SHELL": "1"},
+    )
+
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["error"] is None
+    assert payload["data"]["status"] == "local_execution"
+    assert payload["data"]["via_sidecar"] is False
+    assert "stays local" in payload["data"]["reason"]
+
+
+def test_delegate_command_normalizes_aliases_for_local_execution(tmp_path: Path) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "delegate",
+            "--role",
+            "tester",
+            "--model",
+            "claude-code",
+            "--objective",
+            "Run locally with alias normalization.",
+            "--task-summary",
+            "Alias should resolve to active Claude controller.",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={
+            "CLAUDE_CODE_SHELL": "1",
+            "CODEX_SHELL": None,
+            "CODEX_THREAD_ID": None,
+            "CODEX_INTERNAL_ORIGINATOR_OVERRIDE": None,
+        },
+    )
+
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["error"] is None
+    assert payload["data"]["model"] == "claude"
+    assert payload["data"]["status"] == "local_execution"
