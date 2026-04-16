@@ -191,6 +191,30 @@
       "from_status": "auto_verified",
       "to_status": "done",
       "message": "TASK-007 auto_verified → done: Acceptance mode is auto, so the task is marked done after verification passed."
+    },
+    {
+      "timestamp": "2026-04-16T07:09:10.812Z",
+      "type": "task_status_change",
+      "task_id": "TASK-008",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-008 todo → in_progress: Starting release-gate verification: adding release checklist and running full automated validation before manual acceptance."
+    },
+    {
+      "timestamp": "2026-04-16T07:09:36.963Z",
+      "type": "task_status_change",
+      "task_id": "TASK-008",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-008 in_progress → auto_verified: Release-gate automated checks passed: python -m ruff check . and python -m pytest."
+    },
+    {
+      "timestamp": "2026-04-16T07:09:42.330Z",
+      "type": "task_status_change",
+      "task_id": "TASK-008",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-008 auto_verified → awaiting_manual_acceptance: Automated release-gate checks passed. Manual smoke verification is required before continuing to workflow-core sync."
     }
   ]
 }

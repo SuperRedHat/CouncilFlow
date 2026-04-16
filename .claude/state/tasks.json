@@ -304,11 +304,11 @@
         "确认系统在无需外部模型参与时不会错误激活 sidecar"
       ],
       "stage_gate": true,
-      "status": "todo",
+      "status": "awaiting_manual_acceptance",
       "created_at": "2026-04-16T06:43:49.733Z",
-      "updated_at": "2026-04-16T06:43:49.733Z",
+      "updated_at": "2026-04-16T07:09:42.303Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Automated release-gate checks passed. Manual smoke verification is required before continuing to workflow-core sync."
     },
     {
       "id": "TASK-009",
