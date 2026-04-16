@@ -287,6 +287,30 @@
       "from_status": "auto_verified",
       "to_status": "done",
       "message": "TASK-011 auto_verified → done: Acceptance mode is auto, so TASK-011 is complete after successful verification."
+    },
+    {
+      "timestamp": "2026-04-16T08:56:27.655Z",
+      "type": "task_status_change",
+      "task_id": "TASK-012",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-012 todo → in_progress: Starting Gemini surface work by reviewing current integration docs, release checklist, and CLI/tests to document and verify Gemini controller behavior alongside Codex and Claude."
+    },
+    {
+      "timestamp": "2026-04-16T08:58:48.050Z",
+      "type": "task_status_change",
+      "task_id": "TASK-012",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-012 in_progress → auto_verified: Gemini surface and integration contract work passed python -m ruff check .; python -m pytest tests/test_cli_status.py tests/test_cli_synthesize.py tests/test_cli_discuss.py tests/test_cli_delegate.py tests/test_workflow_integration.py; python -m pytest. Verified Gemini-host synthesize smoke with persisted .council artifacts."
+    },
+    {
+      "timestamp": "2026-04-16T08:58:48.066Z",
+      "type": "task_status_change",
+      "task_id": "TASK-012",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-012 auto_verified → done: Acceptance mode is auto, so Gemini surface and integration contract work is complete after verification passed."
     }
   ]
 }

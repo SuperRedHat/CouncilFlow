@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from councilflow.config.loader import build_default_config
 from councilflow.controller.delegation_orchestrator import DelegationOrchestrator
 from councilflow.controller.discussion_orchestrator import DiscussionOrchestrator
@@ -37,7 +39,18 @@ class IntegrationDelegationProvider:
         )
 
 
-def test_workflow_integration_contracts_are_machine_readable(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    ("controller", "target_model"),
+    [
+        ("codex", "claude"),
+        ("gemini", "codex"),
+    ],
+)
+def test_workflow_integration_contracts_are_machine_readable(
+    tmp_path: Path,
+    controller: str,
+    target_model: str,
+) -> None:
     store = CouncilStateStore(tmp_path)
     discussion_orchestrator = DiscussionOrchestrator(
         store=store,
@@ -51,14 +64,14 @@ def test_workflow_integration_contracts_are_machine_readable(tmp_path: Path) -> 
 
     summary = discussion_orchestrator.run(
         question="How should project-plan consume discuss output?",
-        controller="codex",
-        external_models=["claude"],
+        controller=controller,
+        external_models=[target_model],
         max_rounds=5,
     )
     delegation = delegation_orchestrator.run(
         role=RoleName.IMPLEMENTER,
-        controller="codex",
-        target_model="claude",
+        controller=controller,
+        target_model=target_model,
         objective="Produce implementation output using explicit handoff artifacts.",
         task_summary="Demonstrate workflow integration for delegated tasks.",
         constraints=["Do not rely on hidden context."],
@@ -82,3 +95,4 @@ def test_workflow_integration_contracts_are_machine_readable(tmp_path: Path) -> 
     assert delegation_contract["handoff_path"] == delegation.handoff_path
     assert delegation_contract["result_path"] == delegation.result_path
     assert delegation_contract["handoff_schema"]["task_summary"].startswith("Demonstrate")
+    assert summary.controller == controller

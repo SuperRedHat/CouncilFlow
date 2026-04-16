@@ -43,3 +43,29 @@ def test_synthesize_combines_artifact_contents(tmp_path: Path) -> None:
     assert "Delegation result body" in payload["data"]["synthesis"]
     assert payload["meta"]["command"] == "synthesize"
 
+
+def test_synthesize_works_from_gemini_controlled_session(tmp_path: Path) -> None:
+    store = CouncilStateStore(tmp_path)
+    store.initialize()
+    summary_path = tmp_path / ".council" / "discuss" / "disc_gemini" / "summary.md"
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_path.write_text("Gemini summary body", encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "synthesize",
+            "--artifact",
+            str(summary_path),
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={"GEMINI_CLI": "1"},
+    )
+
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["error"] is None
+    assert payload["data"]["output_language"] == "zh-CN"
+    assert "Gemini summary body" in payload["data"]["synthesis"]
