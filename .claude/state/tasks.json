@@ -222,11 +222,11 @@
         "python -m ruff check .",
         "python -m pytest tests/test_workflow_integration.py"
       ],
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-16T06:43:49.733Z",
-      "updated_at": "2026-04-16T06:43:49.733Z",
+      "updated_at": "2026-04-16T07:05:16.788Z",
       "commit_hash": "",
-      "notes": "",
+      "notes": "Acceptance mode is auto, so the task is marked done after verification passed.",
       "review_checklist": [],
       "stage_gate": false
     },

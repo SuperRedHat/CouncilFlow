@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -43,3 +44,42 @@ def save_handoff_package(package: HandoffPackage, path: Path) -> Path:
     path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
     return path
 
+
+def load_handoff_package(path: Path) -> HandoffPackage:
+    """Load a persisted handoff package from YAML."""
+
+    raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    if not isinstance(raw, dict):
+        raise ValueError("Handoff package must deserialize to a mapping.")
+    return HandoffPackage.model_validate(raw)
+
+
+def build_delegation_contract(
+    package: HandoffPackage,
+    *,
+    handoff_path: str,
+    result_path: str | None = None,
+) -> dict[str, Any]:
+    """Build a machine-readable contract for project-* workflow integration."""
+
+    return {
+        "artifact_kind": "delegation_handoff",
+        "command": "council delegate",
+        "handoff_path": handoff_path,
+        "result_path": result_path,
+        "handoff_schema": {
+            "id": package.id,
+            "role": package.role,
+            "objective": package.objective,
+            "task_summary": package.task_summary,
+            "constraints": package.constraints,
+            "relevant_files": package.relevant_files,
+            "inputs": package.inputs,
+            "expected_output": package.expected_output,
+        },
+        "consumption_rules": [
+            "The workflow must read the handoff package explicitly from disk.",
+            "The delegated model must not rely on hidden shared chat context.",
+            "The result artifact should be treated as the authoritative delegated output.",
+        ],
+    }
