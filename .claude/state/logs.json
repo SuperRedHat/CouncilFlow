@@ -23,6 +23,30 @@
       "from_status": null,
       "to_status": null,
       "message": "Created the CouncilFlow task plan with 9 structured tasks, including a deferred workflow-core global skill sync task that is blocked until product completion and stable validation."
+    },
+    {
+      "timestamp": "2026-04-16T06:45:22.515Z",
+      "type": "task_status_change",
+      "task_id": "TASK-001",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-001 todo → in_progress: Starting bootstrap task: scaffold Python CLI project structure and baseline verification setup."
+    },
+    {
+      "timestamp": "2026-04-16T06:47:53.405Z",
+      "type": "task_status_change",
+      "task_id": "TASK-001",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-001 in_progress → auto_verified: Bootstrap scaffold implemented and verification commands passed: python -m ruff check .; python -m pytest."
+    },
+    {
+      "timestamp": "2026-04-16T06:47:53.426Z",
+      "type": "task_status_change",
+      "task_id": "TASK-001",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-001 auto_verified → done: Acceptance mode is auto, so the task is marked done after passing verification."
     }
   ]
 }
