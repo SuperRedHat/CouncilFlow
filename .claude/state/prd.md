@@ -7,11 +7,11 @@
 `CouncilFlow` 是一个 **CLI-first、本地优先、主控感知** 的多模型协作 sidecar 工具。
 
 它不是浏览器产品，不是本地后端平台，也不是一个新的 AI 聊天前台。
-它的目标是：**增强当前主控 AI 的工作能力，让 Codex 或 Claude Code 在需要时能够丝滑地调用其他模型参与讨论、分工执行和结果收敛。**
+它的目标是：**增强当前主控 AI 的工作能力，让 Codex、Claude Code 或 Gemini CLI 在需要时能够丝滑地调用其他模型参与讨论、分工执行和结果收敛。**
 
 一句话定义：
 
-> `CouncilFlow` 是给 `Codex` 和 `Claude Code` 使用的多模型协作 sidecar，当前会话里的主控 AI 负责总体流程，`CouncilFlow` 只在需要其他模型参与时被调用。
+> `CouncilFlow` 是给 `Codex`、`Claude Code` 和 `Gemini CLI` 使用的多模型协作 sidecar，当前会话里的主控 AI 负责总体流程，`CouncilFlow` 只在需要其他模型参与时被调用。
 
 ## 3. 项目背景与问题定义
 当前个人 AI 开发工作流存在几个明显问题：
@@ -19,7 +19,7 @@
 1. 不同模型各有长处，但在真实开发中切换和配合非常繁琐。
 2. 多模型讨论通常靠手工复制粘贴，来回转述成本高，容易丢信息。
 3. 一旦做成重后端系统，就容易把时间和 token 浪费在后端、接口、状态同步和工具链问题上，而不是实际开发工作上。
-4. 当前已经存在一套可同时服务于 `Codex` 和 `Claude Code` 的 `project-*` 工作流，这套习惯是宝贵资产，不应被推翻。
+4. 当前已经存在一套可同时服务于 `Codex`、`Claude Code` 和 `Gemini CLI` 的 `project-*` 工作流，这套习惯是宝贵资产，不应被推翻。
 
 因此，新的产品方向不是另起一个复杂平台，而是提供一个**薄而稳**的能力层：
 - 继续保留 `project-*` 作为主工作流入口
@@ -46,7 +46,7 @@
 ## 5. 目标用户
 核心用户是像你这样的高频使用多模型进行软件开发的个人开发者或小规模团队成员，特点是：
 
-- 主要在 `Codex app` 或 `Claude Code` 中工作
+- 主要在 `Codex app`、`Claude Code` 或 `Gemini CLI` 中工作
 - 熟悉 git 仓库工作流
 - 希望在不同模型之间分工
 - 希望多模型讨论更流畅
@@ -60,6 +60,7 @@
 例如：
 - 如果当前在 `Codex` 中执行工作流，那么 `Codex` 是当前主控
 - 如果当前在 `Claude Code` 中执行工作流，那么 `Claude Code` 是当前主控
+- 如果当前在 `Gemini CLI` 中执行工作流，那么 `Gemini CLI` 是当前主控
 
 规则：
 1. 默认由当前主控直接执行当前步骤。
@@ -365,7 +366,7 @@ V1 技术选型建议为：
 ## 13. 核心功能列表
 
 ### Must Have
-1. 支持在 `Codex` 和 `Claude Code` 下工作
+1. 支持在 `Codex`、`Claude Code` 和 `Gemini CLI` 下工作
 2. 当前主控自动识别
 3. 支持 `project-discuss`
 4. 支持其它 `project-*` skill 使用 `discuss` 参数
@@ -396,7 +397,7 @@ V1 技术选型建议为：
 - **透明**：每一步是否调用了外部模型必须可见
 - **可恢复**：中断后能从本地状态继续
 - **可配置**：角色映射和输出语言可改
-- **双主控兼容**：同一套工具必须同时适配 Codex 与 Claude Code
+- **三主控兼容**：同一套工具必须同时适配 Codex、Claude Code 与 Gemini CLI
 - **低干扰**：当所有角色都映射到当前主控时，不应触发 sidecar
 
 ## 15. 验收标准
@@ -404,26 +405,39 @@ V1 完成时，至少满足：
 
 1. 在 `Codex` 中可以将其作为主控工作流使用
 2. 在 `Claude Code` 中也可以将其作为主控工作流使用
-3. `project-discuss` 可以发起多模型讨论并得到最终综合结果
-4. `project-design discuss claude` 这类嵌入式讨论可以工作
-5. 如果用户指定 `discuss` 的模型与当前主控相同，系统会给出正确提醒
-6. 当某角色映射到当前主控时，系统不会绕路调用 `CouncilFlow`
-7. 当某角色映射到非主控模型时，系统能通过 `CouncilFlow` 发起委派
-8. 所有关键状态都能从本地 `.council/` 恢复
-9. 默认输出可为中文，且支持切换输出语言
-10. 整个系统不依赖数据库、Web UI 或常驻后端
+3. 在 `Gemini CLI` 中也可以将其作为主控工作流使用
+4. `project-discuss` 可以发起多模型讨论并得到最终综合结果
+5. `project-design discuss claude` 这类嵌入式讨论可以工作
+6. 如果用户指定 `discuss` 的模型与当前主控相同，系统会给出正确提醒
+7. 当某角色映射到当前主控时，系统不会绕路调用 `CouncilFlow`
+8. 当某角色映射到非主控模型时，系统能通过 `CouncilFlow` 发起委派
+9. 所有关键状态都能从本地 `.council/` 恢复
+10. 默认输出可为中文，且支持切换输出语言
+11. 整个系统不依赖数据库、Web UI 或常驻后端
+12. `.workflow-core` 的共享 `project-*` skill 源可稳定同步到 `Codex`、`Claude Code` 与 `Gemini CLI`
 
 ## 16. 约束与假设
 1. 当前项目继续使用现有 `project-*` 作为开发工作流
 2. `CouncilFlow` 是新产品本体，不再沿用旧产品方向
-3. 第一版优先支持：
+3. 第一版正式主控支持：
    - `Codex`
    - `Claude Code`
-   - 可选 `GPT / Gemini` 作为讨论参与者或补充角色
+   - `Gemini CLI`
+   - `GPT` 继续作为可选讨论参与者或补充角色
 4. 第一版不追求复杂平台能力，只追求多模型协作主路径稳定
 5. 只有在非主控模型真正参与时，才启用 sidecar
 
 ## 17. 结论
 `CouncilFlow` 的最终定位不是“另一个 AI 平台”，而是：
 
-> 一个服务于 `Codex` 和 `Claude Code` 的、主控感知的、多模型协作 sidecar CLI。
+> 一个服务于 `Codex`、`Claude Code` 与 `Gemini CLI` 的、主控感知的、多模型协作 sidecar CLI。
+
+## 18. 变更记录（2026-04-16）
+本次变更正式将 `Gemini CLI` 从“可选讨论参与者或补充角色”提升为**产品级主控**支持范围，并要求 `.workflow-core` 的共享 `project-*` skill 源同步覆盖 `Codex`、`Claude Code` 和 `Gemini CLI`。
+
+阶段策略：
+1. 允许先完成 `Codex-first` 稳定性硬化，避免 `TASK-008` 在 Claude 配额重置前成为唯一阻塞点。
+2. `Gemini CLI` 的主控接入与共享 skill 扩展可以和当前 `Claude Code` release-gate 并行推进。
+3. 等 `Claude Code` 配额恢复后，再执行三主控最终 gate 与共享 skill 全量同步验收。
+
+本节覆盖并 supersede 文中所有“仅支持 Codex 与 Claude Code 作为主控”的旧表述。

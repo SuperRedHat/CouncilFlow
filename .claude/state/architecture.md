@@ -5,17 +5,17 @@
 ### 1.1 产品定位
 `CouncilFlow` 是一个 **CLI-first、本地优先、主控感知** 的多模型协作 sidecar 工具。
 
-它不是浏览器产品，不是本地后端平台，也不是一个新的 AI 聊天前台。它的目标是：**增强当前主控 AI 的工作能力，让 Codex 或 Claude Code 在需要时能够丝滑地调用其他模型参与讨论、分工执行和结果收敛。**
+它不是浏览器产品，不是本地后端平台，也不是一个新的 AI 聊天前台。它的目标是：**增强当前主控 AI 的工作能力，让 Codex、Claude Code 或 Gemini CLI 在需要时能够丝滑地调用其他模型参与讨论、分工执行和结果收敛。**
 
 一句话定义：
 
-> `CouncilFlow` 是给 `Codex` 和 `Claude Code` 使用的多模型协作 sidecar，当前会话里的主控 AI 负责总体流程，`CouncilFlow` 只在需要其他模型参与时被调用。
+> `CouncilFlow` 是给 `Codex`、`Claude Code` 和 `Gemini CLI` 使用的多模型协作 sidecar，当前会话里的主控 AI 负责总体流程，`CouncilFlow` 只在需要其他模型参与时被调用。
 
 ### 1.2 当前阶段定位
 当前阶段目标不是继续构建重后端产品，而是重构成一个极简可用的本地 CLI 工具。该工具需要：
 
 - 和现有 `project-*` 开发工作流并存
-- 支持 `Codex` 与 `Claude Code` 作为双主控
+- 支持 `Codex`、`Claude Code` 与 `Gemini CLI` 作为三主控
 - 只在真正需要额外模型参与时才激活 sidecar
 - 通过本地文件保存权威状态，而不是数据库或常驻后端
 
@@ -170,13 +170,14 @@ councilflow/
 
 ### 4.1 主控识别层：`host_context`
 职责：
-- 识别当前主控是 `codex` 还是 `claude`
+- 识别当前主控是 `codex`、`claude` 还是 `gemini`
 - 提供统一的 `current_controller` 视图
 - 输出当前语言、当前运行环境等主控上下文
 
 关键要求：
 - 主控只识别当前真实会话环境
 - 不通过猜测历史状态来推断主控
+- 对 `Gemini CLI` 需要提供与 `Codex` / `Claude Code` 同等级的环境信号或显式 override 契约
 
 ### 4.2 路由层：`routing`
 职责：
@@ -556,6 +557,8 @@ graph TD
 6. `project-*` 的 `discuss` 参数支持
 7. `council status`
 8. 输出语言与中文默认输出
+9. `Gemini CLI` 主控识别与 provider 接入
+10. `.workflow-core` 共享 skill 源同步到 `Codex` / `Claude Code` / `Gemini CLI`
 
 ## 12. 技术栈总结
 建议技术栈：
@@ -571,4 +574,15 @@ graph TD
 ## 13. 结论
 `CouncilFlow` 的最终定位不是“另一个 AI 平台”，而是：
 
-> 一个服务于 `Codex` 和 `Claude Code` 的、主控感知的、多模型协作 sidecar CLI。
+> 一个服务于 `Codex`、`Claude Code` 与 `Gemini CLI` 的、主控感知的、多模型协作 sidecar CLI。
+
+## 14. 变更记录（2026-04-16）
+本次变更将系统目标从“`Codex` + `Claude Code` 双主控”扩展为“`Codex` + `Claude Code` + `Gemini CLI` 三主控”。
+
+新增架构要求：
+1. `host_context` 必须支持 `Gemini CLI` 的主控识别策略，并保持与现有 `controller_override` 兼容。
+2. `providers/` 层必须提供 `GeminiCliAdapter`，并保证 `discuss` / `delegate` / `status` 在 `Gemini CLI` 主控下的行为与现有主控保持一致。
+3. `.workflow-core` 的共享 skill 源与同步脚本不再只面向 `Codex` / `Claude Code`，而是要统一覆盖三种工具侧产物。
+4. 发布节奏改为分阶段推进：先完成 `Codex-first` 稳定性硬化，再接入 `Gemini CLI`，最后在 `Claude Code` 可用时完成三主控最终 gate。
+
+本节覆盖并 supersede 文中所有“双主控”限定表述。

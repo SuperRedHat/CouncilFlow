@@ -304,11 +304,11 @@
         "确认系统在无需外部模型参与时不会错误激活 sidecar"
       ],
       "stage_gate": true,
-      "status": "awaiting_manual_acceptance",
+      "status": "in_progress",
       "created_at": "2026-04-16T06:43:49.733Z",
-      "updated_at": "2026-04-16T07:09:42.303Z",
+      "updated_at": "2026-04-16T07:35:10.612Z",
       "commit_hash": "",
-      "notes": "Automated release-gate checks passed. Manual smoke verification is required before continuing to workflow-core sync."
+      "notes": "Reopened release-gate after automated CLI smoke exposed two gaps: real cross-model discuss providers were not wired, and delegate provider execution needed Windows-safe decoding plus local-controller short-circuiting."
     },
     {
       "id": "TASK-009",
@@ -349,6 +349,224 @@
       "status": "todo",
       "created_at": "2026-04-16T06:43:49.733Z",
       "updated_at": "2026-04-16T06:43:49.733Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-010",
+      "title": "拆分并完成 Codex-first 稳定性硬化",
+      "description": "将当前 release-gate 中不依赖 Claude 配额的稳定性问题拆出为独立任务，优先保证 Codex 主控下的 council status / discuss / delegate 在 Windows 上稳定可跑，并补齐状态损坏恢复、provider 超时边界和结构化错误测试。",
+      "dependencies": [
+        "TASK-007"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "空文件或损坏的 .council/state.json 不会再导致 council status 崩溃",
+        "provider 调用具备明确超时边界，超时与系统级失败会返回结构化错误",
+        "Codex 作为主控时 status、discuss、delegate 主路径在 Windows 上稳定运行",
+        "自动化测试覆盖状态恢复与 provider 超时/错误路径"
+      ],
+      "files": [
+        "src/councilflow/state/store.py",
+        "src/councilflow/cli/status.py",
+        "src/councilflow/providers/base.py",
+        "src/councilflow/providers/codex_cli.py",
+        "tests/test_state_store.py",
+        "tests/test_cli_status.py",
+        "tests/test_provider_adapters.py",
+        "tests/test_cli_delegate.py",
+        "tests/test_cli_discuss.py"
+      ],
+      "module": "codex-stability",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_state_store.py tests/test_cli_status.py tests/test_provider_adapters.py tests/test_cli_delegate.py tests/test_cli_discuss.py"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-16T08:32:03.796Z",
+      "updated_at": "2026-04-16T08:32:03.796Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-011",
+      "title": "接入 Gemini CLI 主控识别与 Provider",
+      "description": "把 Gemini CLI 从可选参与者提升为正式 controller，补齐 host_context 主控识别、模型别名归一化、GeminiCliAdapter 以及 discuss / delegate 的同主控短路与跨模型调用能力。",
+      "dependencies": [
+        "TASK-010"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "系统可以识别 Gemini CLI 作为当前主控，且保留 controller_override 兼容性",
+        "模型归一化与路由规则把 gemini 当作一等 controller 处理",
+        "GeminiCliAdapter 可以安全地以非交互方式调用 Gemini CLI",
+        "自动化测试覆盖 Gemini 的主控识别、路由和 provider 适配路径"
+      ],
+      "files": [
+        "src/councilflow/controller/host_context.py",
+        "src/councilflow/models/roles.py",
+        "src/councilflow/providers/gemini_cli.py",
+        "src/councilflow/cli/discuss.py",
+        "src/councilflow/cli/delegate.py",
+        "tests/test_host_context.py",
+        "tests/test_routing.py",
+        "tests/test_provider_adapters.py",
+        "tests/test_cli_discuss.py",
+        "tests/test_cli_delegate.py"
+      ],
+      "module": "gemini-controller",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_host_context.py tests/test_routing.py tests/test_provider_adapters.py tests/test_cli_discuss.py tests/test_cli_delegate.py"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-16T08:32:03.796Z",
+      "updated_at": "2026-04-16T08:32:03.796Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-012",
+      "title": "完善 Gemini 主控下的 CLI 表面与集成契约",
+      "description": "补齐 Gemini 作为 controller 时的 status / discuss / delegate / synthesize 表现层、artifact 兼容性和集成文档，确保 .council 产物和 project-* workflow 契约在三主控间保持一致。",
+      "dependencies": [
+        "TASK-011",
+        "TASK-006"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "Gemini 作为主控时 status、discuss、delegate、synthesize 返回的结构化输出与现有主控保持一致",
+        "docs/integration.md 和 docs/release-checklist.md 明确记录 Gemini 主控用法与环境契约",
+        "Gemini 主控产生的 .council artifact 可被 Codex / Claude / Gemini 后续流程复用",
+        "自动化测试覆盖 Gemini controller 下的 CLI 表面和 workflow integration 场景"
+      ],
+      "files": [
+        "docs/integration.md",
+        "docs/release-checklist.md",
+        "src/councilflow/cli/status.py",
+        "src/councilflow/cli/synthesize.py",
+        "src/councilflow/cli/discuss.py",
+        "src/councilflow/cli/delegate.py",
+        "tests/test_cli_status.py",
+        "tests/test_cli_synthesize.py",
+        "tests/test_cli_discuss.py",
+        "tests/test_cli_delegate.py",
+        "tests/test_workflow_integration.py"
+      ],
+      "module": "gemini-surface",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_cli_status.py tests/test_cli_synthesize.py tests/test_cli_discuss.py tests/test_cli_delegate.py tests/test_workflow_integration.py"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-16T08:32:03.796Z",
+      "updated_at": "2026-04-16T08:32:03.796Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-013",
+      "title": "扩展 workflow-core 共享 skills 与同步脚本到 Gemini",
+      "description": "把 .workflow-core 的共享 project-* skill 源从当前的 Codex / Claude 双端同步扩展为 Codex / Claude / Gemini 三端同步，并补齐 Gemini 侧的技能安装、MCP 配置说明与同步脚本能力。",
+      "dependencies": [
+        "TASK-012"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        ".workflow-core/skills 覆盖当前在三端使用的完整 project-* 共享 skill 集合",
+        "sync-skills.ps1 能把共享 skill 源同步到 .codex/skills、.claude/skills 和 .gemini/skills",
+        "Gemini 侧存在可复用的 project-manager MCP 配置说明或模板，避免每次手工重配",
+        "同步后不会回归现有 Codex / Claude 侧 project-* 行为"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/skills/project-init/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-plan/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-next/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-feedback/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-change/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-ask/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-design/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-resume/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-review/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-status/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/scripts/sync-skills.ps1",
+        "C:/Users/David Zhai/.workflow-core/docs/gemini-setup.md"
+      ],
+      "module": "workflow-core-gemini",
+      "needs_manual_review": true,
+      "acceptance_mode": "milestone_manual",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'",
+        "gemini skills list --all",
+        "gemini mcp list"
+      ],
+      "review_checklist": [
+        "确认共享 skill 源没有继续只停留在 5 个技能，而是覆盖当前三端实际使用的完整 project-* 集合",
+        "确认 Gemini 同步方案不会破坏现有 Codex / Claude 侧 skill 行为",
+        "确认 project-manager MCP 的 Gemini 配置方式可复用且不依赖手工临时步骤"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-16T08:32:03.796Z",
+      "updated_at": "2026-04-16T08:32:03.796Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-014",
+      "title": "执行三主控最终稳定性验收",
+      "description": "在 Codex / Claude Code / Gemini CLI 三主控能力与共享 workflow-core 同步全部就绪后，执行最终的三主控 release gate，确认 status / discuss / delegate 主路径、同模型提醒、本地状态恢复和 sidecar 触发规则在三端一致。",
+      "dependencies": [
+        "TASK-008",
+        "TASK-013"
+      ],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "Codex、Claude Code、Gemini CLI 都可以作为主控稳定运行 status、discuss、delegate 主路径",
+        "三主控下的同模型 discuss 提醒、本地执行短路和 .council 状态恢复已完成验证",
+        "共享 project-* skill 源同步到三端后行为保持一致",
+        "系统在角色映射到当前主控时不会错误激活 sidecar"
+      ],
+      "files": [
+        "docs/release-checklist.md",
+        "tests/",
+        "C:/Users/David Zhai/.workflow-core/scripts/sync-skills.ps1"
+      ],
+      "module": "tri-controller-gate",
+      "needs_manual_review": true,
+      "acceptance_mode": "manual",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest",
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'"
+      ],
+      "review_checklist": [
+        "在 Codex 作为主控时验证 discuss、delegate、status 主路径",
+        "在 Claude Code 作为主控时验证 discuss、delegate、status 主路径",
+        "在 Gemini CLI 作为主控时验证 discuss、delegate、status 主路径",
+        "确认三主控下同模型提醒、状态恢复和 sidecar 触发规则一致"
+      ],
+      "stage_gate": true,
+      "status": "todo",
+      "created_at": "2026-04-16T08:32:03.796Z",
+      "updated_at": "2026-04-16T08:32:03.796Z",
       "commit_hash": "",
       "notes": ""
     }

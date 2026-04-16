@@ -215,6 +215,30 @@
       "from_status": "auto_verified",
       "to_status": "awaiting_manual_acceptance",
       "message": "TASK-008 auto_verified → awaiting_manual_acceptance: Automated release-gate checks passed. Manual smoke verification is required before continuing to workflow-core sync."
+    },
+    {
+      "timestamp": "2026-04-16T07:35:10.630Z",
+      "type": "task_status_change",
+      "task_id": "TASK-008",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "in_progress",
+      "message": "TASK-008 awaiting_manual_acceptance → in_progress: Reopened release-gate after automated CLI smoke exposed two gaps: real cross-model discuss providers were not wired, and delegate provider execution needed Windows-safe decoding plus local-controller short-circuiting."
+    },
+    {
+      "timestamp": "2026-04-16T08:32:11.364Z",
+      "type": "decision",
+      "task_id": "TASK-011",
+      "from_status": null,
+      "to_status": null,
+      "message": "Formal change approved on 2026-04-16: promote Gemini CLI from optional participant to first-class controller, extend shared workflow-core project-* skills toward Codex / Claude Code / Gemini, and allow Codex-first hardening plus Gemini integration to proceed before the final tri-controller gate."
+    },
+    {
+      "timestamp": "2026-04-16T08:32:11.384Z",
+      "type": "decision",
+      "task_id": "TASK-010",
+      "from_status": null,
+      "to_status": null,
+      "message": "TASK-008 remains the original Codex/Claude release-gate, but it is no longer the only path forward. New tasks TASK-010 through TASK-014 unblock Codex-first stability work and Gemini controller expansion while Claude quota is unavailable."
     }
   ]
 }
