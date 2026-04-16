@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import typer
@@ -17,6 +16,7 @@ from councilflow.providers.base import ProviderAdapter, ProviderError
 from councilflow.providers.claude_code_cli import ClaudeCodeCliAdapter
 from councilflow.providers.codex_cli import CodexCliAdapter
 from councilflow.state.store import CouncilStateStore
+from councilflow.utils.lang import emit_response, resolve_output_language
 
 DEFAULT_PROJECT_ROOT = Path(".")
 ROLE_OPTION = typer.Option(..., "--role", help="Role to delegate.")
@@ -84,6 +84,7 @@ def delegate(
     config = store.load_config()
     controller = detect_controller(config=config).controller.value
     target_model = (model or config.roles.for_role(role)).strip().lower()
+    output_language = resolve_output_language(config.output_language)
 
     orchestrator = DelegationOrchestrator(
         store=store,
@@ -103,29 +104,28 @@ def delegate(
         )
     except DelegationExecutionError as exc:
         typer.echo(
-            json.dumps(
-                {
-                    "data": None,
-                    "error": {
-                        "message": str(exc),
-                        "delegation_id": exc.delegation_id,
-                        "handoff_path": exc.handoff_path,
-                        "record_path": exc.record_path,
-                    },
+            emit_response(
+                data=None,
+                meta={
+                    "command": "delegate",
+                    "output_language": output_language,
                 },
-                ensure_ascii=False,
-                indent=2,
+                error={
+                    "message": str(exc),
+                    "delegation_id": exc.delegation_id,
+                    "handoff_path": exc.handoff_path,
+                    "record_path": exc.record_path,
+                },
             )
         )
         raise typer.Exit(code=1) from exc
 
     typer.echo(
-        json.dumps(
-            {
-                "data": result.model_dump(mode="json"),
-                "error": None,
+        emit_response(
+            data=result.model_dump(mode="json"),
+            meta={
+                "command": "delegate",
+                "output_language": output_language,
             },
-            ensure_ascii=False,
-            indent=2,
         )
     )

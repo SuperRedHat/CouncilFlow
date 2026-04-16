@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import typer
@@ -15,6 +14,7 @@ from councilflow.controller.host_context import detect_controller
 from councilflow.controller.routing import resolve_discuss_models
 from councilflow.models.discussion import DiscussionRequest, ParticipantResponse
 from councilflow.state.store import CouncilStateStore
+from councilflow.utils.lang import emit_response, resolve_output_language
 
 DEFAULT_PROJECT_ROOT = Path(".")
 QUESTION_ARGUMENT = typer.Argument(..., help="Question to discuss across models.")
@@ -69,24 +69,30 @@ def discuss(
     store = CouncilStateStore(project_root)
     store.initialize()
     config = store.load_config()
+    output_language = resolve_output_language(config.output_language)
     controller = detect_controller(config=config).controller
     requested_models = [item for item in models.split(",") if item.strip()]
     resolution = resolve_discuss_models(requested_models, controller)
 
     if not resolution.requires_sidecar:
         payload = {
-            "data": {
-                "question": question,
-                "participants": [controller.value],
-                "requested_models": resolution.requested_models,
-                "external_models": resolution.external_models,
-                "ignored_models": resolution.ignored_models,
-                "warning": resolution.warning,
-                "rounds_completed": 0,
-            },
-            "error": None,
+            "question": question,
+            "participants": [controller.value],
+            "requested_models": resolution.requested_models,
+            "external_models": resolution.external_models,
+            "ignored_models": resolution.ignored_models,
+            "warning": resolution.warning,
+            "rounds_completed": 0,
         }
-        typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
+        typer.echo(
+            emit_response(
+                data=payload,
+                meta={
+                    "command": "discuss",
+                    "output_language": output_language,
+                },
+            )
+        )
         return
 
     orchestrator = DiscussionOrchestrator(
@@ -103,26 +109,25 @@ def discuss(
         )
     except UnavailableParticipantError as exc:
         typer.echo(
-            json.dumps(
-                {
-                    "data": None,
-                    "error": {
-                        "message": str(exc),
-                    },
+            emit_response(
+                data=None,
+                meta={
+                    "command": "discuss",
+                    "output_language": output_language,
                 },
-                ensure_ascii=False,
-                indent=2,
+                error={
+                    "message": str(exc),
+                },
             )
         )
         raise typer.Exit(code=1) from exc
 
     typer.echo(
-        json.dumps(
-            {
-                "data": summary.model_dump(mode="json"),
-                "error": None,
+        emit_response(
+            data=summary.model_dump(mode="json"),
+            meta={
+                "command": "discuss",
+                "output_language": output_language,
             },
-            ensure_ascii=False,
-            indent=2,
         )
     )
