@@ -1,0 +1,12 @@
+{
+  "logs": [
+    {
+      "timestamp": "2026-04-16T06:05:18.176Z",
+      "type": "decision",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "Confirmed existing prd.md as the approved PRD baseline for CouncilFlow and saved it to project-manager state."
+    }
+  ]
+}

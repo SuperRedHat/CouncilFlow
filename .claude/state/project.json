@@ -1,0 +1,21 @@
+{
+  "name": "CouncilFlow",
+  "created_at": "2026-04-16T06:05:18.182Z",
+  "updated_at": "2026-04-16T06:05:18.183Z",
+  "status": "initialized",
+  "tech_stack": [
+    "Python 3.13",
+    "Typer",
+    "Pydantic v2",
+    "PyYAML",
+    "JSON/YAML/Markdown",
+    "CLI-first architecture"
+  ],
+  "progress": {
+    "total": 0,
+    "done": 0,
+    "in_progress": 0,
+    "awaiting_acceptance": 0,
+    "todo": 0
+  }
+}
