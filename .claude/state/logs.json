@@ -47,6 +47,30 @@
       "from_status": "auto_verified",
       "to_status": "done",
       "message": "TASK-001 auto_verified → done: Acceptance mode is auto, so the task is marked done after passing verification."
+    },
+    {
+      "timestamp": "2026-04-16T06:48:35.075Z",
+      "type": "task_status_change",
+      "task_id": "TASK-002",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-002 todo → in_progress: Starting controller detection, config schema, and routing implementation."
+    },
+    {
+      "timestamp": "2026-04-16T06:51:36.434Z",
+      "type": "task_status_change",
+      "task_id": "TASK-002",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-002 in_progress → auto_verified: Controller detection, config schema, and routing implementation passed python -m ruff check . and python -m pytest tests/test_host_context.py tests/test_routing.py."
+    },
+    {
+      "timestamp": "2026-04-16T06:51:45.729Z",
+      "type": "task_status_change",
+      "task_id": "TASK-002",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-002 auto_verified → done: Acceptance mode is auto, so the task is marked done after verification passed."
     }
   ]
 }

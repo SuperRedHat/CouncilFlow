@@ -9,6 +9,8 @@ description = "CLI-first, local-first, controller-aware sidecar for multi-model 
 readme = "readme.md"
 requires-python = ">=3.13"
 dependencies = [
+    "pydantic>=2.12,<3.0",
+    "PyYAML>=6.0,<7.0",
     "typer>=0.12,<1.0",
 ]
 
@@ -38,4 +40,3 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = ["B", "E", "F", "I", "UP"]
-
