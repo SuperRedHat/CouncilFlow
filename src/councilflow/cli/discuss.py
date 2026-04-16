@@ -22,7 +22,7 @@ from councilflow.providers.claude_code_cli import ClaudeCodeCliAdapter
 from councilflow.providers.codex_cli import CodexCliAdapter
 from councilflow.providers.gemini_cli import GeminiCliAdapter
 from councilflow.state.store import CouncilStateStore
-from councilflow.utils.lang import emit_response, resolve_output_language
+from councilflow.utils.lang import emit_console_text, emit_response, resolve_output_language
 
 DEFAULT_PROJECT_ROOT = Path(".")
 QUESTION_ARGUMENT = typer.Argument(..., help="Question to discuss across models.")
@@ -119,7 +119,7 @@ def discuss(
             "warning": resolution.warning,
             "rounds_completed": 0,
         }
-        typer.echo(
+        emit_console_text(
             emit_response(
                 data=payload,
                 meta={
@@ -143,7 +143,7 @@ def discuss(
             max_rounds=max_rounds,
         )
     except UnavailableParticipantError as exc:
-        typer.echo(
+        emit_console_text(
             emit_response(
                 data=None,
                 meta={
@@ -157,7 +157,7 @@ def discuss(
         )
         raise typer.Exit(code=1) from exc
 
-    typer.echo(
+    emit_console_text(
         emit_response(
             data=summary.model_dump(mode="json"),
             meta={

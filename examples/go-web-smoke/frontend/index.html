@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>围棋烟测小游戏</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="panel">
+        <p class="eyebrow">CouncilFlow Smoke Demo</p>
+        <h1>9x9 围棋网页小游戏</h1>
+        <p class="summary">
+          这是一个为了验证真实工作流闭环而做的最小示例。
+          支持落子、轮转和重置，不包含提子、打劫和计分。
+        </p>
+        <div class="status-bar">
+          <span id="current-player">当前执子：黑</span>
+          <span id="move-count">手数：0</span>
+        </div>
+        <div id="message" class="message"></div>
+        <div id="board" class="board" aria-label="9x9 围棋棋盘"></div>
+        <div class="actions">
+          <button id="reset-button" type="button">重置棋盘</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>

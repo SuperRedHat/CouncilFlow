@@ -7,7 +7,7 @@ from pathlib import Path
 import typer
 
 from councilflow.state.store import CouncilStateStore
-from councilflow.utils.lang import emit_response, resolve_output_language
+from councilflow.utils.lang import emit_console_text, emit_response, resolve_output_language
 
 DEFAULT_PROJECT_ROOT = Path(".")
 ARTIFACT_OPTION = typer.Option(
@@ -46,7 +46,7 @@ def synthesize(
         ]
     )
 
-    typer.echo(
+    emit_console_text(
         emit_response(
             data={
                 "output_language": output_language,
@@ -59,4 +59,3 @@ def synthesize(
             },
         )
     )
-

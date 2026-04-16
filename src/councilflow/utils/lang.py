@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import sys
 from collections.abc import Mapping
 from typing import Any
+
+import typer
 
 DEFAULT_OUTPUT_LANGUAGE = "zh-CN"
 SUPPORTED_OUTPUT_LANGUAGES = {"zh-CN", "en"}
@@ -35,3 +38,16 @@ def emit_response(
         payload["meta"] = dict(meta)
     return json.dumps(payload, ensure_ascii=False, indent=2)
 
+
+def emit_console_text(text: str) -> None:
+    """Echo text safely even when the active console encoding is not UTF-8."""
+
+    try:
+        typer.echo(text)
+    except UnicodeEncodeError:
+        encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+        fallback = text.encode(encoding, errors="backslashreplace").decode(
+            encoding,
+            errors="replace",
+        )
+        typer.echo(fallback)

@@ -9,7 +9,7 @@ import typer
 from councilflow.controller.host_context import detect_controller
 from councilflow.models.run_record import RunRecord
 from councilflow.state.store import CouncilStateStore
-from councilflow.utils.lang import emit_response, resolve_output_language
+from councilflow.utils.lang import emit_console_text, emit_response, resolve_output_language
 
 DEFAULT_PROJECT_ROOT = Path(".")
 PROJECT_ROOT_OPTION = typer.Option(
@@ -44,7 +44,7 @@ def status(project_root: Path = PROJECT_ROOT_OPTION) -> None:
         None,
     )
 
-    typer.echo(
+    emit_console_text(
         emit_response(
             data={
                 "current_controller": controller,
@@ -67,4 +67,3 @@ def status(project_root: Path = PROJECT_ROOT_OPTION) -> None:
             },
         )
     )
-

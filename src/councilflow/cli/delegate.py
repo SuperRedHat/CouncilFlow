@@ -17,7 +17,7 @@ from councilflow.providers.claude_code_cli import ClaudeCodeCliAdapter
 from councilflow.providers.codex_cli import CodexCliAdapter
 from councilflow.providers.gemini_cli import GeminiCliAdapter
 from councilflow.state.store import CouncilStateStore
-from councilflow.utils.lang import emit_response, resolve_output_language
+from councilflow.utils.lang import emit_console_text, emit_response, resolve_output_language
 
 DEFAULT_PROJECT_ROOT = Path(".")
 ROLE_OPTION = typer.Option(..., "--role", help="Role to delegate.")
@@ -92,7 +92,7 @@ def delegate(
     target_model = normalize_model_name(model or config.roles.for_role(role))
     output_language = resolve_output_language(config.output_language)
     if target_model == controller:
-        typer.echo(
+        emit_console_text(
             emit_response(
                 data={
                     "role": role.value,
@@ -129,7 +129,7 @@ def delegate(
             expected_output=expected_output,
         )
     except DelegationExecutionError as exc:
-        typer.echo(
+        emit_console_text(
             emit_response(
                 data=None,
                 meta={
@@ -146,7 +146,7 @@ def delegate(
         )
         raise typer.Exit(code=1) from exc
 
-    typer.echo(
+    emit_console_text(
         emit_response(
             data=result.model_dump(mode="json"),
             meta={
