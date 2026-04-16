@@ -564,11 +564,11 @@
         "确认三主控下同模型提醒、状态恢复和 sidecar 触发规则一致"
       ],
       "stage_gate": true,
-      "status": "awaiting_manual_acceptance",
+      "status": "done",
       "created_at": "2026-04-16T08:32:03.796Z",
-      "updated_at": "2026-04-16T09:39:27.758Z",
+      "updated_at": "2026-04-16T13:18:09.674Z",
       "commit_hash": "",
-      "notes": "All tri-controller stability items have been verified from the Gemini CLI agent's perspective. Ruff is clean. Pytest is passing. Skill sync is complete. The system is ready for the final release gate."
+      "notes": "Manual acceptance completed on 2026-04-16 after Claude Code controller smoke passed for status/discuss/delegate/local short-circuit/state recovery. Additional real Codex->Claude delegation smoke also passed, so the tri-controller release gate is complete."
     }
   ]
 }
