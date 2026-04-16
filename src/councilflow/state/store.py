@@ -98,6 +98,21 @@ class CouncilStateStore:
 
         return self._read_json(path)
 
+    def save_json(self, path: Path, payload: Mapping[str, Any]) -> Path:
+        """Persist a JSON artifact relative to the project root."""
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        self._write_json(path, payload)
+        return path
+
+    def write_text(self, path: Path, content: str) -> Path:
+        """Persist a UTF-8 text artifact relative to the project root."""
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+        return path
+
+
     @staticmethod
     def _read_json(path: Path) -> dict[str, Any]:
         return json.loads(path.read_text(encoding="utf-8"))
@@ -108,4 +123,3 @@ class CouncilStateStore:
             json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
             encoding="utf-8",
         )
-

@@ -5,6 +5,7 @@ from __future__ import annotations
 import typer
 
 from councilflow import __version__
+from councilflow.cli.discuss import discuss
 
 app = typer.Typer(
     name="council",
@@ -23,6 +24,9 @@ def root() -> None:
 def version() -> None:
     """Show the installed CouncilFlow version."""
     typer.echo(__version__)
+
+
+app.command(name="discuss")(discuss)
 
 
 def main() -> None:

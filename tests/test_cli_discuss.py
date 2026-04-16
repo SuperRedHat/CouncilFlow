@@ -1,0 +1,74 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from typer.testing import CliRunner
+
+from councilflow.cli import discuss as discuss_module
+from councilflow.cli.app import app
+from councilflow.models.discussion import DiscussionRequest, ParticipantResponse
+
+runner = CliRunner()
+
+
+class FakeParticipant:
+    def respond(self, request: DiscussionRequest) -> ParticipantResponse:
+        return ParticipantResponse(
+            model=request.participant,
+            message="Proceed with the current architecture split.",
+            key_options=["Split routing from orchestration"],
+            agreements=["Use controller-led synthesis"],
+            recommended_decision="Proceed with the split controller/orchestrator design.",
+            next_step="Create the implementation tasks.",
+            supports_current_direction=True,
+            has_new_information=False,
+        )
+
+
+def test_discuss_command_returns_structured_summary(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(discuss_module, "get_participant", lambda _: FakeParticipant())
+
+    result = runner.invoke(
+        app,
+        [
+            "discuss",
+            "How should we split the architecture?",
+            "--models",
+            "claude",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={"CODEX_SHELL": "1"},
+    )
+
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["error"] is None
+    assert payload["data"]["question"] == "How should we split the architecture?"
+    assert payload["data"]["participants"] == ["codex", "claude"]
+    assert payload["data"]["ended_reason"] == "converged"
+    assert (tmp_path / payload["data"]["summary_path"]).is_file()
+
+
+def test_discuss_command_warns_when_only_controller_is_requested(tmp_path: Path) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "discuss",
+            "Should we branch out to another model?",
+            "--models",
+            "codex",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={"CODEX_SHELL": "1"},
+    )
+
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["error"] is None
+    assert payload["data"]["rounds_completed"] == 0
+    assert payload["data"]["warning"] is not None
