@@ -1,0 +1,356 @@
+{
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "搭建 CLI 工程骨架",
+      "description": "初始化 CouncilFlow 的 Python CLI 项目骨架，建立 pyproject、src/councilflow 包、Typer 入口、基础测试目录与质量基线，让后续模块能在稳定结构上迭代。",
+      "dependencies": [],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "仓库具备 pyproject.toml、src/councilflow 与 tests 基础结构",
+        "存在统一 CLI 入口并能输出帮助信息",
+        "基础测试与静态检查命令可运行，为后续任务提供稳定基线"
+      ],
+      "files": [
+        "pyproject.toml",
+        "src/councilflow/__init__.py",
+        "src/councilflow/cli/__init__.py",
+        "src/councilflow/cli/app.py",
+        "tests/"
+      ],
+      "module": "bootstrap",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-16T06:43:49.733Z",
+      "updated_at": "2026-04-16T06:43:49.733Z",
+      "commit_hash": "",
+      "notes": "",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-002",
+      "title": "实现主控识别与角色路由",
+      "description": "实现配置 schema、默认角色映射、主控环境识别和路由规则，确保系统能判断当前由主控原生执行还是进入 sidecar，并正确处理 discuss 去重与同模型提醒。",
+      "dependencies": [
+        "TASK-001"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "可识别当前主控是 codex 或 claude",
+        "默认角色映射与可覆盖配置可被加载和校验",
+        "discuss 参数支持去重、忽略与主控重复的模型并对完全重复场景给出明确提醒",
+        "角色映射到当前主控时直接本地执行，映射到非主控模型时返回 sidecar 路由结果"
+      ],
+      "files": [
+        "src/councilflow/config/loader.py",
+        "src/councilflow/config/schema.py",
+        "src/councilflow/controller/host_context.py",
+        "src/councilflow/controller/routing.py",
+        "src/councilflow/models/config.py",
+        "src/councilflow/models/roles.py",
+        "tests/test_host_context.py",
+        "tests/test_routing.py"
+      ],
+      "module": "core-routing",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_host_context.py tests/test_routing.py"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-16T06:43:49.733Z",
+      "updated_at": "2026-04-16T06:43:49.733Z",
+      "commit_hash": "",
+      "notes": "",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-003",
+      "title": "实现本地状态层与恢复能力",
+      "description": "构建 .council 本地状态目录、路径管理、状态读写和快照恢复能力，为 discussion、delegation、runs 等记录提供统一持久化层。",
+      "dependencies": [
+        "TASK-001"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "系统能创建并管理 .council 下的标准目录结构",
+        "状态读写接口支持 config、state、runs 等核心对象的持久化",
+        "中断后可从本地文件恢复最近关键状态",
+        "状态文件格式可读且适合后续模型消费"
+      ],
+      "files": [
+        "src/councilflow/state/__init__.py",
+        "src/councilflow/state/paths.py",
+        "src/councilflow/state/store.py",
+        "src/councilflow/state/snapshots.py",
+        "tests/test_state_store.py"
+      ],
+      "module": "state",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_state_store.py"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-16T06:43:49.733Z",
+      "updated_at": "2026-04-16T06:43:49.733Z",
+      "commit_hash": "",
+      "notes": "",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-004",
+      "title": "实现多模型讨论编排",
+      "description": "实现 discussion 数据模型、讨论编排器与 council discuss 命令，支持多轮讨论、最多 5 轮限制、提前收敛和主控综合输出，并将结果沉淀到结构化产物。",
+      "dependencies": [
+        "TASK-002",
+        "TASK-003"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "council discuss 支持主控加一个或多个额外模型的讨论流程",
+        "主控加单一额外模型场景最多 5 轮且满足收敛条件时可提前结束",
+        "讨论结果会输出 question、participants、agreements、disagreements、recommended_decision、next_step 等结构化字段",
+        "discussion 运行记录和总结文件可落盘到 .council/discuss"
+      ],
+      "files": [
+        "src/councilflow/cli/discuss.py",
+        "src/councilflow/controller/discussion_orchestrator.py",
+        "src/councilflow/models/discussion.py",
+        "src/councilflow/handoff/summaries.py",
+        "tests/test_cli_discuss.py",
+        "tests/test_discussion_orchestrator.py"
+      ],
+      "module": "discussion",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_cli_discuss.py tests/test_discussion_orchestrator.py"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-16T06:43:49.733Z",
+      "updated_at": "2026-04-16T06:43:49.733Z",
+      "commit_hash": "",
+      "notes": "",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-005",
+      "title": "实现任务委派与 Provider 适配层",
+      "description": "实现 provider adapter 抽象、handoff package 生成和 council delegate 命令，优先接入 Codex CLI、Claude Code CLI 等 provider，并在失败时返回结构化错误。",
+      "dependencies": [
+        "TASK-002",
+        "TASK-003"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "存在统一 ProviderAdapter 抽象并可接入至少 Codex CLI 与 Claude Code CLI",
+        "系统可为非主控角色生成结构化 handoff package",
+        "council delegate 能调用目标 provider 并落盘结果",
+        "委派失败时返回结构化错误而不是吞掉异常"
+      ],
+      "files": [
+        "src/councilflow/cli/delegate.py",
+        "src/councilflow/controller/delegation_orchestrator.py",
+        "src/councilflow/providers/base.py",
+        "src/councilflow/providers/codex_cli.py",
+        "src/councilflow/providers/claude_code_cli.py",
+        "src/councilflow/handoff/packages.py",
+        "src/councilflow/handoff/prompts.py",
+        "src/councilflow/models/delegation.py",
+        "tests/test_cli_delegate.py",
+        "tests/test_delegation_orchestrator.py"
+      ],
+      "module": "delegation",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_cli_delegate.py tests/test_delegation_orchestrator.py"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-16T06:43:49.733Z",
+      "updated_at": "2026-04-16T06:43:49.733Z",
+      "commit_hash": "",
+      "notes": "",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-006",
+      "title": "补齐 project-* 工作流接入契约",
+      "description": "在 CouncilFlow 仓库内补齐与 project-* 工作流对接所需的 artifact 格式、调用契约、示例与最小集成测试，确保外部工作流后续接入时有稳定边界而不是依赖隐式上下文。",
+      "dependencies": [
+        "TASK-004",
+        "TASK-005"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "仓库内明确了 discuss 与 delegate 对 project-* 工作流暴露的输入输出契约",
+        "handoff 与 summary artifact 的结构可被后续 skill 直接消费",
+        "至少存在覆盖 discuss 嵌入式调用与 project-discuss 场景的集成测试或示例",
+        "集成层不依赖跨模型隐式共享上下文"
+      ],
+      "files": [
+        "src/councilflow/handoff/packages.py",
+        "src/councilflow/handoff/summaries.py",
+        "docs/integration.md",
+        "tests/test_workflow_integration.py"
+      ],
+      "module": "workflow-integration",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_workflow_integration.py"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-16T06:43:49.733Z",
+      "updated_at": "2026-04-16T06:43:49.733Z",
+      "commit_hash": "",
+      "notes": "",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-007",
+      "title": "完善状态命令与输出表面",
+      "description": "实现 council status、council synthesize、统一响应格式和输出语言配置，让 CLI 表面完整、可观察并能以中文默认输出，同时支持英文切换。",
+      "dependencies": [
+        "TASK-004",
+        "TASK-005"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "council status 能返回当前主控、最近 discussion、最近 delegation 与当前语言设置",
+        "council synthesize 能汇总已有 discuss 或 delegation 结果",
+        "CLI 命令统一采用 { data, meta?, error? } 响应格式",
+        "系统默认输出语言为 zh-CN 且支持切换为 en"
+      ],
+      "files": [
+        "src/councilflow/cli/status.py",
+        "src/councilflow/cli/synthesize.py",
+        "src/councilflow/utils/lang.py",
+        "src/councilflow/models/run_record.py",
+        "tests/test_cli_status.py",
+        "tests/test_cli_synthesize.py",
+        "tests/test_output_language.py"
+      ],
+      "module": "surface",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_cli_status.py tests/test_cli_synthesize.py tests/test_output_language.py"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-16T06:43:49.733Z",
+      "updated_at": "2026-04-16T06:43:49.733Z",
+      "commit_hash": "",
+      "notes": "",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-008",
+      "title": "执行发布前稳定性验收",
+      "description": "在产品能力全部具备后执行完整自动化验证与双主控手动 smoke，确认 CouncilFlow 在 Codex 和 Claude Code 下都能稳定运行，再作为后续全局 skill 源升级的前置门。",
+      "dependencies": [
+        "TASK-006",
+        "TASK-007"
+      ],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "完整自动化验证全部通过",
+        "在 Codex 作为主控时 discuss、delegate、status 主路径可稳定工作",
+        "在 Claude Code 作为主控时同样主路径可稳定工作",
+        "同模型 discuss 提醒、重复模型忽略和 .council 状态恢复已完成手动验证"
+      ],
+      "files": [
+        "docs/release-checklist.md",
+        "tests/"
+      ],
+      "module": "release-gate",
+      "needs_manual_review": true,
+      "acceptance_mode": "manual",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest"
+      ],
+      "review_checklist": [
+        "在 Codex 作为主控时手动验证 discuss、delegate、status 主路径",
+        "在 Claude Code 作为主控时手动验证 discuss、delegate、status 主路径",
+        "验证同模型 discuss 提醒、重复模型忽略和本地状态恢复",
+        "确认系统在无需外部模型参与时不会错误激活 sidecar"
+      ],
+      "stage_gate": true,
+      "status": "todo",
+      "created_at": "2026-04-16T06:43:49.733Z",
+      "updated_at": "2026-04-16T06:43:49.733Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-009",
+      "title": "同步稳定能力到 workflow-core 全局 skills",
+      "description": "仅在 CouncilFlow 已通过发布前稳定性验收并能稳定运行后，更新 C:/Users/David Zhai/.workflow-core 中的 project-* 共享 skill 源，使其引用已经稳定验证过的 CouncilFlow 能力，再同步到 Codex 与 Claude 侧产物。",
+      "dependencies": [
+        "TASK-008"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "只在 CouncilFlow 已完成并稳定运行后才修改 workflow-core 共享 skill 源",
+        "共享 skill 源仅接入已验证稳定的 CouncilFlow 行为与接口",
+        "sync-skills.ps1 执行成功并将变更同步到 Codex 与 Claude 两侧技能产物",
+        "同步后 project-* 工作流在双工具侧保持一致行为"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/skills/project-init/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-design/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-plan/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-next/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-review/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-change/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/scripts/sync-skills.ps1"
+      ],
+      "module": "workflow-core",
+      "needs_manual_review": true,
+      "acceptance_mode": "manual",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'"
+      ],
+      "review_checklist": [
+        "确认只把已稳定验证过的 CouncilFlow 行为写入共享 skill 源",
+        "确认 Codex 与 Claude 两侧同步后的 project-* 行为一致",
+        "确认没有把实验性接口提前暴露到全局工作流"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-16T06:43:49.733Z",
+      "updated_at": "2026-04-16T06:43:49.733Z",
+      "commit_hash": "",
+      "notes": ""
+    }
+  ]
+}
