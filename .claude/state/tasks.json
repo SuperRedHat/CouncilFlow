@@ -185,11 +185,11 @@
         "python -m ruff check .",
         "python -m pytest tests/test_cli_delegate.py tests/test_delegation_orchestrator.py"
       ],
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-16T06:43:49.733Z",
-      "updated_at": "2026-04-16T06:43:49.733Z",
+      "updated_at": "2026-04-16T07:03:01.930Z",
       "commit_hash": "",
-      "notes": "",
+      "notes": "Acceptance mode is auto, so the task is marked done after verification passed.",
       "review_checklist": [],
       "stage_gate": false
     },

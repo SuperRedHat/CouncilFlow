@@ -5,6 +5,7 @@ from __future__ import annotations
 import typer
 
 from councilflow import __version__
+from councilflow.cli.delegate import delegate
 from councilflow.cli.discuss import discuss
 
 app = typer.Typer(
@@ -27,6 +28,7 @@ def version() -> None:
 
 
 app.command(name="discuss")(discuss)
+app.command(name="delegate")(delegate)
 
 
 def main() -> None:
