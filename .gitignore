@@ -1,6 +1,6 @@
 __pycache__/
 .pytest_cache/
 .ruff_cache/
+.council/
 .venv/
 *.pyc
-

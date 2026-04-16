@@ -71,6 +71,30 @@
       "from_status": "auto_verified",
       "to_status": "done",
       "message": "TASK-002 auto_verified → done: Acceptance mode is auto, so the task is marked done after verification passed."
+    },
+    {
+      "timestamp": "2026-04-16T06:52:43.211Z",
+      "type": "task_status_change",
+      "task_id": "TASK-003",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-003 todo → in_progress: Starting local state layer implementation for .council paths, persistence, and snapshot recovery."
+    },
+    {
+      "timestamp": "2026-04-16T06:54:01.228Z",
+      "type": "task_status_change",
+      "task_id": "TASK-003",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-003 in_progress → auto_verified: State layer implementation passed python -m ruff check . and python -m pytest tests/test_state_store.py."
+    },
+    {
+      "timestamp": "2026-04-16T06:54:06.209Z",
+      "type": "task_status_change",
+      "task_id": "TASK-003",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-003 auto_verified → done: Acceptance mode is auto, so the task is marked done after verification passed."
     }
   ]
 }

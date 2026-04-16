@@ -1,0 +1,111 @@
+"""Persistence helpers for CouncilFlow local state."""
+
+from __future__ import annotations
+
+import json
+from collections.abc import Mapping
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
+
+from councilflow.config.loader import dump_config, load_config
+from councilflow.config.schema import CouncilConfig
+from councilflow.state.paths import CouncilPaths, build_council_paths, ensure_council_paths
+
+
+def utc_timestamp() -> str:
+    """Return an ISO-8601 UTC timestamp."""
+
+    return datetime.now(tz=UTC).isoformat()
+
+
+class CouncilStateStore:
+    """High-level API for managing .council configuration and runtime state."""
+
+    def __init__(self, project_root: str | Path) -> None:
+        self.paths = build_council_paths(Path(project_root))
+
+    def initialize(self) -> CouncilPaths:
+        """Ensure the standard directory layout exists and bootstrap state.json."""
+
+        ensure_council_paths(self.paths)
+        if not self.paths.state.exists():
+            self.write_state(
+                {
+                    "current_phase": None,
+                    "current_controller": None,
+                    "updated_at": utc_timestamp(),
+                }
+            )
+        return self.paths
+
+    def load_config(self) -> CouncilConfig:
+        """Load the persisted configuration or return defaults."""
+
+        return load_config(self.paths.config)
+
+    def save_config(self, config: CouncilConfig) -> Path:
+        """Persist project configuration to .council/config.yaml."""
+
+        ensure_council_paths(self.paths)
+        dump_config(config, self.paths.config)
+        return self.paths.config
+
+    def read_state(self) -> dict[str, Any]:
+        """Load state.json, returning the bootstrap payload when absent."""
+
+        if not self.paths.state.exists():
+            return {
+                "current_phase": None,
+                "current_controller": None,
+                "updated_at": None,
+            }
+
+        return self._read_json(self.paths.state)
+
+    def write_state(self, payload: Mapping[str, Any]) -> Path:
+        """Persist the top-level workflow state as JSON."""
+
+        ensure_council_paths(self.paths)
+        state_payload = dict(payload)
+        state_payload["updated_at"] = utc_timestamp()
+        self._write_json(self.paths.state, state_payload)
+        return self.paths.state
+
+    def append_run_record(self, kind: str, payload: Mapping[str, Any]) -> Path:
+        """Persist a run record under .council/runs with a sortable timestamp."""
+
+        ensure_council_paths(self.paths)
+        record = {
+            "kind": kind,
+            "created_at": utc_timestamp(),
+            "payload": dict(payload),
+        }
+        stamp = datetime.now(tz=UTC).strftime("%Y%m%dT%H%M%S%fZ")
+        record_path = self.paths.runs / f"{stamp}-{kind}.json"
+        self._write_json(record_path, record)
+        return record_path
+
+    def list_run_records(self) -> list[Path]:
+        """Return run record paths in ascending timestamp order."""
+
+        if not self.paths.runs.exists():
+            return []
+        return sorted(self.paths.runs.glob("*.json"))
+
+    def load_run_record(self, path: Path) -> dict[str, Any]:
+        """Read a persisted run record from disk."""
+
+        return self._read_json(path)
+
+    @staticmethod
+    def _read_json(path: Path) -> dict[str, Any]:
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    @staticmethod
+    def _write_json(path: Path, payload: Mapping[str, Any]) -> None:
+        path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+
