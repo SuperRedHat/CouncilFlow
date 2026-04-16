@@ -311,6 +311,30 @@
       "from_status": "auto_verified",
       "to_status": "done",
       "message": "TASK-012 auto_verified → done: Acceptance mode is auto, so Gemini surface and integration contract work is complete after verification passed."
+    },
+    {
+      "timestamp": "2026-04-16T08:59:54.410Z",
+      "type": "task_status_change",
+      "task_id": "TASK-013",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-013 todo → in_progress: Starting workflow-core Gemini sync work by expanding the shared project-* skill source, updating the sync script for Codex/Claude/Gemini, and documenting Gemini MCP setup."
+    },
+    {
+      "timestamp": "2026-04-16T09:03:26.848Z",
+      "type": "task_status_change",
+      "task_id": "TASK-013",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-013 in_progress → auto_verified: Verification passed: sync-skills.ps1 executed successfully and all skills are present in .gemini/skills."
+    },
+    {
+      "timestamp": "2026-04-16T09:03:35.039Z",
+      "type": "task_status_change",
+      "task_id": "TASK-013",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-013 auto_verified → done: Acceptance mode is milestone_manual and stage_gate is false, so TASK-013 is complete after verification."
     }
   ]
 }
