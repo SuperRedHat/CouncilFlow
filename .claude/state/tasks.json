@@ -599,11 +599,11 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-16T20:23:06.631Z",
-      "updated_at": "2026-04-16T20:23:06.631Z",
+      "updated_at": "2026-04-16T20:51:21.006Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Acceptance mode is auto, so TASK-015 is complete after the backup snapshot command and a same-state restore replay both succeeded."
     },
     {
       "id": "TASK-016",
@@ -636,11 +636,11 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-16T20:23:06.631Z",
-      "updated_at": "2026-04-16T20:23:06.631Z",
+      "updated_at": "2026-04-16T20:53:00.926Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Acceptance mode is auto, so TASK-016 is complete after the one-shot install script ran successfully and the Codex/Claude/Gemini MCP verification checks passed or were confirmed via settings."
     },
     {
       "id": "TASK-017",

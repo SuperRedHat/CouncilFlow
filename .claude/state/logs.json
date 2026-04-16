@@ -567,6 +567,70 @@
       "from_status": null,
       "to_status": null,
       "message": "TASK-019 completed on 2026-04-16. A detailed Chinese user guide was added to docs/user-guide.zh-CN.md after the Codex-controller smoke passed, and repo-wide verification remained green."
+    },
+    {
+      "timestamp": "2026-04-16T20:47:23.088Z",
+      "type": "task_status_change",
+      "task_id": "TASK-015",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-015 todo → in_progress: Starting TASK-015 on 2026-04-16 after completing the Codex-controller smoke and user guide work. The focus is a safe backup + restore layer for global workflow skills and MCP configuration sources."
+    },
+    {
+      "timestamp": "2026-04-16T20:51:18.092Z",
+      "type": "task_status_change",
+      "task_id": "TASK-015",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-015 in_progress → auto_verified: backup-global-workflow.ps1 now creates timestamped snapshots covering workflow-core/codex/claude/gemini project-* skills, config files, and project-manager MCP sources. restore-global-workflow.ps1 successfully replayed the latest snapshot and re-applied the saved MCP registrations."
+    },
+    {
+      "timestamp": "2026-04-16T20:51:21.021Z",
+      "type": "task_status_change",
+      "task_id": "TASK-015",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-015 auto_verified → done: Acceptance mode is auto, so TASK-015 is complete after the backup snapshot command and a same-state restore replay both succeeded."
+    },
+    {
+      "timestamp": "2026-04-16T20:51:26.909Z",
+      "type": "task_status_change",
+      "task_id": "TASK-015",
+      "from_status": null,
+      "to_status": null,
+      "message": "TASK-015 completed on 2026-04-16. A backup snapshot was successfully created under the temp verification root, the snapshot included skills/config/mcp records, and the restore script replayed the same-state snapshot successfully."
+    },
+    {
+      "timestamp": "2026-04-16T20:51:36.041Z",
+      "type": "task_status_change",
+      "task_id": "TASK-016",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-016 todo → in_progress: Starting TASK-016 on 2026-04-16. The goal is a repeatable global install script that calls the backup layer first, syncs shared project-* skills, and ensures project-manager MCP is present for Codex, Claude, and Gemini."
+    },
+    {
+      "timestamp": "2026-04-16T20:52:56.824Z",
+      "type": "task_status_change",
+      "task_id": "TASK-016",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-016 in_progress → auto_verified: install-global-workflow.ps1 now performs backup -> sync-skills -> project-manager MCP ensure for Codex/Claude/Gemini. The install chain ran successfully, codex mcp list and claude mcp list confirmed project-manager, and Gemini settings.json confirmed the saved user-scope project-manager registration even though gemini mcp list printed no rows."
+    },
+    {
+      "timestamp": "2026-04-16T20:53:00.943Z",
+      "type": "task_status_change",
+      "task_id": "TASK-016",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-016 auto_verified → done: Acceptance mode is auto, so TASK-016 is complete after the one-shot install script ran successfully and the Codex/Claude/Gemini MCP verification checks passed or were confirmed via settings."
+    },
+    {
+      "timestamp": "2026-04-16T20:53:05.365Z",
+      "type": "task_status_change",
+      "task_id": "TASK-016",
+      "from_status": null,
+      "to_status": null,
+      "message": "TASK-016 completed on 2026-04-16. install-global-workflow.ps1 now creates a backup snapshot, syncs shared project-* skills, and ensures project-manager MCP for Codex, Claude, and Gemini. Codex and Claude CLI checks passed directly; Gemini was confirmed via settings.json because its mcp list command still printed no rows."
     }
   ]
 }
