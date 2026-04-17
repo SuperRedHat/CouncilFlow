@@ -1543,6 +1543,38 @@
       "from_status": null,
       "to_status": null,
       "message": "Completed the project-next phase-machine implementation pass. Delegation artifacts now carry required_artifacts and next-action guidance for implementer/tester/fixer stages, CLI delegate accepts structured stage metadata, and the synchronized project-next workflow now passes tester/fixer loop intent explicitly instead of relying on controller-local inference."
+    },
+    {
+      "timestamp": "2026-04-17T21:52:19.242Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-005",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-037-FIX-005 todo → in_progress: Starting workflow-skill-alignment: aligning project-init/design/plan/change/ask/review and project-feedback with the full role-driven phase taxonomy, explicit route outcomes, and gate-only feedback boundaries."
+    },
+    {
+      "timestamp": "2026-04-17T22:01:04.992Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-005",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-037-FIX-005 in_progress → auto_verified: Aligned project-init/design/plan/change/ask/review/feedback with explicit route-first phase roles, consistent local_execution/delegated/error behavior, and gate-only feedback boundaries. Verified by running sync-skills plus sequential hash and hard-stage wording checks across workflow-core, Codex, Claude, and Gemini."
+    },
+    {
+      "timestamp": "2026-04-17T22:01:07.386Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-005",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-037-FIX-005 auto_verified → done: Skill alignment complete. Shared workflow docs and route-first wording are synced across workflow-core and all three controller installs."
+    },
+    {
+      "timestamp": "2026-04-17T22:01:11.987Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-005",
+      "from_status": null,
+      "to_status": null,
+      "message": "Completed TASK-037-FIX-005: aligned project-init/design/plan/change/ask/review/feedback with explicit phase roles and hard route-first outcome handling; sync-skills and cross-controller hash checks passed."
     }
   ]
 }

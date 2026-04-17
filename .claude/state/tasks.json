@@ -1751,11 +1751,11 @@
         "$skills = @('project-init','project-design','project-plan','project-change','project-ask','project-review','project-feedback'); foreach ($skill in $skills) { $paths = @(\"C:\\Users\\David Zhai\\.workflow-core\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.codex\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.claude\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.gemini\\skills\\$skill\\SKILL.md\"); $hashes = (Get-FileHash $paths).Hash | Select-Object -Unique; if ($hashes.Count -ne 1) { throw ('Synced skill mismatch for ' + $skill) } }",
         "$paths = @('C:\\Users\\David Zhai\\.workflow-core\\skills\\project-init\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-design\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-plan\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-change\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-ask\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-review\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-feedback\\SKILL.md'); $bad = $paths | Where-Object { -not (Select-String -Path $_ -Pattern 'local_execution|delegated|否则停止|否则中止|必须先调用' -Quiet) }; if ($bad) { throw ('Missing hard-stage wording in: ' + ($bad -join ', ')) }"
       ],
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-17T16:14:54.724Z",
-      "updated_at": "2026-04-17T16:14:54.724Z",
+      "updated_at": "2026-04-17T22:01:07.367Z",
       "commit_hash": "",
-      "notes": "Subtask of TASK-037",
+      "notes": "Skill alignment complete. Shared workflow docs and route-first wording are synced across workflow-core and all three controller installs.",
       "review_checklist": [],
       "stage_gate": false
     },

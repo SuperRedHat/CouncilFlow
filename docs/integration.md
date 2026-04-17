@@ -8,7 +8,8 @@ The key rule is simple:
 
 - `project-*` workflows never rely on hidden shared chat context.
 - Every integration step reads an explicit artifact from `.council/`.
-- The controller still owns synthesis and workflow continuation.
+- The controller still owns workflow continuation and persistence, but substantive role work must
+  flow through explicit routed stages first.
 - Project-local `.council/config.yaml` is the routing source of truth when `CouncilFlow` is available.
 
 ## Supported Controllers
@@ -106,12 +107,21 @@ Phase-machine rules:
   expected output.
 - The host workflow must not infer permission to keep going; it must react to an explicit route
   result for each stage.
+- `data.status = local_execution` means the active controller may perform only that current stage
+  locally.
+- `data.status = delegated` means the host must first read the emitted artifacts for that stage
+  before continuing to the next stage.
+- `error.status = error` means the workflow must stop and report the failure instead of silently
+  absorbing the stage into the controller.
 - `verification_commands` and `verification_profile` belong to the `tester` stage. They are stage
   inputs, not an automatic controller-local action after `implementer` finishes.
 - If a `tester` stage reports failure, the workflow must enter `fixer` and then return to `tester`
   for re-verification.
 - `project-feedback` may close a gate, reopen a task, or create a follow-up fix/review task, but it
   must not silently act as `tester` or `fixer` without a new routed execution stage.
+- Controller-owned save/log/status updates happen only after the routed role stages have completed;
+  they are not a license to skip `planner`, `architect`, `advisor`, `reviewer`, or `synthesizer`
+  stages when those stages belong to the current workflow.
 
 ## Supported Entry Points
 
