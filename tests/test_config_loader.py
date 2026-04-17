@@ -18,6 +18,10 @@ def test_build_default_config_uses_packaged_template_defaults() -> None:
     assert config.discussion.default_models == []
     assert config.discussion.min_rounds == 2
     assert config.discussion.max_rounds == 5
+    assert config.providers.default.total_timeout_seconds == 900
+    assert config.providers.default.idle_timeout_seconds is None
+    assert config.providers.claude is not None
+    assert config.providers.for_model("claude").idle_timeout_seconds == 180
 
 
 def test_ensure_config_exists_copies_project_local_default_template(tmp_path: Path) -> None:
@@ -86,6 +90,36 @@ def test_load_config_keeps_backward_compatible_min_rounds_default(tmp_path: Path
     assert loaded.discussion.default_models == ["gemini"]
     assert loaded.discussion.min_rounds == 1
     assert loaded.discussion.max_rounds == 1
+    assert loaded.providers.for_model("claude").idle_timeout_seconds == 180
+
+
+def test_load_config_supports_provider_runtime_overrides(tmp_path: Path) -> None:
+    config_path = tmp_path / ".council" / "config.yaml"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(
+        "\n".join(
+            [
+                "config_version: 1",
+                "providers:",
+                "  default:",
+                "    total_timeout_seconds: 1200",
+                "    idle_timeout_seconds: null",
+                "  claude:",
+                "    idle_timeout_seconds: 240",
+                "  gemini:",
+                "    total_timeout_seconds: 600",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    loaded = load_config(config_path)
+
+    assert loaded.providers.for_model("claude").total_timeout_seconds == 1200
+    assert loaded.providers.for_model("claude").idle_timeout_seconds == 240
+    assert loaded.providers.for_model("gemini").total_timeout_seconds == 600
+    assert loaded.providers.for_model("gemini").idle_timeout_seconds is None
 
 
 def test_load_config_rejects_min_rounds_greater_than_max_rounds(tmp_path: Path) -> None:

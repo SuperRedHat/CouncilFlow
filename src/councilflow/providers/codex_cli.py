@@ -6,12 +6,15 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from councilflow.models.config import ProviderRuntimeSettings
 from councilflow.providers.base import (
-    DEFAULT_PROVIDER_TIMEOUT_SECONDS,
     CommandRunner,
     ProviderError,
     ProviderRequest,
     ProviderResponse,
+    ProviderRunResult,
+    coerce_run_result,
+    default_runtime_settings,
 )
 
 
@@ -24,13 +27,21 @@ class CodexCliAdapter:
         self,
         command: list[str] | None = None,
         runner: CommandRunner | None = None,
+        runtime: ProviderRuntimeSettings | None = None,
     ) -> None:
         self.command = command or _default_codex_command()
-        self.runner = runner or _run_codex_command
+        self.runtime = runtime or default_runtime_settings()
+        self.runner = runner or (
+            lambda command, prompt: _run_codex_command(command, prompt, runtime=self.runtime)
+        )
 
     def ask(self, request: ProviderRequest) -> ProviderResponse:
-        content = self.runner(self.command, request.prompt)
-        return ProviderResponse(model=self.model_name, content=content)
+        result = coerce_run_result(self.runner(self.command, request.prompt))
+        return ProviderResponse(
+            model=self.model_name,
+            content=result.content,
+            metadata=result.metadata,
+        )
 
 
 def _default_codex_command() -> list[str]:
@@ -51,10 +62,11 @@ def _default_codex_command() -> list[str]:
 def _run_codex_command(
     command: list[str],
     prompt: str,
-    timeout_seconds: float = DEFAULT_PROVIDER_TIMEOUT_SECONDS,
-) -> str:
+    runtime: ProviderRuntimeSettings | None = None,
+) -> ProviderRunResult:
     """Execute Codex with the prompt provided on stdin for Windows compatibility."""
 
+    runtime_settings = runtime or default_runtime_settings()
     try:
         completed = subprocess.run(
             command,
@@ -62,17 +74,41 @@ def _run_codex_command(
             capture_output=True,
             check=False,
             text=False,
-            timeout=timeout_seconds,
+            timeout=runtime_settings.total_timeout_seconds,
         )
     except subprocess.TimeoutExpired as exc:
         raise ProviderError(
-            f"Provider command timed out after {timeout_seconds:g}s."
+            f"Provider command timed out after {runtime_settings.total_timeout_seconds:g}s.",
+            kind="total_timeout",
+            metadata={
+                "command": command,
+                "total_timeout_seconds": runtime_settings.total_timeout_seconds,
+                "idle_timeout_seconds": runtime_settings.idle_timeout_seconds,
+            },
         ) from exc
     except OSError as exc:
-        raise ProviderError(str(exc)) from exc
+        raise ProviderError(str(exc), kind="os_error", metadata={"command": command}) from exc
 
     stdout = completed.stdout.decode("utf-8", errors="replace").strip()
     stderr = completed.stderr.decode("utf-8", errors="replace").strip()
     if completed.returncode != 0:
-        raise ProviderError(stderr or "unknown provider error")
-    return stdout
+        raise ProviderError(
+            stderr or "unknown provider error",
+            kind="process_exit",
+            metadata={
+                "command": command,
+                "returncode": completed.returncode,
+                "stderr": stderr,
+            },
+        )
+    return ProviderRunResult(
+        content=stdout,
+        metadata={
+            "execution_mode": "blocking",
+            "timeout_strategy": "total_only",
+            "total_timeout_seconds": runtime_settings.total_timeout_seconds,
+            "idle_timeout_seconds": runtime_settings.idle_timeout_seconds,
+            "returncode": completed.returncode,
+            "stderr": stderr,
+        },
+    )

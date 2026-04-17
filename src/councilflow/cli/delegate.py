@@ -12,6 +12,7 @@ from councilflow.controller.delegation_orchestrator import (
 )
 from councilflow.controller.host_context import detect_controller
 from councilflow.controller.routing import build_route_decision
+from councilflow.models.config import ProviderRuntimeSettings
 from councilflow.models.roles import RoleName, normalize_model_name
 from councilflow.providers.base import ProviderAdapter, ProviderError
 from councilflow.providers.claude_code_cli import ClaudeCodeCliAdapter
@@ -58,18 +59,21 @@ PROJECT_ROOT_OPTION = typer.Option(
 )
 
 
-def get_provider_adapter(model: str) -> ProviderAdapter:
+def get_provider_adapter(
+    model: str,
+    runtime: ProviderRuntimeSettings | None = None,
+) -> ProviderAdapter:
     """Resolve a provider adapter for the requested model."""
 
     normalized = normalize_model_name(model)
     if normalized == "codex":
-        return CodexCliAdapter()
+        return CodexCliAdapter(runtime=runtime)
     if normalized == "claude":
-        return ClaudeCodeCliAdapter()
+        return ClaudeCodeCliAdapter(runtime=runtime)
     if normalized == "gemini":
         # Use original model name if it's a specific version (e.g., gemini-1.5-flash)
         specific_model = model if model.startswith("gemini-") and model != "gemini-cli" else None
-        return GeminiCliAdapter(model=specific_model)
+        return GeminiCliAdapter(model=specific_model, runtime=runtime)
     raise ProviderError(f"No provider adapter is registered for model '{model}'.")
 
 
@@ -119,7 +123,10 @@ def delegate(
 
     orchestrator = DelegationOrchestrator(
         store=store,
-        participant_factory=get_provider_adapter,
+        participant_factory=lambda requested_model: get_provider_adapter(
+            requested_model,
+            config.providers.for_model(requested_model),
+        ),
     )
     try:
         result = orchestrator.run(
@@ -147,6 +154,7 @@ def delegate(
                     "role": role.value,
                     "model": decision.target_model,
                     "message": str(exc),
+                    "error_kind": exc.error_kind,
                     "delegation_id": exc.delegation_id,
                     "handoff_path": exc.handoff_path,
                     "record_path": exc.record_path,

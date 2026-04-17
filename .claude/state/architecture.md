@@ -742,3 +742,32 @@ graph TD
 实现边界：
 1. 本次变更优先依赖现有 `council delegate` 与 `council discuss` 返回契约实现硬约束；若共享 workflow 仍缺少足够稳定的判定信号，再考虑为 `CouncilFlow` 增加更细的 route-only 或 enforcement 辅助表面。
 2. 本节覆盖并 supersede 文中所有“主控默认直接工作”的旧集成语义；新的主路径应理解为：**controller 负责 orchestrate，但是否亲自执行任何角色，必须先由 `CouncilFlow` 给出显式许可。**
+
+## 21. 变更记录（2026-04-17，provider 活跃度监控与流式执行）
+本次变更聚焦 provider runtime 层，目标是把当前基于 `subprocess.run(..., timeout=...)` 的单一阻塞模型升级为“总超时 + 失活超时 + 显式进度事件”的可观察执行模型，优先解决 `Claude Code CLI` 在长时间推理场景下被固定 120 秒错误判死的问题。
+
+新增架构要求：
+1. **provider runtime 从一次性阻塞调用升级为可流式监控的执行器**：`providers.base` 需要提供一层统一的 runtime 抽象，至少能表达：
+   - `total_timeout_seconds`
+   - `idle_timeout_seconds`
+   - 最近一次活动时间
+   - 捕获到的 stdout/stderr / 结构化事件
+   - 结束原因（completed / idle_timeout / total_timeout / process_error）
+2. **Claude provider 切换到 stream-json 主路径**：`ClaudeCodeCliAdapter` 在非主控调用时，优先使用 `claude -p --verbose --output-format stream-json --include-partial-messages`，并通过逐行消费事件来更新活动心跳；只要 CLI 仍持续输出事件，系统就不应把这轮调用判死。
+3. **显式事件与最终回答分离**：provider runtime 需要允许中途看到 `system/status`、`stream_event`、partial message、最终 `result` 等事件，但仅把最终可消费回答内容交给 orchestrator；中间事件可作为 metadata 或调试信息保存，不应污染最终 handoff result。
+4. **为 Codex / Gemini 保留统一抽象与兼容路径**：
+   - `Codex CLI` 需要评估 `codex exec --json` 是否适合作为未来的事件流接入；
+   - `Gemini CLI` 需要评估 `--output-format stream-json` 是否能稳定提供活动信号；
+   - 即使本轮暂不切换两者的默认执行路径，也应复用新的 runtime 配置与错误类型，避免三家 provider 各自分叉出不同的超时语义。
+5. **错误分类升级并向上透传**：ProviderError 及其宿主包装错误需要至少区分：
+   - `idle_timeout`
+   - `total_timeout`
+   - `process_exit`
+   - `os_error`
+   这样 route-first workflow 才能正确判断这是 provider 容错问题，而不是“主控可以直接绕过 sidecar”。
+6. **项目级配置进入 provider runtime**：`.council/config.yaml` 需要提供 provider 或 runtime 配置块，用于调节讨论/委派时的总超时、失活超时与潜在的流式行为开关；默认模板也应同步更新。
+7. **讨论与委派共享同一套 provider 运行语义**：无论是 `council delegate` 还是 `council discuss` 里的外部参与者调用，都应走同一套 runtime 抽象，避免后续出现“委派能长跑、讨论却仍固定 120 秒崩掉”的协议分裂。
+
+实现边界：
+1. 本次变更优先落地 Claude 的流式监控和统一 runtime 配置，不要求当场把 Codex / Gemini 的默认 provider 全部改成事件流模式。
+2. 本节补充并 supersede 当前 provider 层“固定常量超时即可代表执行状态”的旧假设；新的架构语义应为：**执行是否继续，取决于 provider 是否仍有显式活动信号，而不是只看墙钟时间。**

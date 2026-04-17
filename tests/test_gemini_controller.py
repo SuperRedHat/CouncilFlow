@@ -42,7 +42,11 @@ class FakeParticipant:
 
 
 def test_delegate_from_gemini_to_codex(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(delegate_module, "get_provider_adapter", lambda _: FakeCodexAdapter())
+    monkeypatch.setattr(
+        delegate_module,
+        "get_provider_adapter",
+        lambda *args, **kwargs: FakeCodexAdapter(),
+    )
 
     env = {
         "GEMINI_CLI": "1",
@@ -75,7 +79,11 @@ def test_delegate_from_gemini_to_codex(monkeypatch, tmp_path: Path) -> None:
 
 
 def test_discuss_from_gemini_to_codex_and_claude(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(discuss_module, "get_participant", lambda model: FakeParticipant(model))
+    monkeypatch.setattr(
+        discuss_module,
+        "get_participant",
+        lambda model, *_args, **_kwargs: FakeParticipant(model),
+    )
 
     env = {
         "GEMINI_CLI": "1",

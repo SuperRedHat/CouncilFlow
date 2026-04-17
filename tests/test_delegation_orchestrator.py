@@ -26,7 +26,7 @@ class FailingProvider:
     model_name = "claude"
 
     def ask(self, request: ProviderRequest) -> ProviderResponse:
-        raise ProviderError("claude CLI is unavailable")
+        raise ProviderError("claude CLI is unavailable", kind="idle_timeout")
 
 
 def test_delegation_orchestrator_persists_handoff_and_result(tmp_path: Path) -> None:
@@ -86,6 +86,8 @@ def test_delegation_orchestrator_records_failures(tmp_path: Path) -> None:
     record = json.loads((tmp_path / error.record_path).read_text(encoding="utf-8"))
 
     assert error.delegation_id.startswith("del_")
+    assert error.error_kind == "idle_timeout"
     assert record["status"] == "failed"
     assert record["error"] == "claude CLI is unavailable"
+    assert record["error_kind"] == "idle_timeout"
     assert error.handoff_path.endswith("handoff.yaml")

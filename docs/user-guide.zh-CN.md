@@ -156,6 +156,12 @@ discussion:
     - gemini
   min_rounds: 2
   max_rounds: 3
+providers:
+  default:
+    total_timeout_seconds: 900
+    idle_timeout_seconds: null
+  claude:
+    idle_timeout_seconds: 180
 ```
 
 ### 4.3 如何指定不同角色使用哪一种模型
@@ -250,6 +256,42 @@ controller_override: codex
 - 特殊 shell 环境
 - 测试环境
 - 无法可靠读到主控环境变量时的兜底
+
+### 4.7 provider 运行窗口
+
+`providers` 配置块用来控制 sidecar 子进程的执行窗口，特别适合长时间推理但仍持续输出事件的模型。
+
+常用字段有两个：
+
+- `total_timeout_seconds`
+  - 总墙钟时间上限
+  - 防止进程无限挂住
+- `idle_timeout_seconds`
+  - 失活超时
+  - 只有在 provider 长时间没有新的显式输出、日志或事件时才触发
+
+当前默认策略是：
+
+- `providers.default.total_timeout_seconds = 900`
+- `providers.default.idle_timeout_seconds = null`
+- `providers.claude.idle_timeout_seconds = 180`
+
+含义是：
+
+- 所有 provider 默认最长可跑 15 分钟
+- 对仍走一次性 blocking 路径的 provider，不启用全局 idle timeout，避免误杀
+- 对已切到流式事件监控的 `Claude`，如果连续 180 秒没有新事件输出，才判定失活
+
+如果你的项目里 `Claude` 经常需要更长的持续思考窗口，可以这样调：
+
+```yaml
+providers:
+  default:
+    total_timeout_seconds: 1200
+    idle_timeout_seconds: null
+  claude:
+    idle_timeout_seconds: 300
+```
 
 ---
 
@@ -505,6 +547,19 @@ python -m councilflow.cli.app delegate `
 - `delegated`：说明 workflow 已完成真实委派，后续应读取 `.council/delegations/...` 产物继续
 - `local_execution`：说明该角色最终解析到当前主控，workflow 可以继续本地执行
 - `error`：说明委派失败，workflow 应停止并报告失败，不能因为主控“也会做”就偷偷跳过 sidecar
+
+当返回 `error` 时，现在还会附带 `error_kind`，常见值包括：
+
+- `idle_timeout`
+- `total_timeout`
+- `process_exit`
+- `os_error`
+
+这样你可以更快区分：
+
+- 是真的跑太久了
+- 还是 provider 很久没有任何新输出
+- 还是 CLI 自己报错退出
 
 ### 9.6 常见参数
 
@@ -840,6 +895,33 @@ controller_override: codex
 
 ```powershell
 $env:PYTHONPATH = (Resolve-Path .\src).Path
+```
+
+### 17.6 provider 长时间运行时如何调参
+
+如果你遇到这类错误：
+
+- `error_kind = total_timeout`
+- `error_kind = idle_timeout`
+
+优先先分清是哪一种：
+
+- `total_timeout`
+  - 说明总执行窗口不够长
+  - 提高 `providers.default.total_timeout_seconds`
+- `idle_timeout`
+  - 说明 provider 太久没有新的显式输出
+  - 对流式 provider（当前主要是 `Claude`）提高对应的 `idle_timeout_seconds`
+
+例如：
+
+```yaml
+providers:
+  default:
+    total_timeout_seconds: 1200
+    idle_timeout_seconds: null
+  claude:
+    idle_timeout_seconds: 300
 ```
 
 ---

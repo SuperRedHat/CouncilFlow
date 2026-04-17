@@ -90,6 +90,60 @@ class DiscussionSettings(BaseModel):
         return self
 
 
+class ProviderRuntimeSettings(BaseModel):
+    """Runtime execution window for provider subprocesses."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    total_timeout_seconds: float = Field(default=900.0, gt=0)
+    idle_timeout_seconds: float | None = Field(default=None, gt=0)
+
+
+class ProviderRuntimeOverrides(BaseModel):
+    """Optional per-provider runtime overrides merged onto the default settings."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    total_timeout_seconds: float | None = Field(default=None, gt=0)
+    idle_timeout_seconds: float | None = Field(default=None, gt=0)
+
+
+class ProviderSettings(BaseModel):
+    """Project-level runtime settings for non-controller provider calls."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    default: ProviderRuntimeSettings = Field(
+        default_factory=lambda: ProviderRuntimeSettings(
+            total_timeout_seconds=900.0,
+            idle_timeout_seconds=None,
+        )
+    )
+    codex: ProviderRuntimeOverrides | None = None
+    claude: ProviderRuntimeOverrides = Field(
+        default_factory=lambda: ProviderRuntimeOverrides(idle_timeout_seconds=180.0)
+    )
+    gemini: ProviderRuntimeOverrides | None = None
+
+    def for_model(self, model: str) -> ProviderRuntimeSettings:
+        """Return merged runtime settings for the requested model."""
+
+        runtime = self.default.model_copy(deep=True)
+        normalized = normalize_model_name(model)
+        override = (
+            getattr(self, normalized, None)
+            if normalized in {"codex", "claude", "gemini"}
+            else None
+        )
+        if override is None:
+            return runtime
+        if override.total_timeout_seconds is not None:
+            runtime.total_timeout_seconds = override.total_timeout_seconds
+        if override.idle_timeout_seconds is not None:
+            runtime.idle_timeout_seconds = override.idle_timeout_seconds
+        return runtime
+
+
 class ControllerContext(BaseModel):
     """Detected controller information for the current host environment."""
 

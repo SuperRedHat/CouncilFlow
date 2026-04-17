@@ -15,6 +15,7 @@ from councilflow.controller.discussion_orchestrator import (
 from councilflow.controller.host_context import detect_controller
 from councilflow.controller.routing import resolve_discuss_models, select_discuss_models
 from councilflow.handoff.prompts import render_discussion_prompt
+from councilflow.models.config import ProviderRuntimeSettings
 from councilflow.models.discussion import DiscussionRequest, ParticipantResponse
 from councilflow.models.roles import normalize_model_name
 from councilflow.providers.base import ProviderAdapter, ProviderError, ProviderRequest
@@ -76,7 +77,7 @@ class ProviderDiscussionParticipant:
         try:
             response = self.adapter.ask(ProviderRequest(prompt=prompt))
         except ProviderError as exc:
-            raise UnavailableParticipantError(str(exc)) from exc
+            raise UnavailableParticipantError(str(exc), error_kind=exc.kind) from exc
 
         parsed = _parse_participant_payload(response.content)
         return ParticipantResponse(
@@ -93,18 +94,24 @@ class ProviderDiscussionParticipant:
         )
 
 
-def get_participant(model: str) -> DiscussionParticipant:
+def get_participant(
+    model: str,
+    runtime: ProviderRuntimeSettings | None = None,
+) -> DiscussionParticipant:
     """Resolve a participant implementation for a model name."""
 
     normalized = normalize_model_name(model)
     if normalized == "codex":
-        return ProviderDiscussionParticipant(normalized, CodexCliAdapter())
+        return ProviderDiscussionParticipant(normalized, CodexCliAdapter(runtime=runtime))
     if normalized == "claude":
-        return ProviderDiscussionParticipant("claude", ClaudeCodeCliAdapter())
+        return ProviderDiscussionParticipant("claude", ClaudeCodeCliAdapter(runtime=runtime))
     if normalized == "gemini":
         # Use original model name if it's a specific version (e.g., gemini-1.5-flash)
         specific_model = model if model.startswith("gemini-") and model != "gemini-cli" else None
-        return ProviderDiscussionParticipant("gemini", GeminiCliAdapter(model=specific_model))
+        return ProviderDiscussionParticipant(
+            "gemini",
+            GeminiCliAdapter(model=specific_model, runtime=runtime),
+        )
     raise UnavailableParticipantError(
         f"No discussion participant is registered for model '{model}'."
     )
@@ -183,7 +190,10 @@ def discuss(
     orchestrator = DiscussionOrchestrator(
         store=store,
         config=config,
-        participant_factory=get_participant,
+        participant_factory=lambda requested_model: get_participant(
+            requested_model,
+            config.providers.for_model(requested_model),
+        ),
     )
     try:
         summary = orchestrator.run(
@@ -204,6 +214,7 @@ def discuss(
                 },
                 error={
                     "message": str(exc),
+                    "error_kind": exc.error_kind,
                 },
             )
         )

@@ -40,6 +40,12 @@ Rules:
 - `discussion.min_rounds` defines the minimum number of critique/respond rounds that must complete
   before early convergence is allowed.
 - `discussion.max_rounds` defines the default round budget when workflows omit `--max-rounds`.
+- `providers.default.total_timeout_seconds` defines the maximum wall-clock budget for a provider
+  subprocess.
+- `providers.default.idle_timeout_seconds` defines the inactivity timeout used by stream-aware
+  providers when they stop emitting visible events.
+- Provider-specific overrides such as `providers.claude.idle_timeout_seconds` may tighten or relax
+  runtime windows for a single model family without changing the project-wide default.
 - Local-only execution is a fallback for `council`-missing environments or explicit
   `local_execution` responses, not the default routing strategy.
 
@@ -123,6 +129,8 @@ Expected route outcomes:
   false`, and the workflow may continue locally.
 - `error.status = "error"`: routing or execution failed; the workflow must stop and report the
   failure instead of silently falling back to controller-only execution.
+- `error.error_kind`: the provider failure class (`idle_timeout`, `total_timeout`, `process_exit`,
+  or `os_error`) so the host can distinguish a long-running sidecar from a broken invocation.
 
 Expected persisted artifacts:
 
@@ -152,6 +160,8 @@ Expected machine-readable contract:
 - The workflow must not assume provider-specific hidden memory.
 - The controller decides whether a discussion or delegation result is accepted, retried, or ignored.
 - Missing artifacts should be treated as failed or incomplete execution.
+- Provider timeouts should be interpreted using `error_kind`, rather than assuming all failures are
+  the same kind of timeout.
 - Same-controller discuss requests should not trigger sidecar execution.
 - Same-controller delegate requests should return explicit `local_execution` instead of starting a sidecar.
 - Artifacts created under a Gemini-controlled session must remain consumable by Codex and Claude workflows.

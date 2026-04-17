@@ -14,3 +14,9 @@ discussion:
   default_models: []
   min_rounds: 2
   max_rounds: 5
+providers:
+  default:
+    total_timeout_seconds: 900
+    idle_timeout_seconds: null
+  claude:
+    idle_timeout_seconds: 180

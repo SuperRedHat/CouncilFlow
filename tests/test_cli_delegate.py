@@ -30,7 +30,11 @@ class FakeFailureAdapter:
 
 
 def test_delegate_command_returns_structured_success(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(delegate_module, "get_provider_adapter", lambda _: FakeSuccessAdapter())
+    monkeypatch.setattr(
+        delegate_module,
+        "get_provider_adapter",
+        lambda *args, **kwargs: FakeSuccessAdapter(),
+    )
 
     result = runner.invoke(
         app,
@@ -63,7 +67,11 @@ def test_delegate_command_returns_structured_success(monkeypatch, tmp_path: Path
 
 
 def test_delegate_command_returns_structured_error(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(delegate_module, "get_provider_adapter", lambda _: FakeFailureAdapter())
+    monkeypatch.setattr(
+        delegate_module,
+        "get_provider_adapter",
+        lambda *args, **kwargs: FakeFailureAdapter(),
+    )
 
     result = runner.invoke(
         app,
@@ -92,6 +100,7 @@ def test_delegate_command_returns_structured_error(monkeypatch, tmp_path: Path) 
     assert payload["error"]["role"] == "implementer"
     assert payload["error"]["model"] == "claude"
     assert payload["error"]["message"] == "mock delegation failure"
+    assert payload["error"]["error_kind"] == "process_exit"
     assert payload["error"]["handoff_path"].endswith("handoff.yaml")
 
 

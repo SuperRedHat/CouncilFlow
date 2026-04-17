@@ -115,7 +115,9 @@ def test_discuss_cli_reads_project_default_models_for_workflow_integration(
     monkeypatch, tmp_path: Path
 ) -> None:
     monkeypatch.setattr(
-        discuss_module, "get_participant", lambda _: IntegrationDiscussionParticipant()
+        discuss_module,
+        "get_participant",
+        lambda *args, **kwargs: IntegrationDiscussionParticipant(),
     )
     config_path = tmp_path / ".council" / "config.yaml"
     config_path.parent.mkdir(parents=True, exist_ok=True)

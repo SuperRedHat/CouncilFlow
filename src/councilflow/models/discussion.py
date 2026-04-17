@@ -90,3 +90,4 @@ class DiscussionRecord(BaseModel):
     turns: list[DiscussionTurn] = Field(default_factory=list)
     summary_path: str | None = None
     error_message: str | None = None
+    error_kind: str | None = None

@@ -34,7 +34,11 @@ def write_project_config(tmp_path: Path, content: str) -> Path:
 
 
 def test_discuss_command_returns_structured_summary(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(discuss_module, "get_participant", lambda _: FakeParticipant())
+    monkeypatch.setattr(
+        discuss_module,
+        "get_participant",
+        lambda *args, **kwargs: FakeParticipant(),
+    )
 
     result = runner.invoke(
         app,
@@ -150,7 +154,11 @@ def test_discuss_command_normalizes_gemini_controller_aliases(tmp_path: Path) ->
 def test_discuss_command_uses_project_default_models_when_option_is_omitted(
     monkeypatch, tmp_path: Path
 ) -> None:
-    monkeypatch.setattr(discuss_module, "get_participant", lambda _: FakeParticipant())
+    monkeypatch.setattr(
+        discuss_module,
+        "get_participant",
+        lambda *args, **kwargs: FakeParticipant(),
+    )
     write_project_config(
         tmp_path,
         "\n".join(
@@ -190,7 +198,11 @@ def test_discuss_command_uses_project_default_models_when_option_is_omitted(
 def test_discuss_command_prefers_explicit_models_over_project_defaults(
     monkeypatch, tmp_path: Path
 ) -> None:
-    monkeypatch.setattr(discuss_module, "get_participant", lambda _: FakeParticipant())
+    monkeypatch.setattr(
+        discuss_module,
+        "get_participant",
+        lambda *args, **kwargs: FakeParticipant(),
+    )
     write_project_config(
         tmp_path,
         "\n".join(
@@ -256,7 +268,7 @@ def test_discuss_command_warns_when_no_explicit_or_default_models_exist(
 def test_discuss_command_can_use_locally_generated_controller_position(
     monkeypatch, tmp_path: Path
 ) -> None:
-    def fake_participant(model: str) -> FakeParticipant:
+    def fake_participant(model: str, *_args, **_kwargs) -> FakeParticipant:
         if model == "codex":
             raise AssertionError("Controller subprocess should be skipped in local mode.")
         return FakeParticipant()

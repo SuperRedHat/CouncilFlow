@@ -1556,6 +1556,89 @@
       "updated_at": "2026-04-17T14:32:54.056Z",
       "commit_hash": "",
       "notes": ""
+    },
+    {
+      "id": "TASK-037-FIX-001",
+      "title": "引入 provider 运行配置与活动心跳抽象",
+      "description": "为 provider 层增加统一的 runtime 配置、总超时/失活超时语义和结构化错误分类，让长时 sidecar 调用不再只依赖固定墙钟超时。",
+      "dependencies": [
+        "TASK-036"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "provider runtime 支持 total_timeout 与 idle_timeout 两类执行窗口",
+        "结构化错误可区分 total_timeout、idle_timeout、process_exit 与 os_error",
+        "项目级配置与默认模板支持 provider runtime 相关参数",
+        "自动化测试覆盖 runtime 配置加载与错误分类行为"
+      ],
+      "files": [
+        "src/councilflow/providers/base.py",
+        "src/councilflow/models/config.py",
+        "src/councilflow/config/schema.py",
+        "src/councilflow/config/loader.py",
+        "src/councilflow/templates/default-config.yaml",
+        "tests/test_provider_adapters.py",
+        "tests/test_config_loader.py"
+      ],
+      "module": "provider-runtime",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_provider_adapters.py tests/test_config_loader.py"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "done",
+      "created_at": "2026-04-17T15:31:39.590Z",
+      "updated_at": "2026-04-17T15:46:14.803Z",
+      "commit_hash": "",
+      "notes": "Auto task completed after provider runtime settings and error-classification verification passed."
+    },
+    {
+      "id": "TASK-037-FIX-002",
+      "title": "为 Claude 落地流式监控并校验 Codex/Gemini 兼容性",
+      "description": "把 Claude Code CLI provider 升级为基于 stream-json 的活跃度监控执行路径，并同步验证 Codex/Gemini 在非主控 sidecar 调用下仍与新的 runtime 抽象兼容。",
+      "dependencies": [
+        "TASK-037-FIX-001"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "Claude provider 使用 stream-json 事件流监控长时调用，只要持续有事件输出就不会被误判失活",
+        "Claude provider 的结构化错误会明确区分 idle_timeout 与 total_timeout",
+        "Codex/Gemini 非主控调用路径在新的 runtime 抽象下无回归，并保留清晰的兼容语义",
+        "委派与讨论的自动化测试覆盖新的 provider 执行模式与非回归场景"
+      ],
+      "files": [
+        "src/councilflow/providers/claude_code_cli.py",
+        "src/councilflow/providers/codex_cli.py",
+        "src/councilflow/providers/gemini_cli.py",
+        "src/councilflow/cli/delegate.py",
+        "src/councilflow/cli/discuss.py",
+        "src/councilflow/controller/delegation_orchestrator.py",
+        "src/councilflow/controller/discussion_orchestrator.py",
+        "docs/integration.md",
+        "docs/user-guide.zh-CN.md",
+        "tests/test_provider_adapters.py",
+        "tests/test_cli_delegate.py",
+        "tests/test_cli_discuss.py"
+      ],
+      "module": "provider-streaming",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_provider_adapters.py tests/test_cli_delegate.py tests/test_cli_discuss.py tests/test_discussion_orchestrator.py tests/test_delegation_orchestrator.py"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "done",
+      "created_at": "2026-04-17T15:31:39.620Z",
+      "updated_at": "2026-04-17T15:46:14.867Z",
+      "commit_hash": "",
+      "notes": "Auto task completed after runtime integration, docs, full verification, and low-cost real provider smoke checks."
     }
   ]
 }

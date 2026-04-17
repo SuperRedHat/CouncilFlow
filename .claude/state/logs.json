@@ -1399,6 +1399,70 @@
       "from_status": null,
       "to_status": null,
       "message": "Completed TASK-036: shared project-* skills now enforce a route-first workflow contract. When CouncilFlow is available, discuss/delegate steps must be called before local controller work can continue, and failures are documented as explicit stop conditions instead of silent local fallback."
+    },
+    {
+      "timestamp": "2026-04-17T15:31:39.647Z",
+      "type": "decision",
+      "task_id": "TASK-037",
+      "from_status": null,
+      "to_status": null,
+      "message": "Added provider-runtime fix subtasks under TASK-037 to address long-running sidecar executions: introduce runtime timeout/activity abstraction first, then land Claude stream-json monitoring while validating Codex and Gemini compatibility."
+    },
+    {
+      "timestamp": "2026-04-17T15:40:34.856Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-001",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-037-FIX-001 todo → in_progress: Implementing provider runtime settings, timeout classification, and activity-monitoring primitives before wiring Claude stream-json execution."
+    },
+    {
+      "timestamp": "2026-04-17T15:46:14.795Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-001",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-037-FIX-001 in_progress → auto_verified: Implemented project-level provider runtime settings, timeout classification, monitored-process primitive, and updated config/default template coverage. Verification passed with ruff and targeted provider/config tests."
+    },
+    {
+      "timestamp": "2026-04-17T15:46:14.820Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-001",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-037-FIX-001 auto_verified → done: Auto task completed after provider runtime settings and error-classification verification passed."
+    },
+    {
+      "timestamp": "2026-04-17T15:46:14.841Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-002",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-037-FIX-002 todo → in_progress: Landing Claude stream-json activity monitoring, wiring runtime settings into delegate/discuss, and validating Codex/Gemini compatibility."
+    },
+    {
+      "timestamp": "2026-04-17T15:46:14.862Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-002",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-037-FIX-002 in_progress → auto_verified: Claude now uses stream-json activity monitoring with idle vs total timeout classification. Full test suite passed (76 passed), and real adapter smoke confirmed Claude stream-monitored success, Codex blocking success, and Gemini compatibility via long-total-timeout semantics."
+    },
+    {
+      "timestamp": "2026-04-17T15:46:14.881Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-002",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-037-FIX-002 auto_verified → done: Auto task completed after runtime integration, docs, full verification, and low-cost real provider smoke checks."
+    },
+    {
+      "timestamp": "2026-04-17T15:46:14.886Z",
+      "type": "decision",
+      "task_id": "TASK-037",
+      "from_status": null,
+      "to_status": null,
+      "message": "Completed provider runtime hardening under TASK-037: added project-level provider execution settings, stream-aware activity monitoring for Claude, structured error kinds, and compatibility validation for Codex/Gemini sidecar paths."
     }
   ]
 }

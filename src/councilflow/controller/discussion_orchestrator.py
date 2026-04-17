@@ -29,6 +29,10 @@ class DiscussionParticipant(Protocol):
 class UnavailableParticipantError(RuntimeError):
     """Raised when a requested discussion participant is not available."""
 
+    def __init__(self, message: str, *, error_kind: str | None = None) -> None:
+        super().__init__(message)
+        self.error_kind = error_kind
+
 
 class DiscussionOrchestrator:
     """Coordinate controller-led discussion rounds and persist the outcome."""
@@ -260,6 +264,7 @@ class DiscussionOrchestrator:
                 ended_reason="failed",
                 turns=turns,
                 error_message=str(exc),
+                error_kind=getattr(exc, "error_kind", None),
             )
             self.store.append_run_record(
                 "discussion",
@@ -267,6 +272,7 @@ class DiscussionOrchestrator:
                     "discussion_id": discussion_id,
                     "status": "failed",
                     "error": str(exc),
+                    "error_kind": getattr(exc, "error_kind", None),
                 },
             )
             self.store.write_state(
@@ -343,7 +349,8 @@ class DiscussionOrchestrator:
         except UnavailableParticipantError as exc:
             raise UnavailableParticipantError(
                 "Discussion participant "
-                f"'{request.participant}' failed during {phase_label}: {exc}"
+                f"'{request.participant}' failed during {phase_label}: {exc}",
+                error_kind=exc.error_kind,
             ) from exc
 
     def _persist_summary(
@@ -396,6 +403,7 @@ class DiscussionOrchestrator:
         ended_reason: str,
         turns: list[DiscussionTurn],
         error_message: str | None = None,
+        error_kind: str | None = None,
     ) -> None:
         completed_rounds = max((turn.round_number for turn in turns), default=0)
         record = DiscussionRecord(
@@ -412,6 +420,7 @@ class DiscussionOrchestrator:
             ended_reason=ended_reason,
             turns=turns,
             error_message=error_message,
+            error_kind=error_kind,
         )
         self.store.save_json(record_path, record.model_dump(mode="json"))
 

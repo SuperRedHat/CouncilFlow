@@ -45,7 +45,10 @@ class FailingParticipant:
 
     def respond(self, request: DiscussionRequest) -> ParticipantResponse:
         if request.round_number == self._fail_on_round:
-            raise UnavailableParticipantError("Provider command timed out after 120s.")
+            raise UnavailableParticipantError(
+                "Provider command timed out after 120s.",
+                error_kind="total_timeout",
+            )
         return ParticipantResponse(
             model=self._model,
             message="Initial controller position",
@@ -318,6 +321,7 @@ def test_failed_discussion_persists_record_and_resets_state(tmp_path: Path) -> N
     )
     assert record.status == "failed"
     assert record.error_message is not None
+    assert record.error_kind == "total_timeout"
     assert "participant_round_1" in record.error_message
     assert record.initial_position == "Initial controller position"
     assert record.completed_rounds == 0
@@ -326,6 +330,7 @@ def test_failed_discussion_persists_record_and_resets_state(tmp_path: Path) -> N
     run_record = store.load_run_record(run_record_path)
     assert run_record["payload"]["status"] == "failed"
     assert "timed out" in run_record["payload"]["error"]
+    assert run_record["payload"]["error_kind"] == "total_timeout"
 
 
 def test_local_controller_initial_position_skips_same_model_subprocess(tmp_path: Path) -> None:

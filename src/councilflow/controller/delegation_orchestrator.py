@@ -23,11 +23,13 @@ class DelegationExecutionError(RuntimeError):
         delegation_id: str,
         handoff_path: str,
         record_path: str,
+        error_kind: str | None = None,
     ) -> None:
         super().__init__(message)
         self.delegation_id = delegation_id
         self.handoff_path = handoff_path
         self.record_path = record_path
+        self.error_kind = error_kind
 
 
 class DelegationOrchestrator:
@@ -104,6 +106,7 @@ class DelegationOrchestrator:
                     status="failed",
                     handoff_path=relative_handoff_path,
                     error=str(exc),
+                    error_kind=exc.kind,
                 ).model_dump(mode="json"),
             )
             self.store.write_state(
@@ -114,11 +117,23 @@ class DelegationOrchestrator:
                     "last_delegation_status": "failed",
                 }
             )
+            self.store.append_run_record(
+                "delegation",
+                {
+                    "delegation_id": delegation_id,
+                    "role": role.value,
+                    "target_model": target_model,
+                    "status": "failed",
+                    "error": str(exc),
+                    "error_kind": exc.kind,
+                },
+            )
             raise DelegationExecutionError(
                 str(exc),
                 delegation_id=delegation_id,
                 handoff_path=relative_handoff_path,
                 record_path=relative_record_path,
+                error_kind=exc.kind,
             ) from exc
 
         result_path = delegation_dir / "result.md"
