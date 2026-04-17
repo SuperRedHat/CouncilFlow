@@ -3,7 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from councilflow.config.loader import build_default_config
-from councilflow.controller.discussion_orchestrator import DiscussionOrchestrator
+from councilflow.controller.discussion_orchestrator import (
+    DiscussionOrchestrator,
+    UnavailableParticipantError,
+)
 from councilflow.models.discussion import (
     DiscussionRecord,
     DiscussionRequest,
@@ -33,6 +36,42 @@ class ScriptedFactory:
 
     def __call__(self, model: str) -> ScriptedParticipant:
         return self._participants[model]
+
+
+class FailingParticipant:
+    def __init__(self, model: str, fail_on_round: int) -> None:
+        self._model = model
+        self._fail_on_round = fail_on_round
+
+    def respond(self, request: DiscussionRequest) -> ParticipantResponse:
+        if request.round_number == self._fail_on_round:
+            raise UnavailableParticipantError("Provider command timed out after 120s.")
+        return ParticipantResponse(
+            model=self._model,
+            message="Initial controller position",
+            supports_current_direction=False,
+            has_new_information=True,
+        )
+
+
+class MixedFactory:
+    def __init__(self) -> None:
+        self._controller = ScriptedParticipant(
+            [
+                ParticipantResponse(
+                    model="codex",
+                    message="Initial controller position",
+                    supports_current_direction=False,
+                    has_new_information=True,
+                )
+            ]
+        )
+        self._participant = FailingParticipant("gemini", fail_on_round=1)
+
+    def __call__(self, model: str) -> ScriptedParticipant | FailingParticipant:
+        if model == "codex":
+            return self._controller
+        return self._participant
 
 
 def test_single_external_model_discussion_caps_rounds_at_five(tmp_path: Path) -> None:
@@ -221,5 +260,49 @@ def test_discussion_models_support_controller_positions_and_round_trip_turns() -
     assert payload["initial_position"].startswith("Start from a controller-led proposal")
     assert payload["current_controller_position"].startswith("The controller updated")
     assert payload["min_rounds"] == 2
+    assert payload["error_message"] is None
     assert payload["turns"][1]["speaker_role"] == "controller"
     assert payload["turns"][1]["responds_to_models"] == ["claude"]
+
+
+def test_failed_discussion_persists_record_and_resets_state(tmp_path: Path) -> None:
+    store = CouncilStateStore(tmp_path)
+    orchestrator = DiscussionOrchestrator(
+        store=store,
+        config=build_default_config(),
+        participant_factory=MixedFactory(),
+    )
+
+    try:
+        orchestrator.run(
+            question="Why is the current architecture timing out?",
+            controller="codex",
+            external_models=["gemini"],
+            max_rounds=5,
+            min_rounds=1,
+        )
+    except UnavailableParticipantError as exc:
+        assert "gemini" in str(exc)
+        assert "participant_round_1" in str(exc)
+    else:
+        raise AssertionError("Expected discussion to fail when the participant times out.")
+
+    state = store.read_state()
+    assert state["current_phase"] == "idle"
+    assert state["last_discussion_id"].startswith("disc_")
+    assert "timed out" in state["last_error"]
+
+    discussion_dir = tmp_path / ".council" / "discuss" / state["last_discussion_id"]
+    record = DiscussionRecord.model_validate_json(
+        (discussion_dir / "record.json").read_text(encoding="utf-8")
+    )
+    assert record.status == "failed"
+    assert record.error_message is not None
+    assert "participant_round_1" in record.error_message
+    assert record.initial_position == "Initial controller position"
+    assert record.completed_rounds == 0
+
+    run_record_path = store.list_run_records()[-1]
+    run_record = store.load_run_record(run_record_path)
+    assert run_record["payload"]["status"] == "failed"
+    assert "timed out" in run_record["payload"]["error"]
