@@ -673,6 +673,77 @@ python -m councilflow.cli.app synthesize `
 - 只要 `CouncilFlow` 可用，主工作流必须先拿到显式路由结果；没有 `status = local_execution` 或真实委派产物前，不应直接开始本地编码、评审或测试
 - 只有在 `council` 缺失或不可调用时，主工作流才退回纯本地执行
 
+### 12.3 全技能阶段机与允许例外
+
+现在可以把 `project-*` 粗分成 4 类：
+
+- `read_only`
+  - `project-status`
+  - `project-resume`
+- `gate_close`
+  - `project-feedback`
+- `discussion`
+  - `project-discuss`
+  - 其它技能里的嵌入式 `discuss`
+- `role_driven`
+  - `project-init`
+  - `project-design`
+  - `project-plan`
+  - `project-change`
+  - `project-ask`
+  - `project-review`
+  - `project-next`
+
+真正允许不走角色路由的，只有两种情况：
+
+- 技能本身只是读状态或关 gate
+- 当前阶段已经明确拿到了 `local_execution`
+
+也就是说：
+
+- 不能因为主控“自己也会做”就默认把 `role_driven` 技能本地做完
+- 也不能因为人工验收没过，就让 `project-feedback` 直接顶上去补代码
+
+### 12.4 `project-next` 的完整角色阶段
+
+`project-next` 现在应该按这个阶段机理解：
+
+- `implementer`
+- `tester`
+- 如果失败则进入 `fixer`
+- 再回到 `tester`
+- 最后由主控做收口/综合
+
+最关键的一点是：
+
+- `verification_commands`
+- `verification_profile`
+
+这两个字段从现在开始应该被理解成 **`tester` 阶段的输入**，不是“implementer 做完后，主控理所当然自己在本地跑一下”的默认动作。
+
+换句话说：
+
+- implementer 负责实现
+- tester 负责消费 `verification_commands`
+- fixer 负责根据 tester 失败结果修复
+- 主控只有在某个阶段显式返回 `local_execution` 时，才允许本地承担那个阶段
+
+### 12.5 `project-feedback` 的边界
+
+`project-feedback` 的职责是：
+
+- 关闭人工 gate
+- 把任务从 `awaiting_manual_acceptance` 改回 `in_progress`
+- 记录人工反馈
+- 必要时推动创建后续修复任务
+
+它**不是**一个隐式的 `fixer` 或 `tester`。
+
+所以当人工反馈说“这里没过，需要修一下”时，正确理解应该是：
+
+- `project-feedback` 负责把状态重新打开，或者追加新的修复任务
+- 真正的修复与复测，仍应回到 `project-next` / `project-review` 等 `role_driven` workflow 中按角色路由继续做
+
 ---
 
 ## 13. 三主控使用建议
@@ -932,9 +1003,11 @@ providers:
 - 把 `.council/config.yaml` 当作项目级自动分发真相源，而不是可有可无的提示文件
 - 让最常做主流程控制的模型承担 `planner / architect / synthesizer`
 - 把你真正想外包的能力映射出去，例如 `implementer` 或 `tester`
+- 把 `verification_commands` 当作 tester 的职责输入，而不是主控默认本地动作
 - 把默认讨论参与者写进 `discussion.default_models`，减少每次手动重复写模型
 - 把 `.council` 当作显式协作轨迹，而不是临时缓存
 - 对重要步骤优先先 `discuss`，再 `delegate`
+- 让 `project-feedback` 只做 gate 收口和任务流转，不直接代替修复流程
 - 如果 `council` 缺失，再退回主控本地完成；有工具时优先按配置自动路由
 
 ---

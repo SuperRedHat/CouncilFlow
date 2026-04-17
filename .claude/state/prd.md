@@ -588,3 +588,38 @@ V1 完成时，至少满足：
 范围说明：
 1. 本次变更优先覆盖 provider 层、配置 schema、委派/讨论错误语义和相关测试，不要求在这一轮把三家 CLI 全部重写成流式接入。
 2. `Claude` 流式监控会作为第一优先级落地；`Codex`、`Gemini` 至少需要在本轮中完成能力评估、抽象兼容和非回归验证。
+
+## 26. 变更记录（2026-04-17，全技能自动化阶段机与全链路硬约束）
+本次变更聚焦“所有 `project-*` skills 都必须真正服从项目级分工配置”这一产品语义，目标是把当前仍然存在的半硬约束状态彻底收口成一套**按技能、按阶段、按角色显式路由**的完整自动化工作流。
+
+新增产品要求：
+1. **所有 `project-*` skills 必须先被归类，再决定是否允许跳过角色路由**。新的正式分类为：
+   - **只读/状态型技能**：`project-status`、`project-resume`，只读取状态，不承担执行角色，因此不需要 `delegate`；
+   - **人工 gate / 状态流转型技能**：`project-feedback`，只负责人工验收结果回写、阶段 gate 收口或追加后续任务，除非用户显式要求“继续修复”之类的新执行动作，否则不直接承担代码、测试、评审工作；
+   - **执行型技能**：`project-init`、`project-design`、`project-plan`、`project-change`、`project-ask`、`project-review`、`project-next`，都必须拆成显式角色阶段并按阶段路由；
+   - **讨论型技能**：`project-discuss` 以及其它技能中的嵌入式 `discuss`，一旦触发就是硬前置，不允许主控绕过。
+2. **执行型技能必须定义最小阶段机**。V1 正式阶段机要求至少明确为：
+   - `project-init`：`planner -> synthesizer`
+   - `project-design`：`architect -> synthesizer`
+   - `project-plan`：`planner -> synthesizer`
+   - `project-change`：`architect -> planner -> synthesizer`
+   - `project-ask`：`advisor -> synthesizer`
+   - `project-review`：`reviewer`
+   - `project-next`：`implementer -> tester -> [fixer -> tester]* -> synthesizer`
+3. **`project-next` 的验证与修复不再默认由主控亲自承担**。任务的 `verification_commands` 与 `verification_profile` 应视为 `tester` 阶段的输入，而不是宿主 workflow 自动在本地执行的默认动作。
+4. **测试失败后的修补必须进入 `fixer` 阶段机**。当 `tester` 返回失败结论后，workflow 必须显式进入 `fixer` 路由，再回到 `tester` 复测；主控不得因为“问题不大”而直接本地补丁，除非当前阶段拿到了 `local_execution` 或明确进入 `CouncilFlow` 缺失降级路径。
+5. **主控的职责收缩为 orchestrate、读取 artifact、以及在获得显式许可后的本地执行**。也就是说，主控不再因为“自己也能做”就默许接管实现、测试、修复、评审或分析阶段。
+6. **每个阶段都必须有显式 artifact 消费契约**。至少要明确：
+   - 使用哪个 `role`
+   - 需要读取哪些前序 artifact
+   - 成功后宿主读取哪个 result/summary artifact
+   - 失败时如何停止并上报
+7. **允许不走 `delegate` 的情况必须是白名单，而不是默认宽松**。只有以下两类情况允许本地继续而不先委派：
+   - 技能本身属于只读/状态流转类型；
+   - 该阶段明确拿到 `local_execution`，或当前环境确认不存在/不可调用 `council`。
+8. **人工验收技能不直接“帮忙补做”执行工作**。`project-feedback` 在收到“未通过”或“需要修改”时，应优先推动新修复任务或重新打开现有任务，而不是在没有新路由的前提下直接进入本地修复。
+
+范围说明：
+1. 本次变更同时影响 `CouncilFlow` 本体的集成契约、`.workflow-core` 共享 `project-*` skills、用户文档、发布清单和自动化验证策略。
+2. 本次变更的目标不是把每个技能都变成复杂的编排引擎，而是确保**一旦某个阶段属于执行角色，就必须 route-first**。
+3. 本节覆盖并 supersede 当前文档中所有“部分角色已硬约束即可视为 workflow 完整”的旧理解；新的产品语义应为：**只有当每个技能的执行阶段都拥有明确角色归属、显式路由结果和清晰的失败/降级规则时，这套 workflow 才算真正完成。**

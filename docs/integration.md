@@ -49,6 +49,70 @@ Rules:
 - Local-only execution is a fallback for `council`-missing environments or explicit
   `local_execution` responses, not the default routing strategy.
 
+## Workflow Taxonomy And Allowed No-Route Exceptions
+
+`CouncilFlow` now assumes every `project-*` workflow falls into one of four categories:
+
+- `read_only`
+  - `project-status`
+  - `project-resume`
+- `gate_close`
+  - `project-feedback`
+- `discussion`
+  - `project-discuss`
+  - embedded `discuss` inside other `project-*` workflows
+- `role_driven`
+  - `project-init`
+  - `project-design`
+  - `project-plan`
+  - `project-change`
+  - `project-ask`
+  - `project-review`
+  - `project-next`
+
+Allowed no-route exceptions are a strict whitelist:
+
+- `read_only` workflows never take execution roles, so they do not call `delegate`.
+- Pure `gate_close` steps only write back manual acceptance or reopen/create follow-up tasks, so
+  they do not take execution roles either.
+- Every `discussion` or `role_driven` step must treat `CouncilFlow` as a hard prerequisite when the
+  tool is available.
+
+This means the controller may only skip routing when:
+
+- the workflow is truly read-only or gate-closing, or
+- the stage already received `status = local_execution`, or
+- `council` is genuinely unavailable and the workflow is entering an explicit controller-only
+  fallback.
+
+## Role-Driven Phase Machines
+
+Every `role_driven` workflow should be modeled as an explicit stage machine instead of a single
+"controller does the rest" step.
+
+Recommended minimum stage machines:
+
+- `project-init`: `planner -> synthesizer`
+- `project-design`: `architect -> synthesizer`
+- `project-plan`: `planner -> synthesizer`
+- `project-change`: `architect -> planner -> synthesizer`
+- `project-ask`: `advisor -> synthesizer`
+- `project-review`: `reviewer`
+- `project-next`: `implementer -> tester -> [fixer -> tester]* -> synthesizer`
+
+Phase-machine rules:
+
+- Each stage must declare a `role`, `objective`, `task_summary`, required upstream artifacts, and
+  expected output.
+- The host workflow must not infer permission to keep going; it must react to an explicit route
+  result for each stage.
+- `verification_commands` and `verification_profile` belong to the `tester` stage. They are stage
+  inputs, not an automatic controller-local action after `implementer` finishes.
+- If a `tester` stage reports failure, the workflow must enter `fixer` and then return to `tester`
+  for re-verification.
+- `project-feedback` may close a gate, reopen a task, or create a follow-up fix/review task, but it
+  must not silently act as `tester` or `fixer` without a new routed execution stage.
+
 ## Supported Entry Points
 
 ### `project-discuss`
@@ -169,16 +233,25 @@ Expected machine-readable contract:
   fallback should be explicit in the calling workflow rather than treated as the primary path.
 - When `council` is available, workflows must not start role work until they receive either
   `data.status = local_execution` or a delegated artifact set.
+- Role-driven workflows must interpret `verification_commands` as `tester` inputs and must not let
+  the controller run them locally unless the `tester` stage itself returned `local_execution`.
+- If a manual gate fails, `project-feedback` should reopen the task or create a follow-up routed
+  repair task instead of directly performing fixer/tester work inside the gate-closing workflow.
 - If `council delegate` or `council discuss` returns an error, workflows must stop and surface that
   failure instead of silently switching to local execution.
 
 ## Minimum Integration Flow
 
-1. `project-*` decides whether it needs `discuss` or `delegate`.
-2. For host-integrated `discuss`, the active controller generates a local `initial_position`.
-3. `CouncilFlow` distributes that position to external participants for critique.
+1. `project-*` classifies the current step as `read_only`, `gate_close`, `discussion`, or
+   `role_driven`.
+2. If the step is `discussion`, the active controller generates a local `initial_position` and calls
+   `council discuss`.
+3. If the step is `role_driven`, the workflow enters the first explicit role stage and calls
+   `council delegate --role <stage-role>`.
 4. `CouncilFlow` writes artifacts into `.council/`.
-5. `project-*` reads those artifacts explicitly.
-6. The controller uses those artifacts to continue the main workflow without same-model self-nesting.
+5. The host workflow reads those artifacts explicitly before deciding the next stage.
+6. The controller may only continue locally when the current stage returned `local_execution`.
+7. `project-next` loops through `implementer -> tester -> [fixer -> tester]*` until verification
+   succeeds, then hands final synthesis/status updates back to the controller.
 
 This keeps the integration deterministic, inspectable, and portable across Codex, Claude Code, and Gemini CLI.

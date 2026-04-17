@@ -1551,11 +1551,11 @@
         "临时隐藏或断开 council 命令，验证共享 workflow 会明确说明正在降级到主控本地执行"
       ],
       "stage_gate": true,
-      "status": "todo",
+      "status": "in_progress",
       "created_at": "2026-04-17T14:32:54.056Z",
-      "updated_at": "2026-04-17T14:32:54.056Z",
+      "updated_at": "2026-04-17T16:14:16.396Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Broader full-skill hard-constraint redesign has been formalized. Manual gate is deferred until tester/fixer loops and remaining role-driven workflow stages are explicitly route-first."
     },
     {
       "id": "TASK-037-FIX-001",
@@ -1639,6 +1639,167 @@
       "updated_at": "2026-04-17T15:46:14.867Z",
       "commit_hash": "",
       "notes": "Auto task completed after runtime integration, docs, full verification, and low-cost real provider smoke checks."
+    },
+    {
+      "id": "TASK-037-FIX-003",
+      "title": "固化全技能阶段机与允许例外的集成契约",
+      "description": "把全技能自动化阶段机、允许不路由的白名单、每个阶段的 artifact 消费规则和 project-feedback 的边界写入集成文档、发布清单与共享 workflow 约定，为后续实现提供单一真相源。",
+      "dependencies": [
+        "TASK-037-FIX-002"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "docs/integration.md 明确列出 read_only、gate_close、discussion、role_driven 四类技能及允许不走 delegate 的白名单",
+        "release checklist 与中文用户文档明确写出 project-next 的 implementer -> tester -> [fixer -> tester]* -> synthesizer 阶段机",
+        "文档明确说明 verification_commands 属于 tester 阶段输入，不再是宿主默认本地动作",
+        "project-feedback 的说明明确其职责是 gate 收口与任务流转，而不是无路由直接承担 fixer/tester 工作"
+      ],
+      "files": [
+        "docs/integration.md",
+        "docs/release-checklist.md",
+        "docs/user-guide.zh-CN.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-next/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-feedback/SKILL.md"
+      ],
+      "module": "workflow-phase-contract",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "docs",
+      "verification_commands": [
+        "if (-not (Select-String -Path 'D:\\project\\CouncilFlow\\docs\\integration.md' -Pattern 'read_only|gate_close|role_driven|tester|fixer' -Quiet)) { throw 'Integration contract must describe the full workflow phase taxonomy.' }",
+        "if (-not (Select-String -Path 'D:\\project\\CouncilFlow\\docs\\release-checklist.md' -Pattern 'implementer.*tester.*fixer|tester.*fixer.*tester' -Quiet)) { throw 'Release checklist must describe the project-next staged loop.' }",
+        "if (-not (Select-String -Path 'D:\\project\\CouncilFlow\\docs\\user-guide.zh-CN.md' -Pattern 'verification_commands|tester|project-feedback' -Quiet)) { throw 'User guide must explain tester ownership and project-feedback boundaries.' }"
+      ],
+      "status": "done",
+      "created_at": "2026-04-17T16:14:28.306Z",
+      "updated_at": "2026-04-17T16:37:46.538Z",
+      "commit_hash": "",
+      "notes": "Acceptance mode is auto, so TASK-037-FIX-003 is complete after the docs phase-contract checks passed and the updated shared skills were synchronized to all three controllers.",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-037-FIX-004",
+      "title": "将 project-next 重构为 implementer/tester/fixer 闭环硬约束",
+      "description": "更新 CouncilFlow 集成契约、共享 project-next workflow 和相关测试，让实现、验证、修复、复测都必须先按项目配置路由，并以显式 artifact 与 local_execution 结果驱动阶段流转。",
+      "dependencies": [
+        "TASK-037-FIX-003"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "project-next 在 implementer 完成后不会直接由主控跑 verification_commands，而是先进入 tester 路由阶段",
+        "tester 失败时 workflow 必须进入 fixer，再回到 tester 复测；未获得 local_execution 前主控不得直接补丁",
+        "每个 project-next 阶段都能明确指出要读取的 artifact 与下一步允许的动作",
+        "自动化测试覆盖 implementer delegated、tester delegated、fixer delegated、local_execution 与 error/缺产物中止场景"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/skills/project-next/SKILL.md",
+        "docs/integration.md",
+        "src/councilflow/handoff/packages.py",
+        "src/councilflow/models/delegation.py",
+        "tests/test_workflow_integration.py",
+        "tests/test_cli_delegate.py"
+      ],
+      "module": "project-next-phase-machine",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_cli_delegate.py tests/test_workflow_integration.py",
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-17T16:14:36.600Z",
+      "updated_at": "2026-04-17T16:14:36.600Z",
+      "commit_hash": "",
+      "notes": "Subtask of TASK-037",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-037-FIX-005",
+      "title": "对齐其余 role-driven skills 的阶段机与硬约束边界",
+      "description": "把 project-init、project-design、project-plan、project-change、project-ask、project-review 以及 project-feedback 的角色阶段、允许例外和失败语义统一到完整 phase machine，避免只有 project-next 收紧而其它技能仍存在可静默绕过的空洞。",
+      "dependencies": [
+        "TASK-037-FIX-003"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "project-init/design/plan/change/ask/review 都明确写出其主阶段角色，并要求在 CouncilFlow 可用时先 route 后执行",
+        "project-feedback 明确只负责 gate 收口、任务重开或追加后续修复任务，不再无路由直接承担执行角色",
+        "共享 skills 对 delegated、local_execution、error 三种结果的后续行为保持一致",
+        "sync-skills.ps1 执行后，workflow-core 与 Codex/Claude/Gemini 三端对应技能内容保持一致"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/skills/project-init/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-design/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-plan/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-change/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-ask/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-review/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-feedback/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/scripts/sync-skills.ps1",
+        "docs/integration.md"
+      ],
+      "module": "workflow-skill-alignment",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'",
+        "$skills = @('project-init','project-design','project-plan','project-change','project-ask','project-review','project-feedback'); foreach ($skill in $skills) { $paths = @(\"C:\\Users\\David Zhai\\.workflow-core\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.codex\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.claude\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.gemini\\skills\\$skill\\SKILL.md\"); $hashes = (Get-FileHash $paths).Hash | Select-Object -Unique; if ($hashes.Count -ne 1) { throw ('Synced skill mismatch for ' + $skill) } }",
+        "$paths = @('C:\\Users\\David Zhai\\.workflow-core\\skills\\project-init\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-design\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-plan\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-change\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-ask\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-review\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-feedback\\SKILL.md'); $bad = $paths | Where-Object { -not (Select-String -Path $_ -Pattern 'local_execution|delegated|否则停止|否则中止|必须先调用' -Quiet) }; if ($bad) { throw ('Missing hard-stage wording in: ' + ($bad -join ', ')) }"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-17T16:14:54.724Z",
+      "updated_at": "2026-04-17T16:14:54.724Z",
+      "commit_hash": "",
+      "notes": "Subtask of TASK-037",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-037-FIX-006",
+      "title": "补齐全技能不可静默绕过的自动化回归",
+      "description": "为完整阶段机补齐自动化回归和真实 smoke 入口，验证 role-driven skills 在实现、测试、修复、评审、分析各阶段都不能在未 route、未拿到 local_execution 或缺少 artifact 的情况下被主控静默接管。",
+      "dependencies": [
+        "TASK-037-FIX-004",
+        "TASK-037-FIX-005"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "自动化测试覆盖 implementer/tester/fixer/reviewer/architect/advisor 等关键阶段的 delegated、local_execution、error 分支",
+        "测试能证明 route 失败、缺 artifact 或 discuss 失败时宿主 workflow 会停止，而不是改走本地路径",
+        "文档与 release checklist 明确列出需要做的真实主控 smoke 场景，且与自动化验证覆盖面一致",
+        "共享 workflow 在 council 缺失场景下仍保持显式 fallback，而不是和 route 失败混淆"
+      ],
+      "files": [
+        "tests/test_workflow_integration.py",
+        "tests/test_cli_delegate.py",
+        "docs/release-checklist.md",
+        "docs/integration.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-next/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-review/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-change/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-design/SKILL.md"
+      ],
+      "module": "workflow-hard-regression",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest",
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-17T16:15:04.476Z",
+      "updated_at": "2026-04-17T16:15:04.476Z",
+      "commit_hash": "",
+      "notes": "Subtask of TASK-037",
+      "review_checklist": [],
+      "stage_gate": false
     }
   ]
 }

@@ -1463,6 +1463,54 @@
       "from_status": null,
       "to_status": null,
       "message": "Completed provider runtime hardening under TASK-037: added project-level provider execution settings, stream-aware activity monitoring for Claude, structured error kinds, and compatibility validation for Codex/Gemini sidecar paths."
+    },
+    {
+      "timestamp": "2026-04-17T16:14:16.413Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-037 todo → in_progress: Broader full-skill hard-constraint redesign has been formalized. Manual gate is deferred until tester/fixer loops and remaining role-driven workflow stages are explicitly route-first."
+    },
+    {
+      "timestamp": "2026-04-17T16:15:09.236Z",
+      "type": "decision",
+      "task_id": "TASK-037",
+      "from_status": null,
+      "to_status": null,
+      "message": "Formalized the full-skill hard-constraint workflow change before further implementation. Added PRD/architecture change records for skill taxonomy, explicit per-skill phase machines, tester/fixer routing, artifact consumption rules, and project-feedback boundaries; split the remaining work into TASK-037-FIX-003 through TASK-037-FIX-006."
+    },
+    {
+      "timestamp": "2026-04-17T16:34:53.903Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-003",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-037-FIX-003 todo → in_progress: Starting the workflow phase-contract task: codifying full skill taxonomy, allowed no-route exceptions, tester ownership of verification_commands, and project-feedback boundaries before any behavioral implementation."
+    },
+    {
+      "timestamp": "2026-04-17T16:37:41.749Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-003",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-037-FIX-003 in_progress → auto_verified: Documented the full workflow taxonomy, role-driven phase machines, tester ownership of verification_commands, and project-feedback boundaries. Synced updated shared skills to Codex/Claude/Gemini and passed the docs verification checks."
+    },
+    {
+      "timestamp": "2026-04-17T16:37:46.555Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-003",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-037-FIX-003 auto_verified → done: Acceptance mode is auto, so TASK-037-FIX-003 is complete after the docs phase-contract checks passed and the updated shared skills were synchronized to all three controllers."
+    },
+    {
+      "timestamp": "2026-04-17T16:37:50.067Z",
+      "type": "decision",
+      "task_id": "TASK-037-FIX-003",
+      "from_status": null,
+      "to_status": null,
+      "message": "Completed the docs-first workflow phase-contract pass. Integration docs, release checklist, user guide, and shared project-next/project-feedback skills now describe the full skill taxonomy, the project-next implementer/tester/fixer loop, tester ownership of verification_commands, and the fact that project-feedback only closes/reopens gates instead of directly executing fixer/tester work."
     }
   ]
 }

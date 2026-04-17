@@ -771,3 +771,53 @@ graph TD
 实现边界：
 1. 本次变更优先落地 Claude 的流式监控和统一 runtime 配置，不要求当场把 Codex / Gemini 的默认 provider 全部改成事件流模式。
 2. 本节补充并 supersede 当前 provider 层“固定常量超时即可代表执行状态”的旧假设；新的架构语义应为：**执行是否继续，取决于 provider 是否仍有显式活动信号，而不是只看墙钟时间。**
+
+## 22. 变更记录（2026-04-17，全技能自动化阶段机与全链路硬约束）
+本次变更聚焦宿主 workflow 的整体阶段机设计，目标是把当前“部分技能已 route-first、但中途仍可能被主控接管”的半完成状态，升级为**技能级阶段机 + 角色级硬约束 + artifact 级消费契约**三层一致的执行架构。
+
+新增架构要求：
+1. **先建立 workflow 阶段分类，再定义允许不路由的白名单**。新的宿主技能分类为：
+   - `read_only`: `project-status`、`project-resume`
+   - `gate_close`: `project-feedback`
+   - `discussion`: `project-discuss` 与其它技能中的嵌入式 `discuss`
+   - `role_driven`: `project-init`、`project-design`、`project-plan`、`project-change`、`project-ask`、`project-review`、`project-next`
+   只有 `read_only` 和纯 `gate_close` 步骤允许天然不走 `delegate`。
+2. **`role_driven` 技能必须声明最小阶段机**。推荐最小架构映射如下：
+   - `project-init`: `planner -> synthesizer`
+   - `project-design`: `architect -> synthesizer`
+   - `project-plan`: `planner -> synthesizer`
+   - `project-change`: `architect -> planner -> synthesizer`
+   - `project-ask`: `advisor -> synthesizer`
+   - `project-review`: `reviewer`
+   - `project-next`: `implementer -> tester -> [fixer -> tester]* -> synthesizer`
+3. **阶段机的公共输入输出契约需要统一**。每个执行阶段至少要携带：
+   - `role`
+   - `objective`
+   - `task_summary`
+   - `required_inputs`（需要读取的前序 artifact / task context）
+   - `expected_output`
+   - `route_result`（`delegated` / `local_execution` / `error`）
+4. **`project-next` 需要被重构成真正的执行闭环**。具体要求为：
+   - `implementer` 阶段只负责实现产物；
+   - `tester` 阶段负责消费 `verification_commands` / `verification_profile` 并产出验证结论；
+   - 若 `tester` 失败，则必须进入 `fixer` 阶段，再回到 `tester` 复测；
+   - 只有当某一阶段显式返回 `local_execution` 时，主控才可在本地承担该阶段。
+5. **验证命令属于 tester 阶段，而不是宿主默认动作**。共享 workflow 不应在 implementer 产物返回后立刻由主控自己跑 `verification_commands`；这些命令应通过 handoff 明确交给 `tester`，并以结构化结果回传。
+6. **`project-feedback` 的职责必须与执行阶段解耦**。它可以：
+   - 关闭人工 gate；
+   - 重新打开任务；
+   - 创建后续 fix/review 子任务；
+   但不应在没有新路由结果的情况下直接扮演 `fixer` 或 `tester`。
+7. **讨论型与执行型阶段要共享同一套“不可绕过”语义**。无论是 `council discuss` 还是 `council delegate`，宿主 workflow 都只能基于显式结果继续：
+   - `delegated`: 读取 artifact 后进入下一阶段
+   - `local_execution`: 主控可本地承担该阶段
+   - `error` / missing artifact: 立即停止并报告
+8. **手动验收 gate 需要覆盖“过程正确”而不是只看最终结果**。新的 release/workflow gate 必须验证：
+   - 主控不会在 implementer 之后偷偷接管 tester/fixer
+   - 其它 role-driven 技能也不会在未 route 的情况下直接开始分析、评审或改动
+   - `CouncilFlow` 缺失时的 controller-only fallback 仍保持显式且可观察
+
+实现边界：
+1. 本次变更优先修改集成契约、共享 skills、相关 handoff 输入约定与自动化测试；只有在现有 `delegate` 表面不足以承载阶段机输入时，才补充 `CouncilFlow` Python 本体的辅助字段。
+2. 本次变更不要求把 `read_only` / `gate_close` 技能强行包装成委派型技能；例外必须是显式白名单，而不是隐式偷跑。
+3. 本节覆盖并 supersede 当前文档中“route-first 已经基本成立”的旧判断；新的架构语义应为：**只有当每个 role-driven 技能都拥有完整阶段机、统一 route result 解释和不可静默绕过的宿主行为时，这套 workflow 才算真正闭环。**
