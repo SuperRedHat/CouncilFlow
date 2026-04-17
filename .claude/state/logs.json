@@ -1511,6 +1511,38 @@
       "from_status": null,
       "to_status": null,
       "message": "Completed the docs-first workflow phase-contract pass. Integration docs, release checklist, user guide, and shared project-next/project-feedback skills now describe the full skill taxonomy, the project-next implementer/tester/fixer loop, tester ownership of verification_commands, and the fact that project-feedback only closes/reopens gates instead of directly executing fixer/tester work."
+    },
+    {
+      "timestamp": "2026-04-17T21:43:55.114Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-004",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-037-FIX-004 todo → in_progress: Starting the project-next phase-machine implementation: wiring explicit tester/fixer stage semantics into the integration contract, delegation artifacts, and regression tests."
+    },
+    {
+      "timestamp": "2026-04-17T21:49:10.846Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-004",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-037-FIX-004 in_progress → auto_verified: Implemented explicit stage metadata for delegated project-next phases: delegate now accepts structured stage inputs, required upstream artifacts, and next-action guidance; integration contract and workflow tests cover implementer/tester/fixer delegated, local_execution, and error behavior."
+    },
+    {
+      "timestamp": "2026-04-17T21:49:13.749Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-004",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-037-FIX-004 auto_verified → done: Acceptance mode is auto, so TASK-037-FIX-004 is complete after delegate stage-metadata support, project-next skill synchronization, and the targeted verification commands all passed."
+    },
+    {
+      "timestamp": "2026-04-17T21:49:17.049Z",
+      "type": "decision",
+      "task_id": "TASK-037-FIX-004",
+      "from_status": null,
+      "to_status": null,
+      "message": "Completed the project-next phase-machine implementation pass. Delegation artifacts now carry required_artifacts and next-action guidance for implementer/tester/fixer stages, CLI delegate accepts structured stage metadata, and the synchronized project-next workflow now passes tester/fixer loop intent explicitly instead of relying on controller-local inference."
     }
   ]
 }

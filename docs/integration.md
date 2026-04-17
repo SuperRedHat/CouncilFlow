@@ -181,6 +181,7 @@ Delegation-oriented workflow steps should call:
 council delegate --role implementer --model claude --objective "<objective>" --task-summary "<summary>"
 council delegate --role reviewer --model gemini --objective "<objective>" --task-summary "<summary>"
 council delegate --role implementer --objective "<objective>" --task-summary "<summary>"
+council delegate --role tester --objective "<objective>" --task-summary "<summary>" --input verification_commands="pnpm exec vitest run" --required-artifact implementer_result=.council/delegations/del_x/result.md --next-on-success "Continue to synthesis or status update." --next-on-failure "Enter fixer, then rerun tester."
 ```
 
 If `--model` is omitted, `CouncilFlow` reads the target model from the project's local role mapping.
@@ -216,6 +217,9 @@ Expected machine-readable contract:
 - `handoff_schema.constraints`
 - `handoff_schema.relevant_files`
 - `handoff_schema.inputs`
+- `handoff_schema.required_artifacts`
+- `handoff_schema.next_actions_on_success`
+- `handoff_schema.next_actions_on_failure`
 - `handoff_schema.expected_output`
 
 ## Consumption Rules
@@ -235,6 +239,8 @@ Expected machine-readable contract:
   `data.status = local_execution` or a delegated artifact set.
 - Role-driven workflows must interpret `verification_commands` as `tester` inputs and must not let
   the controller run them locally unless the `tester` stage itself returned `local_execution`.
+- Tester/fixer loops should use `required_artifacts` and `next_actions_on_*` from the handoff
+  package/result contract instead of inferring stage transitions from hidden controller state.
 - If a manual gate fails, `project-feedback` should reopen the task or create a follow-up routed
   repair task instead of directly performing fixer/tester work inside the gate-closing workflow.
 - If `council delegate` or `council discuss` returns an error, workflows must stop and surface that

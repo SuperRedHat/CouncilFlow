@@ -84,6 +84,9 @@ def test_workflow_integration_contracts_are_machine_readable(
         constraints=["Do not rely on hidden context."],
         relevant_files=["docs/integration.md"],
         inputs={"phase": "project-next"},
+        required_artifacts={},
+        next_actions_on_success=["Enter tester using the emitted implementation result artifact."],
+        next_actions_on_failure=["Stop and report the failed implementer stage."],
         expected_output="Markdown result that can be consumed by project-* workflows.",
     )
 
@@ -108,6 +111,12 @@ def test_workflow_integration_contracts_are_machine_readable(
     assert delegation_contract["handoff_path"] == delegation.handoff_path
     assert delegation_contract["result_path"] == delegation.result_path
     assert delegation_contract["handoff_schema"]["task_summary"].startswith("Demonstrate")
+    assert delegation_contract["handoff_schema"]["next_actions_on_success"] == [
+        "Enter tester using the emitted implementation result artifact."
+    ]
+    assert delegation_contract["handoff_schema"]["next_actions_on_failure"] == [
+        "Stop and report the failed implementer stage."
+    ]
     assert summary.controller == controller
 
 
@@ -154,3 +163,68 @@ def test_discuss_cli_reads_project_default_models_for_workflow_integration(
     assert payload["data"]["participants"] == ["codex", "gemini"]
     assert payload["data"]["effective_max_rounds"] == 2
     assert (tmp_path / payload["data"]["summary_path"]).is_file()
+
+
+@pytest.mark.parametrize(
+    ("role", "required_artifacts", "next_success", "next_failure"),
+    [
+        (
+            RoleName.IMPLEMENTER,
+            {},
+            ["Enter tester using the implementation result artifact."],
+            ["Stop and report the failed implementer stage."],
+        ),
+        (
+            RoleName.TESTER,
+            {"implementer_result": ".council/delegations/del_impl/result.md"},
+            ["If verification passes, continue to synthesis/status flow."],
+            ["Enter fixer, then rerun tester."],
+        ),
+        (
+            RoleName.FIXER,
+            {"tester_result": ".council/delegations/del_test/result.md"},
+            ["Re-enter tester using the new fixer result artifact."],
+            ["Stop and report the failed fixer stage."],
+        ),
+    ],
+)
+def test_project_next_stage_contracts_are_explicit(
+    tmp_path: Path,
+    role: RoleName,
+    required_artifacts: dict[str, str],
+    next_success: list[str],
+    next_failure: list[str],
+) -> None:
+    store = CouncilStateStore(tmp_path)
+    orchestrator = DelegationOrchestrator(
+        store=store,
+        participant_factory=lambda _: IntegrationDelegationProvider(),
+    )
+
+    result = orchestrator.run(
+        role=role,
+        controller="codex",
+        target_model="claude",
+        objective=f"Run the {role.value} stage for project-next.",
+        task_summary=f"Structured {role.value} phase execution.",
+        constraints=["Do not rely on hidden shared chat context."],
+        relevant_files=["docs/integration.md"],
+        inputs={"workflow": "project-next"},
+        required_artifacts=required_artifacts,
+        next_actions_on_success=next_success,
+        next_actions_on_failure=next_failure,
+        expected_output="Markdown result that the host workflow can consume explicitly.",
+    )
+
+    handoff_package = load_handoff_package(tmp_path / result.handoff_path)
+    contract = build_delegation_contract(
+        handoff_package,
+        handoff_path=result.handoff_path,
+        result_path=result.result_path,
+    )
+
+    assert contract["handoff_schema"]["role"] == role.value
+    assert contract["handoff_schema"]["required_artifacts"] == required_artifacts
+    assert contract["stage_guidance"]["next_actions_on_success"] == next_success
+    assert contract["stage_guidance"]["next_actions_on_failure"] == next_failure
+    assert "Required upstream artifacts must be read" in contract["consumption_rules"][3]

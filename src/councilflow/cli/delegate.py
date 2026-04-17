@@ -49,6 +49,26 @@ EXPECTED_OUTPUT_OPTION = typer.Option(
     "--expected-output",
     help="Describe the output format expected from the delegated model.",
 )
+INPUT_OPTION = typer.Option(
+    None,
+    "--input",
+    help="Repeat KEY=VALUE to attach structured stage inputs.",
+)
+REQUIRED_ARTIFACT_OPTION = typer.Option(
+    None,
+    "--required-artifact",
+    help="Repeat LABEL=PATH to declare required upstream artifacts for this stage.",
+)
+NEXT_ON_SUCCESS_OPTION = typer.Option(
+    None,
+    "--next-on-success",
+    help="Repeat to describe the workflow action that should happen when this stage succeeds.",
+)
+NEXT_ON_FAILURE_OPTION = typer.Option(
+    None,
+    "--next-on-failure",
+    help="Repeat to describe the workflow action that should happen when this stage fails.",
+)
 PROJECT_ROOT_OPTION = typer.Option(
     DEFAULT_PROJECT_ROOT,
     "--project-root",
@@ -57,6 +77,20 @@ PROJECT_ROOT_OPTION = typer.Option(
     dir_okay=True,
     help="Project root used to resolve .council state and artifacts.",
 )
+
+
+def _parse_key_value_items(items: list[str] | None, *, option_name: str) -> dict[str, str]:
+    """Parse repeated KEY=VALUE items into a mapping."""
+
+    parsed: dict[str, str] = {}
+    for item in items or []:
+        key, separator, value = item.partition("=")
+        if not separator or not key.strip() or not value.strip():
+            raise typer.BadParameter(
+                f"{option_name} expects KEY=VALUE items, got '{item}'."
+            )
+        parsed[key.strip()] = value.strip()
+    return parsed
 
 
 def get_provider_adapter(
@@ -85,6 +119,10 @@ def delegate(
     constraint: list[str] | None = CONSTRAINT_OPTION,
     relevant_file: list[str] | None = RELEVANT_FILE_OPTION,
     expected_output: str = EXPECTED_OUTPUT_OPTION,
+    stage_input: list[str] | None = INPUT_OPTION,
+    required_artifact: list[str] | None = REQUIRED_ARTIFACT_OPTION,
+    next_on_success: list[str] | None = NEXT_ON_SUCCESS_OPTION,
+    next_on_failure: list[str] | None = NEXT_ON_FAILURE_OPTION,
     project_root: Path = PROJECT_ROOT_OPTION,
 ) -> None:
     """Generate a handoff package and delegate the work to a provider adapter."""
@@ -128,6 +166,11 @@ def delegate(
             config.providers.for_model(requested_model),
         ),
     )
+    structured_inputs = _parse_key_value_items(stage_input, option_name="--input")
+    required_artifacts = _parse_key_value_items(
+        required_artifact,
+        option_name="--required-artifact",
+    )
     try:
         result = orchestrator.run(
             role=role,
@@ -137,7 +180,14 @@ def delegate(
             task_summary=task_summary,
             constraints=list(constraint or []),
             relevant_files=list(relevant_file or []),
-            inputs={"controller": controller, "configured_language": config.output_language},
+            inputs={
+                "controller": controller,
+                "configured_language": config.output_language,
+                **structured_inputs,
+            },
+            required_artifacts=required_artifacts,
+            next_actions_on_success=list(next_on_success or []),
+            next_actions_on_failure=list(next_on_failure or []),
             expected_output=expected_output,
         )
     except DelegationExecutionError as exc:

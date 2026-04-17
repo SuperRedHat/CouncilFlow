@@ -48,6 +48,16 @@ def test_delegate_command_returns_structured_success(monkeypatch, tmp_path: Path
             "Implement delegation support.",
             "--task-summary",
             "Add delegation CLI plumbing.",
+            "--input",
+            "verification_profile=workflow_meta",
+            "--input",
+            "verification_commands=python -m pytest",
+            "--required-artifact",
+            "implementer_result=.council/delegations/del_prev/result.md",
+            "--next-on-success",
+            "Continue to tester synthesis.",
+            "--next-on-failure",
+            "Stop and report the failed tester stage.",
             "--project-root",
             str(tmp_path),
         ],
@@ -62,6 +72,13 @@ def test_delegate_command_returns_structured_success(monkeypatch, tmp_path: Path
     assert payload["data"]["status"] == "delegated"
     assert payload["data"]["delegation_status"] == "completed"
     assert payload["data"]["via_sidecar"] is True
+    assert payload["data"]["required_artifacts"] == {
+        "implementer_result": ".council/delegations/del_prev/result.md"
+    }
+    assert payload["data"]["next_actions_on_success"] == ["Continue to tester synthesis."]
+    assert payload["data"]["next_actions_on_failure"] == [
+        "Stop and report the failed tester stage."
+    ]
     assert (tmp_path / payload["data"]["handoff_path"]).is_file()
     assert (tmp_path / payload["data"]["result_path"]).is_file()
 
@@ -102,6 +119,29 @@ def test_delegate_command_returns_structured_error(monkeypatch, tmp_path: Path) 
     assert payload["error"]["message"] == "mock delegation failure"
     assert payload["error"]["error_kind"] == "process_exit"
     assert payload["error"]["handoff_path"].endswith("handoff.yaml")
+
+
+def test_delegate_command_rejects_invalid_input_shape(tmp_path: Path) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "delegate",
+            "--role",
+            "tester",
+            "--objective",
+            "Validate the stage contract.",
+            "--task-summary",
+            "Reject malformed input metadata.",
+            "--input",
+            "not-a-pair",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={"CODEX_SHELL": "1"},
+    )
+
+    assert result.exit_code != 0
+    assert "--input expects KEY=VALUE" in result.output
 
 
 def test_delegate_command_stays_local_when_role_maps_to_controller(tmp_path: Path) -> None:

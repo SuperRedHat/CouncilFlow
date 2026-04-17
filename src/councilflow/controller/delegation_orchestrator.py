@@ -54,6 +54,9 @@ class DelegationOrchestrator:
         constraints: list[str],
         relevant_files: list[str],
         inputs: dict[str, str],
+        required_artifacts: dict[str, str] | None = None,
+        next_actions_on_success: list[str] | None = None,
+        next_actions_on_failure: list[str] | None = None,
         expected_output: str,
     ) -> DelegationResult:
         """Persist a handoff package, invoke the adapter, and store the result."""
@@ -70,6 +73,9 @@ class DelegationOrchestrator:
             constraints=constraints,
             relevant_files=relevant_files,
             inputs=inputs,
+            required_artifacts=required_artifacts or {},
+            next_actions_on_success=list(next_actions_on_success or []),
+            next_actions_on_failure=list(next_actions_on_failure or []),
             expected_output=expected_output,
         )
         handoff_path = save_handoff_package(package, delegation_dir / "handoff.yaml")
@@ -178,4 +184,7 @@ class DelegationOrchestrator:
             status="delegated",
             delegation_status="completed",
             via_sidecar=True,
+            required_artifacts=package.required_artifacts,
+            next_actions_on_success=package.next_actions_on_success,
+            next_actions_on_failure=package.next_actions_on_failure,
         )

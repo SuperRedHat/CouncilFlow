@@ -20,6 +20,9 @@ def create_handoff_package(
     constraints: list[str],
     relevant_files: list[str],
     inputs: dict[str, str],
+    required_artifacts: dict[str, str],
+    next_actions_on_success: list[str],
+    next_actions_on_failure: list[str],
     expected_output: str,
 ) -> HandoffPackage:
     """Create a structured handoff package for delegated execution."""
@@ -32,6 +35,9 @@ def create_handoff_package(
         constraints=constraints,
         relevant_files=relevant_files,
         inputs=inputs,
+        required_artifacts=required_artifacts,
+        next_actions_on_success=next_actions_on_success,
+        next_actions_on_failure=next_actions_on_failure,
         expected_output=expected_output,
     )
 
@@ -78,12 +84,25 @@ def build_delegation_contract(
             "constraints": package.constraints,
             "relevant_files": package.relevant_files,
             "inputs": package.inputs,
+            "required_artifacts": package.required_artifacts,
+            "next_actions_on_success": package.next_actions_on_success,
+            "next_actions_on_failure": package.next_actions_on_failure,
             "expected_output": package.expected_output,
+        },
+        "stage_guidance": {
+            "required_artifacts": package.required_artifacts,
+            "next_actions_on_success": package.next_actions_on_success,
+            "next_actions_on_failure": package.next_actions_on_failure,
         },
         "consumption_rules": [
             "The workflow must read the handoff package explicitly from disk.",
             "The delegated model must not rely on hidden shared chat context.",
             "The result artifact should be treated as the authoritative delegated output.",
+            "Required upstream artifacts must be read before the host enters the next stage.",
+            (
+                "The host should use the declared next-actions guidance instead of "
+                "inventing its own stage transitions."
+            ),
             "Only local_execution allows the host workflow to continue locally.",
             (
                 "If council delegate returns an error or missing artifacts, the host "

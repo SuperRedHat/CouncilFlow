@@ -15,6 +15,9 @@ class HandoffPackage(BaseModel):
     constraints: list[str] = Field(default_factory=list)
     relevant_files: list[str] = Field(default_factory=list)
     inputs: dict[str, str] = Field(default_factory=dict)
+    required_artifacts: dict[str, str] = Field(default_factory=dict)
+    next_actions_on_success: list[str] = Field(default_factory=list)
+    next_actions_on_failure: list[str] = Field(default_factory=list)
     expected_output: str
 
 
@@ -30,6 +33,9 @@ class DelegationResult(BaseModel):
     status: str
     delegation_status: str
     via_sidecar: bool
+    required_artifacts: dict[str, str] = Field(default_factory=dict)
+    next_actions_on_success: list[str] = Field(default_factory=list)
+    next_actions_on_failure: list[str] = Field(default_factory=list)
 
 
 class DelegationRecord(BaseModel):

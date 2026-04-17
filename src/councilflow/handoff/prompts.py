@@ -14,6 +14,16 @@ def render_delegation_prompt(package: HandoffPackage) -> str:
     constraints = "\n".join(f"- {item}" for item in package.constraints) or "- None"
     relevant_files = "\n".join(f"- {item}" for item in package.relevant_files) or "- None"
     inputs = "\n".join(f"- {key}: {value}" for key, value in package.inputs.items()) or "- None"
+    required_artifacts = (
+        "\n".join(f"- {key}: {value}" for key, value in package.required_artifacts.items())
+        or "- None"
+    )
+    next_actions_on_success = (
+        "\n".join(f"- {item}" for item in package.next_actions_on_success) or "- None"
+    )
+    next_actions_on_failure = (
+        "\n".join(f"- {item}" for item in package.next_actions_on_failure) or "- None"
+    )
     return (
         f"You are the delegated {package.role}.\n\n"
         f"Objective:\n{package.objective}\n\n"
@@ -21,6 +31,9 @@ def render_delegation_prompt(package: HandoffPackage) -> str:
         f"Constraints:\n{constraints}\n\n"
         f"Relevant Files:\n{relevant_files}\n\n"
         f"Inputs:\n{inputs}\n\n"
+        f"Required Upstream Artifacts:\n{required_artifacts}\n\n"
+        f"Next Actions On Success:\n{next_actions_on_success}\n\n"
+        f"Next Actions On Failure:\n{next_actions_on_failure}\n\n"
         f"Expected Output:\n{package.expected_output}\n"
     )
 
