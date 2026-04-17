@@ -628,3 +628,23 @@ graph TD
 实现边界：
 1. 本次变更只改共享 skill 文案、同步产物与相关状态文档，不扩展新的 Python 模块。
 2. 继续复用现有 `sync-skills.ps1` 作为发布路径，不另起第二套同步机制。
+
+## 17. 变更记录（2026-04-17，Claude commands 包装层）
+本次变更为 `Claude Code` 引入一层**生成式 commands 包装层**，用于解决 slash 命令列表中的描述展示问题，同时保持共享 workflow 的唯一真相源仍然位于 `.workflow-core\skills\project-*`。
+
+新增架构要求：
+1. 共享源仍然只有一层：`.workflow-core\skills\project-*`。`C:\Users\David Zhai\.claude\commands\project-*.md` 只能是派生产物，不能成为第二套业务规则源。
+2. `sync-skills.ps1` 需要扩展为两段式发布：
+   - 同步共享 `project-*` skills 到 `Codex / Claude / Gemini` 的 `skills` 目录
+   - 基于 `Claude` 侧已同步的 `skills` 自动生成 `commands\project-*.md`
+3. 生成式 commands 文件至少需要包含：
+   - 合法的 frontmatter `description`
+   - 对应 skill 文件的明确引用
+   - 参数透传入口（如 `$ARGUMENTS`）以便 slash 命令继续承载用户附加参数
+4. 生成逻辑应从共享 skill 提取最小必要元数据，优先复用 skill frontmatter 中的 `description`，避免在脚本里硬编码第二份命令说明。
+5. 备份/恢复架构需要把 `C:\Users\David Zhai\.claude\commands\project-*.md` 纳入受管范围；安装文档也需要明确这层是“由安装脚本自动生成”的派生产物。
+6. `Codex` 与 `Gemini` 不增加对应的 commands 包装层，继续直接消费 `skills` 目录，避免无必要地扩大打包表面。
+
+实现边界：
+1. 本次变更优先修改 PowerShell 安装/同步脚本与相关文档，不要求新增新的长期驻留服务。
+2. 对 `Claude Code` 的适配应保持可重复执行和可回滚，避免在用户目录中留下未受管的手工命令文件。

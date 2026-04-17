@@ -481,3 +481,18 @@ V1 完成时，至少满足：
 范围说明：
 1. 本次变更只补齐共享 workflow 层，不扩展新的产品 CLI 命令，也不改变 `CouncilFlow` 本体的 provider 行为。
 2. 本次变更完成后，需要重新同步共享 skills 到 `C:\Users\David Zhai\.codex\skills`、`C:\Users\David Zhai\.claude\skills` 与 `C:\Users\David Zhai\.gemini\skills`。
+
+## 21. 变更记录（2026-04-17，Claude commands 包装层）
+本次变更聚焦 `Claude Code` 的 slash 命令展示兼容性。在不改变共享 workflow 真相源的前提下，为 `Claude Code` 增加一层**可生成、可回滚、可重新安装**的 commands 包装层。
+
+新增产品要求：
+1. `.workflow-core\skills\project-*` 继续作为共享 workflow 的唯一真相源，不允许把业务规则复制到第二套 Claude 专用文档中长期手工维护。
+2. `Claude Code` 允许新增一层派生产物：`C:\Users\David Zhai\.claude\commands\project-*.md`，仅用于 slash 命令描述展示和入口适配。
+3. 这层 commands 包装文件必须由共享源自动生成，而不是手工散落维护；其内容应明确引用对应的 `C:\Users\David Zhai\.claude\skills\project-*\SKILL.md`。
+4. `Codex` 与 `Gemini CLI` 的现有 skill 安装方式不应因此改变；本次变更不得要求另外为它们引入额外包装层。
+5. 全局备份、恢复、安装和同步流程必须把 `Claude Code` commands 包装层视为受管产物，保证新机器安装、重复安装和回滚都能恢复到一致状态。
+6. 本次变更完成后，`Claude Code` 中的 `project-*` slash 入口描述不应再退回显示 YAML frontmatter 第一行，例如 `--- (user)`。
+
+范围说明：
+1. 本次变更不改变 `CouncilFlow` 本体命令语义，只处理共享 workflow 在 `Claude Code` 上的入口适配。
+2. 本次变更优先保证“单一真相源 + 自动派生 + 可打包安装”，而不是追求三端物理文件格式完全一致。

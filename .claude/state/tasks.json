@@ -863,6 +863,120 @@
       "updated_at": "2026-04-17T08:20:27.579Z",
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so TASK-022 is complete after sync-skills.ps1 was fixed and the discuss workflow artifacts matched across workflow-core, Codex, Claude, and Gemini."
+    },
+    {
+      "id": "TASK-023",
+      "title": "为 Claude 生成 project-* commands 包装层",
+      "description": "扩展 C:/Users/David Zhai/.workflow-core/scripts/sync-skills.ps1，在保持 .workflow-core/skills/project-* 为唯一真相源的前提下，为 Claude Code 自动生成 C:/Users/David Zhai/.claude/commands/project-*.md 包装文件。包装文件只负责 slash 描述展示、引用对应 skill 文件和参数透传，不复制第二套业务规则。",
+      "dependencies": [
+        "TASK-022"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "sync-skills.ps1 会为每个共享 project-* skill 生成对应的 Claude commands/project-*.md 文件",
+        "生成的 command 文件包含有效的 description frontmatter，而不是退回到 YAML 头第一行",
+        "生成的 command 文件明确引用对应的 C:/Users/David Zhai/.claude/skills/project-*/SKILL.md",
+        "Codex 与 Gemini 的现有 skills 同步行为不因这一改动而变化"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/scripts/sync-skills.ps1",
+        "C:/Users/David Zhai/.claude/commands/project-plan.md",
+        "C:/Users/David Zhai/.claude/commands/project-next.md",
+        "C:/Users/David Zhai/.claude/commands/project-discuss.md"
+      ],
+      "module": "claude-command-wrapper",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'",
+        "$commands = Get-ChildItem 'C:\\Users\\David Zhai\\.claude\\commands' -File -Filter 'project-*.md'; if (-not $commands) { throw 'No generated Claude project-* commands found.' }",
+        "$required = @('project-plan','project-next','project-discuss'); foreach ($name in $required) { $path = Join-Path 'C:\\Users\\David Zhai\\.claude\\commands' ($name + '.md'); if (-not (Test-Path $path)) { throw ('Missing generated command wrapper: ' + $path) }; if (-not (Select-String -Path $path -Pattern '^description:' -Quiet)) { throw ('Missing description frontmatter in ' + $path) }; if (-not (Select-String -Path $path -Pattern '\\$ARGUMENTS|SKILL\\.md' -Quiet)) { throw ('Generated wrapper must reference skill and arguments: ' + $path) } }"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "done",
+      "created_at": "2026-04-17T08:52:06.983Z",
+      "updated_at": "2026-04-17T08:55:08.146Z",
+      "commit_hash": "",
+      "notes": "Acceptance mode is auto, so TASK-023 is complete after generated Claude command wrappers passed verification."
+    },
+    {
+      "id": "TASK-024",
+      "title": "把 Claude commands 包装层接入备份恢复与安装文档",
+      "description": "更新 workflow-core 的 backup/restore/install 脚本与文档，把 C:/Users/David Zhai/.claude/commands/project-*.md 纳入受管产物范围，并明确这层是自动生成的派生产物，保证新机器安装、重复安装和回滚都能恢复一致状态。",
+      "dependencies": [
+        "TASK-023"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "backup-global-workflow.ps1 会备份 Claude 的 project-* command wrappers",
+        "restore-global-workflow.ps1 会恢复 Claude 的 project-* command wrappers",
+        "install-global-workflow.ps1 与 global-workflow-install.md 明确说明 Claude commands 包装层由同步/安装脚本自动生成",
+        "文档中清楚区分共享真相源与 Claude 专用派生产物，避免后续打包时误把 commands 当手工维护源"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/scripts/backup-global-workflow.ps1",
+        "C:/Users/David Zhai/.workflow-core/scripts/restore-global-workflow.ps1",
+        "C:/Users/David Zhai/.workflow-core/scripts/install-global-workflow.ps1",
+        "C:/Users/David Zhai/.workflow-core/docs/global-workflow-install.md"
+      ],
+      "module": "claude-command-packaging",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\backup-global-workflow.ps1' -OutputRoot \"$env:TEMP\\workflow-core-claude-command-backup\"",
+        "$snapshot = Get-ChildItem \"$env:TEMP\\workflow-core-claude-command-backup\" -Directory | Sort-Object Name -Descending | Select-Object -First 1; if (-not $snapshot) { throw 'Backup snapshot missing.' }",
+        "$commandBackup = Join-Path $snapshot.FullName 'commands\\claude'; if (-not (Test-Path $commandBackup)) { throw 'Claude command backup directory missing.' }",
+        "if (-not (Select-String -Path 'C:\\Users\\David Zhai\\.workflow-core\\docs\\global-workflow-install.md' -Pattern 'commands|派生产物|generated' -Quiet)) { throw 'Install doc must mention generated Claude command wrappers.' }"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "done",
+      "created_at": "2026-04-17T08:52:06.983Z",
+      "updated_at": "2026-04-17T08:56:35.231Z",
+      "commit_hash": "",
+      "notes": "Acceptance mode is auto, so TASK-024 is complete after backup/install/restore coverage for generated Claude command wrappers passed verification."
+    },
+    {
+      "id": "TASK-025",
+      "title": "验证 Claude 包装层不影响多端安装与真相源",
+      "description": "执行一轮同步与内容校验，确认 .workflow-core/skills 仍是唯一真相源，Claude commands 只是自动派生产物，且 Codex 与 Gemini 的既有安装结果没有被新包装层破坏。",
+      "dependencies": [
+        "TASK-024"
+      ],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "workflow-core/skills 与 Codex/Claude/Gemini skills 目录仍保持一致同步",
+        "Claude commands 目录由脚本生成，内容引用对应 Claude skills，而不是复制业务规则正文",
+        "Codex 与 Gemini 不会额外生成 commands 包装层，也不需要新增打包步骤",
+        "项目状态与安装文档已明确区分真相源和派生产物"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/skills/",
+        "C:/Users/David Zhai/.codex/skills/",
+        "C:/Users/David Zhai/.claude/skills/",
+        "C:/Users/David Zhai/.claude/commands/",
+        "C:/Users/David Zhai/.gemini/skills/"
+      ],
+      "module": "claude-command-verification",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\install-global-workflow.ps1'",
+        "$skills = Get-ChildItem 'C:\\Users\\David Zhai\\.workflow-core\\skills' -Directory -Filter 'project-*' | Select-Object -ExpandProperty Name; foreach ($skill in $skills) { $skillPaths = @(\"C:\\Users\\David Zhai\\.workflow-core\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.codex\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.claude\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.gemini\\skills\\$skill\\SKILL.md\"); $hashes = (Get-FileHash $skillPaths).Hash | Select-Object -Unique; if ($hashes.Count -ne 1) { throw ('Skill source drift detected for ' + $skill) }; $commandPath = Join-Path 'C:\\Users\\David Zhai\\.claude\\commands' ($skill + '.md'); if (-not (Test-Path $commandPath)) { throw ('Missing Claude command wrapper for ' + $skill) }; if (-not (Select-String -Path $commandPath -Pattern ('@C:/Users/David Zhai/.claude/skills/' + $skill + '/SKILL.md|C:\\\\Users\\\\David Zhai\\\\.claude\\\\skills\\\\' + $skill + '\\\\SKILL.md') -Quiet)) { throw ('Wrapper does not reference the corresponding Claude skill for ' + $skill) } }",
+        "if (Test-Path 'C:\\Users\\David Zhai\\.codex\\commands') { if (Get-ChildItem 'C:\\Users\\David Zhai\\.codex\\commands' -File -Filter 'project-*.md' -ErrorAction SilentlyContinue) { throw 'Codex should not receive generated project-* command wrappers.' } }",
+        "if (Test-Path 'C:\\Users\\David Zhai\\.gemini\\commands') { if (Get-ChildItem 'C:\\Users\\David Zhai\\.gemini\\commands' -File -Filter 'project-*.md' -ErrorAction SilentlyContinue) { throw 'Gemini should not receive generated project-* command wrappers.' } }"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "done",
+      "created_at": "2026-04-17T08:52:06.983Z",
+      "updated_at": "2026-04-17T08:57:16.888Z",
+      "commit_hash": "",
+      "notes": "Acceptance mode is auto, so TASK-025 is complete after install-time verification confirmed generated Claude wrappers without affecting Codex or Gemini packaging."
     }
   ]
 }

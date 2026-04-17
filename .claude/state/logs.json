@@ -791,6 +791,118 @@
       "from_status": null,
       "to_status": null,
       "message": "共享 discuss 工作流补齐已完成：新增 project-discuss，补齐 project-init/project-ask/project-next 的 discuss 支持，修正共享 skill 文案与真实 artifact 契约，并同步到 Codex/Claude/Gemini 三端。"
+    },
+    {
+      "timestamp": "2026-04-17T08:52:07.046Z",
+      "type": "decision",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "发起 Claude commands 包装层变更：为 Claude Code 生成受管的 project-* slash 包装文件，并把它纳入 backup/install/restore 流程，同时保持 .workflow-core/skills 为唯一真相源。"
+    },
+    {
+      "timestamp": "2026-04-17T08:52:14.127Z",
+      "type": "task_status_change",
+      "task_id": "TASK-023",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-023 todo → in_progress: 开始实现生成式 Claude project-* commands 包装层，并接入 sync-skills.ps1。"
+    },
+    {
+      "timestamp": "2026-04-17T08:55:06.054Z",
+      "type": "task_status_change",
+      "task_id": "TASK-023",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-023 in_progress → auto_verified: 已将 Claude project-* commands 包装层接入 sync-skills.ps1，并验证生成的 wrappers 包含 description frontmatter、skill 引用和 $ARGUMENTS 参数透传占位符。"
+    },
+    {
+      "timestamp": "2026-04-17T08:55:06.061Z",
+      "type": "task_status_change",
+      "task_id": "TASK-023",
+      "from_status": null,
+      "to_status": null,
+      "message": "TASK-023 已完成：sync-skills.ps1 现在会在同步 skills 后自动生成 Claude Code 的 project-* commands 包装层。"
+    },
+    {
+      "timestamp": "2026-04-17T08:55:08.167Z",
+      "type": "task_status_change",
+      "task_id": "TASK-023",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-023 auto_verified → done: Acceptance mode is auto, so TASK-023 is complete after generated Claude command wrappers passed verification."
+    },
+    {
+      "timestamp": "2026-04-17T08:56:25.413Z",
+      "type": "task_status_change",
+      "task_id": "TASK-024",
+      "from_status": null,
+      "to_status": null,
+      "message": "TASK-024 已完成：Claude commands 包装层现在属于受管安装/回滚产物，相关文档与脚本已更新。"
+    },
+    {
+      "timestamp": "2026-04-17T08:56:32.219Z",
+      "type": "task_status_change",
+      "task_id": "TASK-024",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-024 todo → in_progress: 开始把 Claude commands 包装层接入 backup/restore/install 文档与脚本。"
+    },
+    {
+      "timestamp": "2026-04-17T08:56:32.238Z",
+      "type": "task_status_change",
+      "task_id": "TASK-024",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-024 in_progress → auto_verified: 已将 Claude command wrappers 纳入 backup/restore/install 文档与脚本范围，并验证备份快照包含 commands\\claude\\project-*.md。"
+    },
+    {
+      "timestamp": "2026-04-17T08:56:35.248Z",
+      "type": "task_status_change",
+      "task_id": "TASK-024",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-024 auto_verified → done: Acceptance mode is auto, so TASK-024 is complete after backup/install/restore coverage for generated Claude command wrappers passed verification."
+    },
+    {
+      "timestamp": "2026-04-17T08:56:42.043Z",
+      "type": "task_status_change",
+      "task_id": "TASK-025",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-025 todo → in_progress: 开始验证 Claude commands 包装层不会破坏多端安装结果，并确认 .workflow-core/skills 仍为唯一真相源。"
+    },
+    {
+      "timestamp": "2026-04-17T08:57:14.508Z",
+      "type": "task_status_change",
+      "task_id": "TASK-025",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-025 in_progress → auto_verified: 已通过完整安装链路验证 .workflow-core/skills 仍为唯一真相源，Claude commands wrappers 为派生产物，且 Codex/Gemini 未新增 commands 包装层。"
+    },
+    {
+      "timestamp": "2026-04-17T08:57:14.515Z",
+      "type": "task_status_change",
+      "task_id": "TASK-025",
+      "from_status": null,
+      "to_status": null,
+      "message": "TASK-025 已完成：验证 Claude commands 包装层不影响多端安装，三端 skills 仍与共享源保持一致。"
+    },
+    {
+      "timestamp": "2026-04-17T08:57:16.903Z",
+      "type": "task_status_change",
+      "task_id": "TASK-025",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-025 auto_verified → done: Acceptance mode is auto, so TASK-025 is complete after install-time verification confirmed generated Claude wrappers without affecting Codex or Gemini packaging."
+    },
+    {
+      "timestamp": "2026-04-17T08:57:22.063Z",
+      "type": "decision",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "Claude commands 包装层变更已完成：共享 skills 仍为唯一真相源，Claude Code 的 project-* slash commands 由 sync/install 流程自动生成，并纳入 backup/restore/install 管理。"
     }
   ]
 }
