@@ -903,6 +903,54 @@
       "from_status": null,
       "to_status": null,
       "message": "Claude commands 包装层变更已完成：共享 skills 仍为唯一真相源，Claude Code 的 project-* slash commands 由 sync/install 流程自动生成，并纳入 backup/restore/install 管理。"
+    },
+    {
+      "timestamp": "2026-04-17T09:05:05.658Z",
+      "type": "decision",
+      "task_id": "TASK-025-FIX-001",
+      "from_status": null,
+      "to_status": null,
+      "message": "检测到 Claude Code 中 project-* skills 与 commands 包装层同时暴露，导致 slash 列表重复和描述错乱。开始回归修复：Claude 只保留 commands 入口，skills 继续仅作为共享真相源和其它客户端产物。"
+    },
+    {
+      "timestamp": "2026-04-17T09:08:50.550Z",
+      "type": "task_status_change",
+      "task_id": "TASK-025-FIX-001",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-025-FIX-001 todo → in_progress: 开始修复 Claude commands 与 skills 双重暴露导致的重复 slash 条目问题。"
+    },
+    {
+      "timestamp": "2026-04-17T09:08:50.573Z",
+      "type": "task_status_change",
+      "task_id": "TASK-025-FIX-001",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-025-FIX-001 in_progress → auto_verified: 已验证 Claude 仅保留 project-* commands 入口，legacy .claude/skills/project-* 已清理，Codex/Gemini 安装行为保持不变。"
+    },
+    {
+      "timestamp": "2026-04-17T09:08:50.577Z",
+      "type": "task_status_change",
+      "task_id": "TASK-025-FIX-001",
+      "from_status": null,
+      "to_status": null,
+      "message": "TASK-025-FIX-001 已完成自动验证：Claude Code 现仅保留 commands 入口，slash 列表重复来源已被移除。"
+    },
+    {
+      "timestamp": "2026-04-17T09:08:54.503Z",
+      "type": "task_status_change",
+      "task_id": "TASK-025-FIX-001",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-025-FIX-001 auto_verified → done: Acceptance mode is auto, so TASK-025-FIX-001 is complete after Claude slash entry regression checks, install verification, and backup coverage all passed."
+    },
+    {
+      "timestamp": "2026-04-17T09:09:00.384Z",
+      "type": "decision",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "Claude commands 回归修复已完成：新安装只保留 .claude/commands/project-*.md，legacy .claude/skills/project-* 不再作为运行时入口暴露。"
     }
   ]
 }

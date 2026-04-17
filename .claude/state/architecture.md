@@ -648,3 +648,10 @@ graph TD
 实现边界：
 1. 本次变更优先修改 PowerShell 安装/同步脚本与相关文档，不要求新增新的长期驻留服务。
 2. 对 `Claude Code` 的适配应保持可重复执行和可回滚，避免在用户目录中留下未受管的手工命令文件。
+
+修复说明（2026-04-17）：
+真实安装验证表明，`Claude Code` 同时暴露 `skills` 与 `commands` 两层 `project-*` 入口会造成重复 slash 条目和 frontmatter 说明回退。因此发布架构调整为：
+1. `Codex` / `Gemini CLI` 继续消费同步后的 `skills` 目录；
+2. `Claude Code` 仅消费由共享源自动生成的 `commands\project-*.md`；
+3. 安装脚本在生成 `commands` 后，需要清理 `.claude\skills\project-*` 这组受管目录，避免双重暴露；
+4. 备份与恢复仍应兼容旧快照中的 `.claude\skills\project-*`，但新安装结果不再保留这组运行时目录。

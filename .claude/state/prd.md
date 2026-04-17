@@ -496,3 +496,9 @@ V1 完成时，至少满足：
 范围说明：
 1. 本次变更不改变 `CouncilFlow` 本体命令语义，只处理共享 workflow 在 `Claude Code` 上的入口适配。
 2. 本次变更优先保证“单一真相源 + 自动派生 + 可打包安装”，而不是追求三端物理文件格式完全一致。
+
+修复说明（2026-04-17）：
+在真实安装后发现 `Claude Code` 会同时暴露 `.claude\skills\project-*` 与 `.claude\commands\project-*.md`，造成 slash 列表重复和说明错乱。自本次修复起：
+1. `Claude Code` 的 `project-*` 运行时入口只保留受管的 `commands` 包装层；
+2. `.workflow-core\skills\project-*` 仍是唯一真相源；
+3. `Codex` 与 `Gemini CLI` 继续使用各自 `skills` 目录，不受该修复影响。

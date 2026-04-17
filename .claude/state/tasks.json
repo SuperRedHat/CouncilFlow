@@ -977,6 +977,44 @@
       "updated_at": "2026-04-17T08:57:16.888Z",
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so TASK-025 is complete after install-time verification confirmed generated Claude wrappers without affecting Codex or Gemini packaging."
+    },
+    {
+      "id": "TASK-025-FIX-001",
+      "title": "修复 Claude commands 与 skills 冲突",
+      "description": "修复生成式 Claude command wrappers 与 .claude/skills/project-* 同时暴露导致的重复 slash 条目和说明错乱问题。调整同步/安装策略，使 Claude 仅暴露受管的 commands 包装层，而共享 .workflow-core/skills 继续作为唯一真相源。",
+      "dependencies": [
+        "TASK-025"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "Claude Code 的 project-* slash 列表不再出现重复条目或 --- (user) 说明回退",
+        "Claude 的 project-* 运行时入口只保留 commands 包装层，不再同时暴露 .claude/skills/project-*",
+        "Codex 与 Gemini 的 skills 同步行为保持不变",
+        "install/backup/restore 文档与脚本反映新的 Claude 发布策略"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/scripts/sync-skills.ps1",
+        "C:/Users/David Zhai/.workflow-core/scripts/install-global-workflow.ps1",
+        "C:/Users/David Zhai/.workflow-core/scripts/backup-global-workflow.ps1",
+        "C:/Users/David Zhai/.workflow-core/scripts/restore-global-workflow.ps1",
+        "C:/Users/David Zhai/.workflow-core/docs/global-workflow-install.md"
+      ],
+      "module": "claude-command-regression",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'",
+        "if (Get-ChildItem 'C:\\Users\\David Zhai\\.claude\\skills' -Directory -Filter 'project-*' -ErrorAction SilentlyContinue) { throw 'Claude skills project-* directories should not remain after sync.' }",
+        "$commands = Get-ChildItem 'C:\\Users\\David Zhai\\.claude\\commands' -File -Filter 'project-*.md' -ErrorAction SilentlyContinue; if (-not $commands) { throw 'Generated Claude commands missing.' }"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "done",
+      "created_at": "2026-04-17T09:05:05.638Z",
+      "updated_at": "2026-04-17T09:08:54.484Z",
+      "commit_hash": "",
+      "notes": "Acceptance mode is auto, so TASK-025-FIX-001 is complete after Claude slash entry regression checks, install verification, and backup coverage all passed."
     }
   ]
 }
