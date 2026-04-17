@@ -679,6 +679,118 @@
       "from_status": null,
       "to_status": null,
       "message": "TASK-017 closed on 2026-04-17 after regularizing the state machine and applying the user's pass feedback to the final global workflow gate."
+    },
+    {
+      "timestamp": "2026-04-17T08:14:50.641Z",
+      "type": "decision",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "发起共享 discuss 工作流补齐变更：新增 project-discuss，补齐 project-init/project-ask/project-next 的 discuss 支持，并修正共享 skills 与真实 discuss artifact 契约的对齐。"
+    },
+    {
+      "timestamp": "2026-04-17T08:15:12.256Z",
+      "type": "task_status_change",
+      "task_id": "TASK-020",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-020 todo → in_progress: 开始新增独立的 project-discuss 共享 skill，并对齐 CouncilFlow discuss artifact 契约。"
+    },
+    {
+      "timestamp": "2026-04-17T08:18:24.696Z",
+      "type": "task_status_change",
+      "task_id": "TASK-020",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-020 in_progress → auto_verified: 已新增共享源 project-discuss skill，并通过文件存在与 discuss artifact 契约检查。"
+    },
+    {
+      "timestamp": "2026-04-17T08:18:24.700Z",
+      "type": "task_status_change",
+      "task_id": "TASK-020",
+      "from_status": null,
+      "to_status": null,
+      "message": "TASK-020 已完成：新增 project-discuss 共享 skill，文案对齐 CouncilFlow discuss 真实契约。"
+    },
+    {
+      "timestamp": "2026-04-17T08:18:27.775Z",
+      "type": "task_status_change",
+      "task_id": "TASK-020",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-020 auto_verified → done: Acceptance mode is auto, so TASK-020 is complete after the new project-discuss shared skill passed verification."
+    },
+    {
+      "timestamp": "2026-04-17T08:18:35.212Z",
+      "type": "task_status_change",
+      "task_id": "TASK-021",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-021 todo → in_progress: 开始补齐 project-init/project-ask/project-next 的嵌入式 discuss 支持，并清理共享 skills 中的陈旧 discuss 文案。"
+    },
+    {
+      "timestamp": "2026-04-17T08:19:02.819Z",
+      "type": "task_status_change",
+      "task_id": "TASK-021",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-021 in_progress → auto_verified: 已补齐 project-init/project-ask/project-next 的 discuss 文案，并清理共享 skills 中的陈旧 discuss 路径与旧命令写法。"
+    },
+    {
+      "timestamp": "2026-04-17T08:19:02.824Z",
+      "type": "task_status_change",
+      "task_id": "TASK-021",
+      "from_status": null,
+      "to_status": null,
+      "message": "TASK-021 已完成：共享 workflow 的嵌入式 discuss 支持和 artifact 契约文案已对齐。"
+    },
+    {
+      "timestamp": "2026-04-17T08:19:05.140Z",
+      "type": "task_status_change",
+      "task_id": "TASK-021",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-021 auto_verified → done: Acceptance mode is auto, so TASK-021 is complete after embedded discuss guidance and artifact contract alignment passed verification."
+    },
+    {
+      "timestamp": "2026-04-17T08:19:09.556Z",
+      "type": "task_status_change",
+      "task_id": "TASK-022",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-022 todo → in_progress: 开始同步新增 project-discuss 和 discuss 文案更新到 Codex/Claude/Gemini 三端全局技能目录。"
+    },
+    {
+      "timestamp": "2026-04-17T08:20:22.932Z",
+      "type": "task_status_change",
+      "task_id": "TASK-022",
+      "from_status": null,
+      "to_status": null,
+      "message": "TASK-022 已完成：修复 sync-skills.ps1 新目录复制缺陷后，project-discuss 和 discuss 文案更新已同步到三端全局技能目录。"
+    },
+    {
+      "timestamp": "2026-04-17T08:20:22.959Z",
+      "type": "task_status_change",
+      "task_id": "TASK-022",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-022 in_progress → auto_verified: 已修复 sync-skills.ps1 对新技能目录的复制问题，并完成共享源到 Codex/Claude/Gemini 的同步与一致性校验。"
+    },
+    {
+      "timestamp": "2026-04-17T08:20:27.598Z",
+      "type": "task_status_change",
+      "task_id": "TASK-022",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-022 auto_verified → done: Acceptance mode is auto, so TASK-022 is complete after sync-skills.ps1 was fixed and the discuss workflow artifacts matched across workflow-core, Codex, Claude, and Gemini."
+    },
+    {
+      "timestamp": "2026-04-17T08:20:51.457Z",
+      "type": "decision",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "共享 discuss 工作流补齐已完成：新增 project-discuss，补齐 project-init/project-ask/project-next 的 discuss 支持，修正共享 skill 文案与真实 artifact 契约，并同步到 Codex/Claude/Gemini 三端。"
     }
   ]
 }

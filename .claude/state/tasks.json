@@ -753,6 +753,116 @@
       "updated_at": "2026-04-16T20:46:17.474Z",
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so the Chinese user guide task is complete after the documentation landed and verification passed."
+    },
+    {
+      "id": "TASK-020",
+      "title": "新增 project-discuss 共享 skill",
+      "description": "在 C:/Users/David Zhai/.workflow-core/skills 中新增独立的 project-discuss 共享 skill，明确其作为不绑定具体阶段的正式讨论入口，并对齐 CouncilFlow 当前的 discuss 触发规则、summary_path 产物契约和 project-manager 上下文恢复要求。",
+      "dependencies": [
+        "TASK-017"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "共享源中存在独立的 project-discuss/SKILL.md，并清晰说明它是正式讨论入口",
+        "project-discuss 文案明确使用 council discuss 发起讨论，并说明 discuss 为显式可选能力",
+        "文案引用的讨论结果路径对齐 CouncilFlow 当前返回的 data.summary_path 或 .council/discuss/<discussion_id>/summary.md",
+        "该 skill 与现有 project-manager 工作流兼容，不要求用户手工拼接隐藏上下文"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/skills/project-discuss/SKILL.md"
+      ],
+      "module": "workflow-discuss-skill",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "if (-not (Test-Path 'C:\\Users\\David Zhai\\.workflow-core\\skills\\project-discuss\\SKILL.md')) { throw 'Missing project-discuss skill.' }",
+        "$path='C:\\Users\\David Zhai\\.workflow-core\\skills\\project-discuss\\SKILL.md'; if (-not (Select-String -Path $path -Pattern 'council discuss' -Quiet)) { throw 'project-discuss must mention council discuss.' }; if (-not (Select-String -Path $path -Pattern 'summary_path|\\.council/discuss/<discussion_id>/summary\\.md' -Quiet)) { throw 'project-discuss must reference the real discuss artifact contract.' }"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "done",
+      "created_at": "2026-04-17T08:14:50.616Z",
+      "updated_at": "2026-04-17T08:18:27.758Z",
+      "commit_hash": "",
+      "notes": "Acceptance mode is auto, so TASK-020 is complete after the new project-discuss shared skill passed verification."
+    },
+    {
+      "id": "TASK-021",
+      "title": "补齐共享 workflow 的嵌入式 discuss 支持",
+      "description": "更新共享源中的 project-init、project-ask、project-next，并同步修正 project-design、project-plan、project-change、project-review 的 discuss 文案，让共享 workflow 全面支持显式 discuss 入口，并清除对不存在 latest summary 路径的陈旧引用。",
+      "dependencies": [
+        "TASK-020"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "project-init、project-ask、project-next 都明确说明 discuss <models> 的使用方式和触发规则",
+        "project-next 把 discuss 与 delegate 组合成完整闭环，但仍保持 discuss 为可选步骤",
+        "共享 skills 中不再出现 .council/discuss/latest/summary.md 这类失效路径",
+        "project-design、project-plan、project-change、project-review 的 discuss 说明与 CouncilFlow 当前 artifact 契约一致"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/skills/project-init/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-ask/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-next/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-design/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-plan/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-change/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-review/SKILL.md"
+      ],
+      "module": "workflow-discuss-alignment",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "$mustMention = @('C:\\Users\\David Zhai\\.workflow-core\\skills\\project-init\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-ask\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-next\\SKILL.md'); $missing = $mustMention | Where-Object { -not (Select-String -Path $_ -Pattern 'discuss <model>|council discuss' -Quiet) }; if ($missing) { throw ('Discuss support missing in: ' + ($missing -join ', ')) }",
+        "$all = @('C:\\Users\\David Zhai\\.workflow-core\\skills\\project-init\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-ask\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-next\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-design\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-plan\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-change\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-review\\SKILL.md'); if (Select-String -Path $all -Pattern '\\.council/discuss/latest/summary\\.md' -Quiet) { throw 'Found stale latest summary path.' }"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "done",
+      "created_at": "2026-04-17T08:14:50.616Z",
+      "updated_at": "2026-04-17T08:19:05.123Z",
+      "commit_hash": "",
+      "notes": "Acceptance mode is auto, so TASK-021 is complete after embedded discuss guidance and artifact contract alignment passed verification."
+    },
+    {
+      "id": "TASK-022",
+      "title": "同步并验证 discuss workflow 到三端全局技能目录",
+      "description": "执行共享 skills 同步，把新增的 project-discuss 和更新后的 discuss 文案发布到 Codex、Claude Code 与 Gemini CLI 的全局技能目录，并验证四处产物内容一致。",
+      "dependencies": [
+        "TASK-021"
+      ],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "sync-skills.ps1 执行成功并把 project-discuss 同步到 Codex、Claude Code 与 Gemini CLI",
+        "共享源与三端目标目录中的 project-discuss 内容一致",
+        "更新后的 project-init、project-ask、project-next 以及其余 discuss 相关 skills 在四处目录中保持一致",
+        "三端全局技能目录中不再保留旧的 discuss 路径文案漂移"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/scripts/sync-skills.ps1",
+        "C:/Users/David Zhai/.workflow-core/skills/project-discuss/SKILL.md",
+        "C:/Users/David Zhai/.codex/skills/project-discuss/SKILL.md",
+        "C:/Users/David Zhai/.claude/skills/project-discuss/SKILL.md",
+        "C:/Users/David Zhai/.gemini/skills/project-discuss/SKILL.md"
+      ],
+      "module": "workflow-discuss-rollout",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'",
+        "$skills = @('project-discuss','project-init','project-ask','project-next','project-design','project-plan','project-change','project-review'); foreach ($skill in $skills) { $paths = @(\"C:\\Users\\David Zhai\\.workflow-core\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.codex\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.claude\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.gemini\\skills\\$skill\\SKILL.md\"); $missing = $paths | Where-Object { -not (Test-Path $_) }; if ($missing) { throw ('Missing synced skill files for ' + $skill + ': ' + ($missing -join ', ')) }; $hashes = (Get-FileHash $paths).Hash | Select-Object -Unique; if ($hashes.Count -ne 1) { throw ('Synced skill mismatch for ' + $skill) } }",
+        "$all = @('C:\\Users\\David Zhai\\.workflow-core\\skills','C:\\Users\\David Zhai\\.codex\\skills','C:\\Users\\David Zhai\\.claude\\skills','C:\\Users\\David Zhai\\.gemini\\skills') | ForEach-Object { Join-Path $_ 'project-discuss\\SKILL.md' }; if ($all | Where-Object { -not (Test-Path $_) }) { throw 'project-discuss did not reach every target directory.' }"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "done",
+      "created_at": "2026-04-17T08:14:50.616Z",
+      "updated_at": "2026-04-17T08:20:27.579Z",
+      "commit_hash": "",
+      "notes": "Acceptance mode is auto, so TASK-022 is complete after sync-skills.ps1 was fixed and the discuss workflow artifacts matched across workflow-core, Codex, Claude, and Gemini."
     }
   ]
 }

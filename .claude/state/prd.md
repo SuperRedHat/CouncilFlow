@@ -464,3 +464,20 @@ V1 完成时，至少满足：
 1. 先备份，再覆盖。
 2. 先完成自动化安装与校验，再进行真实会话 smoke。
 3. 任一安装步骤失败时，必须保留完整快照并停止后续覆盖。
+
+## 20. 变更记录（2026-04-17，共享 discuss 工作流补齐）
+本次变更聚焦 `.workflow-core` 共享 `project-*` skills 与 `CouncilFlow` discuss 能力之间尚未闭环的缺口，目标是让共享 workflow 真正达到 PRD 中承诺的讨论能力覆盖范围。
+
+新增产品要求：
+1. 共享 skill 源必须新增独立的 `project-discuss`，作为不绑定具体开发阶段的正式讨论入口。
+2. `project-init`、`project-ask`、`project-next` 必须补齐对显式 `discuss <model>` 或 `discuss <model1,model2>` 的说明与调用约定，不再只由 `project-design`、`project-plan`、`project-change`、`project-review` 零散支持。
+3. 所有共享 skill 在引用 discuss 产物时，必须遵循 `CouncilFlow` 的真实 artifact 契约：
+   - 优先使用 `council discuss` 返回的 `data.summary_path`
+   - 或读取 `.council/discuss/<discussion_id>/summary.md`
+   - 不再引用不存在的 `.council/discuss/latest/summary.md`
+4. 共享 skill 文案必须明确说明 discuss 为显式可选能力，而不是默认总会触发的隐藏步骤。
+5. 本次变更完成后，`.workflow-core\skills\project-*` 中的共享定义应再次成为 `Codex`、`Claude Code` 与 `Gemini CLI` 的一致真源，不允许三端继续长期存在 discuss 相关文案漂移。
+
+范围说明：
+1. 本次变更只补齐共享 workflow 层，不扩展新的产品 CLI 命令，也不改变 `CouncilFlow` 本体的 provider 行为。
+2. 本次变更完成后，需要重新同步共享 skills 到 `C:\Users\David Zhai\.codex\skills`、`C:\Users\David Zhai\.claude\skills` 与 `C:\Users\David Zhai\.gemini\skills`。

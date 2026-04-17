@@ -32,8 +32,8 @@ Controller detection contract:
 Standalone discussion should call:
 
 ```bash
-council discuss --question "<question>" --models claude,gpt
-council discuss --question "<question>" --models gemini,codex
+council discuss "<question>" --models claude,gpt
+council discuss "<question>" --models gemini,codex
 ```
 
 Expected persisted artifact:
@@ -42,6 +42,7 @@ Expected persisted artifact:
 
 Expected machine-readable contract:
 
+- `discussion_id`
 - `artifact_kind = discussion_summary`
 - `summary_path`
 - `question`

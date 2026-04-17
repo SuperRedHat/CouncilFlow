@@ -606,3 +606,25 @@ graph TD
 范围说明：
 - 本次变更聚焦 `project-*` 共享 skills 与它们所依赖的 MCP，不扩展到其它独立插件或非 workflow-core 技能。
 - 现有 `sync-global-rules.ps1` 可继续作为独立能力存在，但不作为本次全局 skill 安装的强依赖。
+
+## 16. 变更记录（2026-04-17，共享 discuss 工作流补齐）
+本次变更聚焦共享 workflow 层的 discuss 能力补齐，目标是让 `.workflow-core` 中的 `project-*` skills 与 `CouncilFlow` 当前稳定实现重新对齐。
+
+新增架构要求：
+1. `.workflow-core\skills` 需要新增 `project-discuss\SKILL.md`，作为独立讨论入口；该目录仍由共享源维护，再通过现有同步链路复制到 `Codex`、`Claude Code` 与 `Gemini CLI` 的技能目录。
+2. `project-init`、`project-ask`、`project-next` 需要补齐嵌入式 discuss 协议说明，并与现有 `project-design`、`project-plan`、`project-change`、`project-review` 采用同一套显式触发规则：
+   - 默认不讨论
+   - 只有显式 `discuss <models>` 才调用 `council discuss`
+   - 与主控重复的模型由 `CouncilFlow` 自身负责提醒、忽略或短路
+3. 共享 skills 读取讨论结果时必须对齐真实 artifact 契约，不再假设存在 `latest` 别名目录。标准读取顺序应为：
+   - 优先使用 `council discuss` 命令返回 JSON 中的 `data.summary_path`
+   - 若需要手动定位，再读取 `.council/discuss/<discussion_id>/summary.md`
+4. `project-next` 中的多模型协作说明需要从“只强调 delegate”扩展为“先 discuss 做方案收敛，再按角色 delegate 执行”的完整闭环，但仍保持 discuss 为可选入口。
+5. 验证层需要补一轮共享源与三端安装产物的一致性检查，至少确认：
+   - `project-discuss` 已出现在共享源和三端目标目录
+   - 更新后的 `project-init`、`project-ask`、`project-next` 已同步到三端
+   - 旧的 `.council/discuss/latest/summary.md` 文案已从共享 skills 中清除
+
+实现边界：
+1. 本次变更只改共享 skill 文案、同步产物与相关状态文档，不扩展新的 Python 模块。
+2. 继续复用现有 `sync-skills.ps1` 作为发布路径，不另起第二套同步机制。
