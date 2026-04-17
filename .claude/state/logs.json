@@ -1063,6 +1063,38 @@
       "from_status": null,
       "to_status": null,
       "message": "Completed TASK-027: council discuss now uses project-local discussion.default_models and discussion.max_rounds when explicit flags are omitted, while preserving explicit model precedence, normalization, dedupe, and structured warnings when no external model remains."
+    },
+    {
+      "timestamp": "2026-04-17T11:24:04.083Z",
+      "type": "task_status_change",
+      "task_id": "TASK-028",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-028 todo → in_progress: Starting workflow auto-routing rollout: update shared project-* skills so CouncilFlow availability makes config-driven discuss/delegate the default path, with local-only fallback reserved for missing or unavailable council."
+    },
+    {
+      "timestamp": "2026-04-17T11:26:54.654Z",
+      "type": "task_status_change",
+      "task_id": "TASK-028",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-028 in_progress → auto_verified: Verified shared workflow auto-routing guidance: project-init/design/plan/next/review/change/ask/discuss all now reference council discuss or council delegate, and legacy local-first wording was removed from project-next/review/change."
+    },
+    {
+      "timestamp": "2026-04-17T11:26:59.339Z",
+      "type": "task_status_change",
+      "task_id": "TASK-028",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-028 auto_verified → done: Acceptance mode is auto, so TASK-028 is complete after workflow auto-routing guidance verification passed."
+    },
+    {
+      "timestamp": "2026-04-17T11:27:04.336Z",
+      "type": "decision",
+      "task_id": "TASK-028",
+      "from_status": null,
+      "to_status": null,
+      "message": "Completed TASK-028: shared project-* skills now describe CouncilFlow-backed config routing as the default path, use project-level discussion defaults when models are omitted, and reserve local-only execution for council-missing fallback or explicit local_execution responses."
     }
   ]
 }

@@ -1169,11 +1169,11 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-17T11:00:03.204Z",
-      "updated_at": "2026-04-17T11:00:03.204Z",
+      "updated_at": "2026-04-17T11:26:59.321Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Acceptance mode is auto, so TASK-028 is complete after workflow auto-routing guidance verification passed."
     },
     {
       "id": "TASK-029",
