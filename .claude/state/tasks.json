@@ -1264,6 +1264,172 @@
       "updated_at": "2026-04-17T11:30:20.043Z",
       "commit_hash": "",
       "notes": "TASK-030 requires manual acceptance. Automated verification is green, so the workflow is paused at the manual gate for the Codex-side routing and fallback smoke checklist."
+    },
+    {
+      "id": "TASK-031",
+      "title": "扩展 discuss 配置与数据模型以支持 initial_position 和 min_rounds",
+      "description": "扩展 discussion 配置与数据模型，引入主控初始立场 initial_position、最小轮次 min_rounds 以及主控回应轨迹所需的结构化字段，为新的 round-trip discuss 协议提供稳定 schema。",
+      "dependencies": [
+        "TASK-030"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "discussion 配置支持 min_rounds，并保证与 max_rounds 的校验关系稳定",
+        "discussion 数据模型可表达 initial_position、主控后续回应和多轮结构化 turn 摘要",
+        "默认配置模板与配置加载逻辑支持新的 discussion.min_rounds 字段",
+        "自动化测试覆盖新配置字段与数据模型序列化/校验行为"
+      ],
+      "files": [
+        "src/councilflow/models/config.py",
+        "src/councilflow/config/schema.py",
+        "src/councilflow/config/loader.py",
+        "src/councilflow/models/discussion.py",
+        "src/councilflow/templates/default-config.yaml",
+        "tests/test_config_loader.py",
+        "tests/test_discussion_orchestrator.py"
+      ],
+      "module": "discussion-protocol",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_config_loader.py tests/test_discussion_orchestrator.py"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-17T11:47:40.180Z",
+      "updated_at": "2026-04-17T11:47:40.180Z",
+      "commit_hash": "",
+      "notes": "",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-032",
+      "title": "重构 discussion orchestrator 为主控闭环 round-trip",
+      "description": "重构 council discuss 与 discussion_orchestrator，让主控先生成 initial_position，再由外部模型评论，随后把外部意见回灌给主控进入下一轮；并用 min_rounds 约束提前收敛逻辑。",
+      "dependencies": [
+        "TASK-031"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "council discuss 在存在额外参与者时会先生成并持久化 initial_position",
+        "外部参与者收到的问题上下文包含主控初始立场而不是只有裸问题",
+        "主控下一轮可以看到外部反馈摘要，并将回应或修正写入后续 round artifact",
+        "在未达到 min_rounds 前，即使外部模型首轮表示同意，讨论也不会提前结束",
+        "CLI 返回与 summary artifact 暴露 initial_position、min_rounds、主控回应轨迹和结束原因"
+      ],
+      "files": [
+        "src/councilflow/cli/discuss.py",
+        "src/councilflow/controller/discussion_orchestrator.py",
+        "src/councilflow/handoff/prompts.py",
+        "src/councilflow/handoff/summaries.py",
+        "tests/test_cli_discuss.py",
+        "tests/test_discussion_orchestrator.py",
+        "tests/test_workflow_integration.py"
+      ],
+      "module": "discussion-orchestrator",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_cli_discuss.py tests/test_discussion_orchestrator.py tests/test_workflow_integration.py"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-17T11:47:40.180Z",
+      "updated_at": "2026-04-17T11:47:40.180Z",
+      "commit_hash": "",
+      "notes": "",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-033",
+      "title": "更新 discuss 集成文档与共享 workflow 协议",
+      "description": "更新 CouncilFlow 文档与 workflow-core 共享 skills，对齐新的 discuss round-trip 协议、min_rounds 语义和默认讨论配置行为，让 project-discuss 与嵌入式 discuss 的用户体验和文案保持一致。",
+      "dependencies": [
+        "TASK-032"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "docs/integration.md 与 docs/user-guide.zh-CN.md 明确说明 initial_position、主控回应闭环和 min_rounds 语义",
+        "共享 project-discuss 以及涉及嵌入式 discuss 的 project-init/design/plan/ask/next/review/change 技能说明更新为新协议",
+        "sync-skills.ps1 执行后，共享源与 Codex/Claude/Gemini 三端对应 discuss 相关 skills 内容保持一致",
+        "文档不再暗示“首轮外部模型同意即可立即收敛”"
+      ],
+      "files": [
+        "docs/integration.md",
+        "docs/user-guide.zh-CN.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-discuss/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-init/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-design/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-plan/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-ask/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-next/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-review/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-change/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/scripts/sync-skills.ps1"
+      ],
+      "module": "discussion-rollout",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'",
+        "if (-not (Select-String -Path 'D:\\project\\CouncilFlow\\docs\\user-guide.zh-CN.md' -Pattern 'initial_position|min_rounds|主控回应' -Quiet)) { throw 'User guide must describe the upgraded discuss protocol.' }",
+        "$skills = @('project-discuss','project-init','project-design','project-plan','project-ask','project-next','project-review','project-change'); foreach ($skill in $skills) { $paths = @(\"C:\\Users\\David Zhai\\.workflow-core\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.codex\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.claude\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.gemini\\skills\\$skill\\SKILL.md\"); $hashes = (Get-FileHash $paths).Hash | Select-Object -Unique; if ($hashes.Count -ne 1) { throw ('Synced skill mismatch for ' + $skill) } }"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-17T11:47:40.180Z",
+      "updated_at": "2026-04-17T11:47:40.180Z",
+      "commit_hash": "",
+      "notes": "",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-034",
+      "title": "验证升级后的 discuss 闭环质量",
+      "description": "在新协议和文档全部更新后，执行一轮自动化与人工 smoke，确认 discuss 至少完成一次主控回应闭环、min_rounds 生效、以及项目默认讨论配置仍与升级后的协议兼容。",
+      "dependencies": [
+        "TASK-033"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "自动化测试证明存在额外参与者时讨论不会在未达到 min_rounds 前提前收敛",
+        "Codex 主控下的真实 discuss smoke 能看到 initial_position、外部评论和主控回应闭环",
+        "未显式给模型时，项目级 discussion.default_models 仍可驱动 discuss 参与者选择",
+        "升级后的 discuss artifact 可继续被 project-* workflow 消费"
+      ],
+      "files": [
+        "docs/release-checklist.md",
+        "tests/test_cli_discuss.py",
+        "tests/test_discussion_orchestrator.py",
+        "tests/test_workflow_integration.py",
+        "docs/integration.md"
+      ],
+      "module": "discussion-gate",
+      "needs_manual_review": true,
+      "acceptance_mode": "manual",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest",
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'"
+      ],
+      "review_checklist": [
+        "在 Codex 主控下手动验证 discuss 先出现 initial_position，再出现外部评论，再出现主控回应",
+        "验证配置了 min_rounds 的项目不会在首轮外部模型简单同意后立即结束 discuss",
+        "验证不写模型时，project-discuss 与嵌入式 discuss 仍会读取项目默认讨论配置",
+        "验证升级后的 summary artifact 仍能被后续 project-* workflow 明确读取"
+      ],
+      "stage_gate": true,
+      "status": "todo",
+      "created_at": "2026-04-17T11:47:40.180Z",
+      "updated_at": "2026-04-17T11:47:40.180Z",
+      "commit_hash": "",
+      "notes": ""
     }
   ]
 }

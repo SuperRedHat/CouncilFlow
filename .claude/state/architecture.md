@@ -687,3 +687,31 @@ graph TD
 1. 本次变更同时涉及 Python 配置 schema、配置加载与自动落盘逻辑、`discuss`/`delegate` CLI 行为、共享 skills 提示策略，以及默认模板发布路径。
 2. 由于“讨论参与者默认值”与“执行角色映射”在语义上不同，本次架构优先采用独立的 `discussion` 配置块，而不是把 `discuss` 简单塞进现有执行角色枚举。
 3. 本节覆盖并 supersede 文中所有“当前主控默认直接工作”的旧架构表述；新的主路径应理解为“当前主控默认负责 orchestrate 与 synthesize，而不是默认亲自承担所有执行角色”。
+
+## 19. 变更记录（2026-04-17，discuss 协议升级）
+本次变更聚焦 discussion orchestration 的协议质量，目标是把当前“主控提问 -> 外部模型回复 -> 可能立即收敛”的流程升级为最小可闭环的 round-trip 机制。
+
+新增架构要求：
+1. **引入 `initial_position` 作为正式协议对象**：discussion 数据模型需要新增主控初始立场字段，并把它视为首轮讨论的中心对象。外部参与者不再只接收问题文本，而是接收“问题 + 上下文 + 主控当前立场”。
+2. **Prompt 协议分阶段**：
+   - 阶段 A：主控生成 `initial_position`
+   - 阶段 B：外部模型围绕 `initial_position` 输出评论、补充、反驳和风险
+   - 阶段 C：主控读取外部反馈摘要，生成下一轮回应、修正或坚持说明
+   - 如需继续，再将“最新主控立场 + 历史结构化 turn 摘要”提供给外部模型
+3. **增加 `discussion.min_rounds` 配置**：配置模型需要在现有 `discussion.default_models`、`discussion.max_rounds` 之外新增 `discussion.min_rounds`，并保证：
+   - `min_rounds >= 1`
+   - `min_rounds <= max_rounds`
+   - 当存在额外参与者时，convergence evaluator 必须在 `completed_rounds >= min_rounds` 后才允许提前结束
+4. **提前收敛逻辑从“外部是否认可”改为“是否完成最小闭环 + 是否收敛”**：也就是说，第一轮即便外部模型表示同意，只要尚未完成主控回应这一步，也不能直接结束。
+5. **Orchestrator 需要保存主控回应轨迹**：discussion artifact 中不仅要记录外部参与者 turn，还要记录主控在后续轮次中如何吸收、拒绝或修正这些意见，以便下游 workflow 和用户回溯真实决策过程。
+6. **CLI / summary 输出需要可观察新协议状态**：`council discuss` 的结构化输出至少应新增：
+   - `initial_position`
+   - `min_rounds`
+   - `current_controller_position` 或等效字段
+   - 每轮结束原因与最终结束原因
+7. **兼容无 sidecar 场景**：如果去重后没有外部参与者，仍走现有 short-circuit 路径，不强行创建虚假的主控回应回合。
+
+实现边界：
+1. 本次变更优先增强当前单控制器 orchestrator，不引入新的后台服务、队列或多线程协商系统。
+2. 外部模型仍然只接收显式结构化上下文，不读取隐藏聊天历史。
+3. 本节覆盖并 supersede 文中对“提前结束规则”的旧解释；新的架构语义应为：**提前结束建立在最小闭环已完成的前提之上，而不是仅由首轮外部回应决定。**

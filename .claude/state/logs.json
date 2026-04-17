@@ -1159,6 +1159,14 @@
       "from_status": null,
       "to_status": null,
       "message": "Automated verification for the final auto-routing gate is green: ruff passed, pytest passed (64 tests), and shared skill synchronization completed. The workflow is now paused at manual acceptance for Codex-host routing and council-missing fallback smoke checks."
+    },
+    {
+      "timestamp": "2026-04-17T11:47:44.536Z",
+      "type": "decision",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "Planned a discuss-protocol upgrade change: CouncilFlow will move from a lightweight external-consultation pattern to a controller round-trip protocol with initial_position, external critique, controller response, and min_rounds-governed convergence. Added TASK-031 through TASK-034 for schema/config, orchestrator, workflow rollout, and final verification."
     }
   ]
 }
