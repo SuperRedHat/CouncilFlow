@@ -502,3 +502,10 @@ V1 完成时，至少满足：
 1. `Claude Code` 的 `project-*` 运行时入口只保留受管的 `commands` 包装层；
 2. `.workflow-core\skills\project-*` 仍是唯一真相源；
 3. `Codex` 与 `Gemini CLI` 继续使用各自 `skills` 目录，不受该修复影响。
+
+更正说明（2026-04-17）：
+在重新核对 Anthropic 官方当前文档后，确认 `skills` 仍然是 `Claude Code` 推荐的正式路径，`commands` 只是兼容机制。因此上一轮“只保留 commands”的修复方向被撤销，新的交付要求改为：
+1. `Claude Code` 恢复为使用 `.claude\skills\project-*\SKILL.md` 作为正式 `project-*` 入口；
+2. 已生成的 `.claude\commands\project-*.md` 只视为需要清理的 legacy wrapper，不再作为安装目标；
+3. `.workflow-core\skills\project-*` 继续作为三端共享真相源；
+4. 为降低 Claude 对 frontmatter 的解析异常风险，共享 `project-*` skills 的 `description` 将统一为更稳定的单行写法。

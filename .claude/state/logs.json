@@ -951,6 +951,46 @@
       "from_status": null,
       "to_status": null,
       "message": "Claude commands 回归修复已完成：新安装只保留 .claude/commands/project-*.md，legacy .claude/skills/project-* 不再作为运行时入口暴露。"
+    },
+    {
+      "timestamp": "2026-04-17T09:19:32.120Z",
+      "type": "decision",
+      "task_id": "TASK-025-FIX-002",
+      "from_status": null,
+      "to_status": null,
+      "message": "按 Anthropic 官方当前推荐回滚到 skills 主路径：撤销 Claude commands 包装层，并把共享 project-* skills 的 description frontmatter 统一为更稳定的单行格式。"
+    },
+    {
+      "timestamp": "2026-04-17T09:26:19.788Z",
+      "type": "task_status_change",
+      "task_id": "TASK-025-FIX-002",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-025-FIX-002 todo → in_progress: 开始回滚到 Anthropic 官方推荐的 skills 主路径，并同步修正共享 project-* frontmatter 与全局安装脚本。"
+    },
+    {
+      "timestamp": "2026-04-17T09:26:19.788Z",
+      "type": "task_status_change",
+      "task_id": "TASK-025-FIX-002",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-025-FIX-002 in_progress → auto_verified: 已验证 sync/install 后 Claude 再次使用 .claude/skills/project-*，legacy .claude/commands/project-*.md 已清理，shared frontmatter 不再使用 folded description。"
+    },
+    {
+      "timestamp": "2026-04-17T09:26:19.788Z",
+      "type": "task_status_change",
+      "task_id": "TASK-025-FIX-002",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-025-FIX-002 auto_verified → done: Acceptance mode is auto, so TASK-025-FIX-002 is complete after skills-first rollback verification, global install replay, and truth-source consistency checks all passed."
+    },
+    {
+      "timestamp": "2026-04-17T09:26:19.788Z",
+      "type": "decision",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "Claude Code 已回到官方推荐的 skills 主路径：.workflow-core/skills 继续是唯一真相源，.claude/commands/project-*.md 仅作为 legacy 兼容备份对象，不再是新安装入口。"
     }
   ]
 }

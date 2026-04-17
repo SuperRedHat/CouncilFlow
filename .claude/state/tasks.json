@@ -1015,6 +1015,46 @@
       "updated_at": "2026-04-17T09:08:54.484Z",
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so TASK-025-FIX-001 is complete after Claude slash entry regression checks, install verification, and backup coverage all passed."
+    },
+    {
+      "id": "TASK-025-FIX-002",
+      "title": "回滚到官方 skills 主路径并规范 frontmatter",
+      "description": "撤销 Claude commands 包装层这条错误修复，恢复以 .claude/skills/project-*/SKILL.md 为 Claude Code 的正式入口；同时把共享 project-* skills 的 frontmatter description 统一为 Claude 官方推荐的稳定单行格式，降低 slash 列表解析异常风险。",
+      "dependencies": [
+        "TASK-025"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "sync/install 后 Claude 再次使用 .claude/skills/project-* 作为正式 project-* 入口，.claude/commands/project-*.md 受管包装层被移除",
+        "共享 project-* skills 的 frontmatter description 采用稳定单行格式，不再依赖折叠多行写法",
+        "Codex/Claude/Gemini 三端仍从同一共享 skills 真相源同步，不引入第二套命令包装层",
+        "install/backup/restore 文档与脚本回到 skills 主路径，并明确只清理 legacy Claude command wrappers"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/skills/project-*.*/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/scripts/sync-skills.ps1",
+        "C:/Users/David Zhai/.workflow-core/scripts/install-global-workflow.ps1",
+        "C:/Users/David Zhai/.workflow-core/scripts/backup-global-workflow.ps1",
+        "C:/Users/David Zhai/.workflow-core/scripts/restore-global-workflow.ps1",
+        "C:/Users/David Zhai/.workflow-core/docs/global-workflow-install.md"
+      ],
+      "module": "claude-skills-rollback",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'",
+        "$claudeSkills = Get-ChildItem 'C:\\Users\\David Zhai\\.claude\\skills' -Directory -Filter 'project-*' -ErrorAction SilentlyContinue; if (-not $claudeSkills) { throw 'Claude project-* skills should exist after rollback.' }",
+        "if (Get-ChildItem 'C:\\Users\\David Zhai\\.claude\\commands' -File -Filter 'project-*.md' -ErrorAction SilentlyContinue) { throw 'Legacy Claude project-* command wrappers should be removed.' }",
+        "$skillFiles = Get-ChildItem 'C:\\Users\\David Zhai\\.workflow-core\\skills' -Directory -Filter 'project-*' | ForEach-Object { Join-Path $_.FullName 'SKILL.md' }; $bad = @(); foreach ($file in $skillFiles) { $match = Select-String -Path $file -Pattern '^description:\\s+>' -Quiet; if ($match) { $bad += $file } }; if ($bad) { throw ('Folded description frontmatter should be removed from: ' + ($bad -join ', ')) }"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "done",
+      "created_at": "2026-04-17T09:19:32.095Z",
+      "updated_at": "2026-04-17T09:26:19.788Z",
+      "commit_hash": "",
+      "notes": "Acceptance mode is auto, so TASK-025-FIX-002 is complete after skills-first sync/install verification, legacy Claude command wrapper cleanup, and shared frontmatter normalization all passed."
     }
   ]
 }

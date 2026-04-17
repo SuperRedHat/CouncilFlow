@@ -655,3 +655,11 @@ graph TD
 2. `Claude Code` 仅消费由共享源自动生成的 `commands\project-*.md`；
 3. 安装脚本在生成 `commands` 后，需要清理 `.claude\skills\project-*` 这组受管目录，避免双重暴露；
 4. 备份与恢复仍应兼容旧快照中的 `.claude\skills\project-*`，但新安装结果不再保留这组运行时目录。
+
+更正说明（2026-04-17）：
+在重新核对 Anthropic 官方当前文档后，确认 `skills` 仍是 `Claude Code` 的推荐主路径，因此上面的“commands 主入口”修复策略被撤销。新的回归修复架构调整为：
+1. `Codex` / `Gemini CLI` 继续消费同步后的 `skills` 目录；
+2. `Claude Code` 也恢复为消费同步后的 `.claude\skills\project-*\SKILL.md`；
+3. `.claude\commands\project-*.md` 只作为需要清理的 legacy wrapper，不再由安装流程生成；
+4. 为减少 Claude slash 列表对 frontmatter 的兼容性问题，共享 `project-*` skills 的 `description` frontmatter 改为官方示例风格的单行写法；
+5. backup/install/restore 流程需要兼容清理旧的 commands 包装层，但新的安装结果不再保留这层派生产物。
