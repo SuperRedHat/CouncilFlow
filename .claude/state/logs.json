@@ -1095,6 +1095,70 @@
       "from_status": null,
       "to_status": null,
       "message": "Completed TASK-028: shared project-* skills now describe CouncilFlow-backed config routing as the default path, use project-level discussion defaults when models are omitted, and reserve local-only execution for council-missing fallback or explicit local_execution responses."
+    },
+    {
+      "timestamp": "2026-04-17T11:27:57.607Z",
+      "type": "task_status_change",
+      "task_id": "TASK-029",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-029 todo → in_progress: Starting auto-routing rollout docs and sync: update integration and user guide to explain project-local config authority, default discussion models, and council-missing fallback; then sync shared skills to Codex, Claude, and Gemini."
+    },
+    {
+      "timestamp": "2026-04-17T11:29:38.545Z",
+      "type": "task_status_change",
+      "task_id": "TASK-029",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-029 in_progress → auto_verified: Updated integration.md and user-guide.zh-CN.md to document project-local config authority, default discuss models, auto-routing semantics, and council-missing fallback. Ran sync-skills.ps1 successfully and verified hash parity for project-init/design/plan/next/review/change/ask/discuss across workflow-core, Codex, Claude, and Gemini."
+    },
+    {
+      "timestamp": "2026-04-17T11:29:41.814Z",
+      "type": "task_status_change",
+      "task_id": "TASK-029",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-029 auto_verified → done: Acceptance mode is auto, so TASK-029 is complete after docs and synced-skill verification passed."
+    },
+    {
+      "timestamp": "2026-04-17T11:29:45.395Z",
+      "type": "decision",
+      "task_id": "TASK-029",
+      "from_status": null,
+      "to_status": null,
+      "message": "Completed TASK-029: CouncilFlow docs now describe project-local config bootstrap, default discussion strategy, config-driven auto delegation, and explicit fallback semantics; the updated workflow-core skills were synchronized to Codex, Claude, and Gemini with matching hashes."
+    },
+    {
+      "timestamp": "2026-04-17T11:29:57.969Z",
+      "type": "task_status_change",
+      "task_id": "TASK-030",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-030 todo → in_progress: Starting final auto-routing gate. Running automated verification for code health, end-to-end tests, and shared skill synchronization before handing off the manual review checklist."
+    },
+    {
+      "timestamp": "2026-04-17T11:30:16.613Z",
+      "type": "task_status_change",
+      "task_id": "TASK-030",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-030 in_progress → auto_verified: Automated verification passed for the auto-routing gate: python -m ruff check .; python -m pytest (64 passed); sync-skills.ps1 completed successfully."
+    },
+    {
+      "timestamp": "2026-04-17T11:30:20.063Z",
+      "type": "task_status_change",
+      "task_id": "TASK-030",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-030 auto_verified → awaiting_manual_acceptance: TASK-030 requires manual acceptance. Automated verification is green, so the workflow is paused at the manual gate for the Codex-side routing and fallback smoke checklist."
+    },
+    {
+      "timestamp": "2026-04-17T11:30:26.152Z",
+      "type": "decision",
+      "task_id": "TASK-030",
+      "from_status": null,
+      "to_status": null,
+      "message": "Automated verification for the final auto-routing gate is green: ruff passed, pytest passed (64 tests), and shared skill synchronization completed. The workflow is now paused at manual acceptance for Codex-host routing and council-missing fallback smoke checks."
     }
   ]
 }

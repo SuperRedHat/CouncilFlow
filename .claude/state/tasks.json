@@ -1213,11 +1213,11 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-17T11:00:03.204Z",
-      "updated_at": "2026-04-17T11:00:03.204Z",
+      "updated_at": "2026-04-17T11:29:41.794Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Acceptance mode is auto, so TASK-029 is complete after docs and synced-skill verification passed."
     },
     {
       "id": "TASK-030",
@@ -1259,11 +1259,11 @@
         "验证当 council 命令不可用时，共享 workflow 才会退回到主控本地执行"
       ],
       "stage_gate": true,
-      "status": "todo",
+      "status": "awaiting_manual_acceptance",
       "created_at": "2026-04-17T11:00:03.204Z",
-      "updated_at": "2026-04-17T11:00:03.204Z",
+      "updated_at": "2026-04-17T11:30:20.043Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "TASK-030 requires manual acceptance. Automated verification is green, so the workflow is paused at the manual gate for the Codex-side routing and fallback smoke checklist."
     }
   ]
 }

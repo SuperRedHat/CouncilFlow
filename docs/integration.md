@@ -9,6 +9,7 @@ The key rule is simple:
 - `project-*` workflows never rely on hidden shared chat context.
 - Every integration step reads an explicit artifact from `.council/`.
 - The controller still owns synthesis and workflow continuation.
+- Project-local `.council/config.yaml` is the routing source of truth when `CouncilFlow` is available.
 
 ## Supported Controllers
 
@@ -25,6 +26,21 @@ Controller detection contract:
 - `Gemini CLI` is detected from `GEMINI_CLI`, `GEMINI_CLI_SESSION`, or `GEMINI_CLI_IDE_PID`.
 - When no host signal is available, workflows may fall back to `.council/config.yaml` with `controller_override`.
 
+## Project-Local Config Contract
+
+When `project-*` workflows call `CouncilFlow`, they should assume the target project owns a local
+`.council/config.yaml`.
+
+Rules:
+
+- If the file is missing, `CouncilFlow` materializes a project-local default template on first use.
+- `roles.*` defines automatic delegation targets for execution roles.
+- `discussion.default_models` defines the default extra discuss participants when workflows omit
+  `--models`.
+- `discussion.max_rounds` defines the default round budget when workflows omit `--max-rounds`.
+- Local-only execution is a fallback for `council`-missing environments or explicit
+  `local_execution` responses, not the default routing strategy.
+
 ## Supported Entry Points
 
 ### `project-discuss`
@@ -34,7 +50,11 @@ Standalone discussion should call:
 ```bash
 council discuss "<question>" --models claude,gpt
 council discuss "<question>" --models gemini,codex
+council discuss "<question>"
 ```
+
+If `--models` is omitted, `CouncilFlow` reads `discussion.default_models` from the project's local
+`.council/config.yaml`.
 
 Expected persisted artifact:
 
@@ -64,6 +84,8 @@ project-next discuss gemini
 must follow the same pattern:
 
 1. Invoke `council discuss`
+   - Use `--models` only when the user explicitly chose participants
+   - Otherwise omit `--models` and let the project-local config decide the default participants
 2. Wait for the summary artifact
 3. Read the summary artifact from disk
 4. Continue the main `project-*` step with the controller's own synthesis
@@ -75,7 +97,10 @@ Delegation-oriented workflow steps should call:
 ```bash
 council delegate --role implementer --model claude --objective "<objective>" --task-summary "<summary>"
 council delegate --role reviewer --model gemini --objective "<objective>" --task-summary "<summary>"
+council delegate --role implementer --objective "<objective>" --task-summary "<summary>"
 ```
+
+If `--model` is omitted, `CouncilFlow` reads the target model from the project's local role mapping.
 
 Expected persisted artifacts:
 
@@ -105,6 +130,8 @@ Expected machine-readable contract:
 - Same-controller discuss requests should not trigger sidecar execution.
 - Same-controller delegate requests should return local execution instead of starting a sidecar.
 - Artifacts created under a Gemini-controlled session must remain consumable by Codex and Claude workflows.
+- When `council` is unavailable, workflows may fall back to local controller-only execution, but this
+  fallback should be explicit in the calling workflow rather than treated as the primary path.
 
 ## Minimum Integration Flow
 

@@ -134,6 +134,9 @@ gemini --help
 
 [`D:\project\CouncilFlow\.council\config.yaml`](D:/project/CouncilFlow/.council/config.yaml)
 
+如果项目里还没有这个文件，`CouncilFlow` 会在首次调用时自动创建一份项目本地默认模板。  
+这意味着每个项目都可以维护独立的角色分工和讨论策略，而不是共享一份全局运行时配置。
+
 ### 4.2 最小配置示例
 
 ```yaml
@@ -148,6 +151,10 @@ roles:
   fixer: claude
   advisor: gemini
   synthesizer: codex
+discussion:
+  default_models:
+    - gemini
+  max_rounds: 3
 ```
 
 ### 4.3 如何指定不同角色使用哪一种模型
@@ -173,7 +180,36 @@ roles:
 - `implementer: claude` -> 委派给 Claude
 - `tester: gemini` -> 委派给 Gemini
 
-### 4.4 模型别名
+这里有一个关键语义：
+
+- 有 `CouncilFlow` 时，`.council/config.yaml` 是自动分发真相源
+- 主控不会因为“自己也能做”就默认抢着本地执行
+- 只有当目标角色最终解析到当前主控，或 `council` 根本不可用时，才会本地执行
+
+也就是说，这个配置文件不是“建议”，而是项目级自动路由规则。
+
+### 4.4 如何设置默认 discuss 模型
+
+`discussion.default_models` 用来决定：当你调用 `council discuss` 或 `project-discuss` 时，如果**没有显式指定模型**，系统默认邀请谁参与讨论。
+
+例如：
+
+```yaml
+discussion:
+  default_models:
+    - gemini
+    - claude
+  max_rounds: 4
+```
+
+表示：
+
+- 不写 `--models` 时，默认先邀请 `gemini` 和 `claude`
+- 不写 `--max-rounds` 时，默认最多讨论 4 轮
+
+如果其中某个模型正好和当前主控重复，`CouncilFlow` 仍会正常做归一化、去重和短路提醒。
+
+### 4.5 模型别名
 
 当前系统会对常见模型名做归一化。
 
@@ -193,7 +229,7 @@ roles:
 
 这意味着你可以在配置里写更具体的 Gemini 版本名，但路由层仍会把它视为 Gemini 体系。
 
-### 4.5 controller_override
+### 4.6 controller_override
 
 如果当前环境没有被自动识别出来，可以在配置里显式写：
 
@@ -215,7 +251,7 @@ controller_override: codex
 
 ---
 
-## 5. 当前默认角色映射
+## 5. 当前默认角色映射与默认讨论策略
 
 如果你没有写 `.council/config.yaml`，系统会使用默认映射：
 
@@ -227,6 +263,13 @@ controller_override: codex
 - `fixer -> codex`
 - `advisor -> gpt`
 - `synthesizer -> codex`
+
+默认讨论策略是：
+
+- `discussion.default_models = []`
+- `discussion.max_rounds = 5`
+
+这表示如果你不配置默认讨论模型，又没有显式传 `--models`，系统会返回结构化提示，告诉你当前没有额外讨论参与者可用。
 
 如果你已经有自己的偏好，建议总是明确写入项目配置，而不是依赖默认值。
 
@@ -316,10 +359,20 @@ python -m councilflow.cli.app discuss `
   --project-root .
 ```
 
+如果你已经在项目配置里写了默认讨论模型，也可以不传 `--models`：
+
+```powershell
+python -m councilflow.cli.app discuss `
+  "Should we split this feature into phases first?" `
+  --project-root .
+```
+
 ### 8.3 讨论规则
 
 - 主控永远会参与
 - `--models` 里只写额外模型
+- 不写 `--models` 时，会读取项目级 `discussion.default_models`
+- 不写 `--max-rounds` 时，会读取项目级 `discussion.max_rounds`
 - 去重后如果没有非主控模型，sidecar 不会启动
 - “主控 + 1 个额外模型”最多 5 轮
 - 满足收敛条件时可提前结束
@@ -533,6 +586,12 @@ python -m councilflow.cli.app synthesize `
 
 本质上都是先触发一次 `council discuss`，拿到 `.council` 里的显式产物，再由主控继续主流程。
 
+在新的自动路由语义下：
+
+- 如果 `project-discuss` 或嵌入式 `discuss` 没有显式写模型，默认会读取项目级 `discussion.default_models`
+- 如果 `project-next`、`project-review`、`project-change` 需要执行型角色，默认会优先尝试 `council delegate --role ...`
+- 只有在 `council` 缺失或不可调用时，主工作流才退回纯本地执行
+
 ---
 
 ## 13. 三主控使用建议
@@ -596,9 +655,10 @@ python -m councilflow.cli.app status --project-root .
 ```powershell
 python -m councilflow.cli.app discuss `
   "Should we split the feature into backend and frontend first?" `
-  --models claude `
   --project-root .
 ```
+
+如果你已经在项目配置里写了默认讨论模型，这一步就不必每次手动指定。
 
 ### 第三步：按角色委派
 
@@ -761,11 +821,13 @@ $env:PYTHONPATH = (Resolve-Path .\src).Path
 ## 18. 推荐实践
 
 - 总是为每个项目显式写 `.council/config.yaml`
+- 把 `.council/config.yaml` 当作项目级自动分发真相源，而不是可有可无的提示文件
 - 让最常做主流程控制的模型承担 `planner / architect / synthesizer`
 - 把你真正想外包的能力映射出去，例如 `implementer` 或 `tester`
+- 把默认讨论参与者写进 `discussion.default_models`，减少每次手动重复写模型
 - 把 `.council` 当作显式协作轨迹，而不是临时缓存
 - 对重要步骤优先先 `discuss`，再 `delegate`
-- 对快速小任务优先让主控本地完成，不必强行触发 sidecar
+- 如果 `council` 缺失，再退回主控本地完成；有工具时优先按配置自动路由
 
 ---
 
