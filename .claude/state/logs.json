@@ -1167,6 +1167,174 @@
       "from_status": null,
       "to_status": null,
       "message": "Planned a discuss-protocol upgrade change: CouncilFlow will move from a lightweight external-consultation pattern to a controller round-trip protocol with initial_position, external critique, controller response, and min_rounds-governed convergence. Added TASK-031 through TASK-034 for schema/config, orchestrator, workflow rollout, and final verification."
+    },
+    {
+      "timestamp": "2026-04-17T12:09:40.466Z",
+      "type": "task_status_change",
+      "task_id": "TASK-030",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "in_progress",
+      "message": "TASK-030 awaiting_manual_acceptance → in_progress: Resuming the manual gate to perform Codex-host smoke validation for project-local config bootstrap, default discuss routing, auto-delegation to non-controller roles, and council-missing fallback wording in the published shared skills."
+    },
+    {
+      "timestamp": "2026-04-17T12:09:55.923Z",
+      "type": "task_status_change",
+      "task_id": "TASK-030",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-030 in_progress → auto_verified: Resumed the manual gate and re-ran the acceptance checks under Codex-host smoke conditions: a fresh temp project auto-generated .council/config.yaml on first council status call, project-default discuss routing selected gemini when --models was omitted, implementer/reviewer roles mapped to gemini delegated to a non-controller model, and the shared skills explicitly reserve local fallback for council-missing or unavailable environments."
+    },
+    {
+      "timestamp": "2026-04-17T12:10:07.345Z",
+      "type": "task_status_change",
+      "task_id": "TASK-030",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-030 auto_verified → awaiting_manual_acceptance: Manual gate evidence collected: Codex-host smoke confirmed project-local config bootstrap, default discuss routing, non-controller role delegation, and explicit council-missing fallback wording. Ready to record manual acceptance."
+    },
+    {
+      "timestamp": "2026-04-17T12:10:14.247Z",
+      "type": "task_status_change",
+      "task_id": "TASK-030",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-030 awaiting_manual_acceptance → done: Manual acceptance recorded after Codex-host smoke validation confirmed project-local config bootstrap, default discuss routing, non-controller role delegation, and explicit council-missing fallback guidance in the shared workflow skills."
+    },
+    {
+      "timestamp": "2026-04-17T12:10:18.752Z",
+      "type": "decision",
+      "task_id": "TASK-030",
+      "from_status": null,
+      "to_status": null,
+      "message": "Closed TASK-030 after manual acceptance. Codex-host smoke on fresh temp projects confirmed: .council/config.yaml auto-materializes on first CouncilFlow use, discuss without --models reads project-level discussion.default_models, implementer/reviewer routes can delegate to a non-controller model, and shared workflow fallback to local execution is only documented for council-missing or unavailable environments."
+    },
+    {
+      "timestamp": "2026-04-17T12:10:29.928Z",
+      "type": "task_status_change",
+      "task_id": "TASK-031",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-031 todo → in_progress: Starting discuss protocol schema work: add discussion.min_rounds and extend discussion records to carry controller initial_position plus controller-response fields needed for round-trip orchestration."
+    },
+    {
+      "timestamp": "2026-04-17T12:12:44.637Z",
+      "type": "task_status_change",
+      "task_id": "TASK-031",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-031 in_progress → auto_verified: Verified discuss protocol schema upgrades: discussion.min_rounds now validates against max_rounds, the packaged default config template includes min_rounds, and discussion data models serialize controller initial_position/current_controller_position plus controller-role turns. Commands passed: python -m pytest tests/test_config_loader.py tests/test_discussion_orchestrator.py; python -m ruff check ."
+    },
+    {
+      "timestamp": "2026-04-17T12:12:47.731Z",
+      "type": "task_status_change",
+      "task_id": "TASK-031",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-031 auto_verified → done: Acceptance mode is auto, so TASK-031 is complete after discuss-protocol schema verification passed."
+    },
+    {
+      "timestamp": "2026-04-17T12:12:57.743Z",
+      "type": "decision",
+      "task_id": "TASK-031",
+      "from_status": null,
+      "to_status": null,
+      "message": "Completed TASK-031: discussion config and data models now support min_rounds, controller initial_position/current_controller_position fields, and controller-role turns needed by the upcoming round-trip discuss orchestrator."
+    },
+    {
+      "timestamp": "2026-04-17T12:13:09.090Z",
+      "type": "task_status_change",
+      "task_id": "TASK-032",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-032 todo → in_progress: Starting round-trip discuss orchestration: the controller will establish an initial_position, external models will critique it, and subsequent rounds will feed structured critique back into the controller position while min_rounds gates early convergence."
+    },
+    {
+      "timestamp": "2026-04-17T12:18:09.621Z",
+      "type": "task_status_change",
+      "task_id": "TASK-032",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-032 in_progress → auto_verified: Verified round-trip discuss orchestration: controller-generated initial_position and subsequent controller responses are now persisted, min_rounds blocks first-round convergence, and CLI/contracts expose initial_position/current_controller_position/min_rounds. Commands passed: python -m pytest tests/test_cli_discuss.py tests/test_discussion_orchestrator.py tests/test_workflow_integration.py; python -m ruff check ."
+    },
+    {
+      "timestamp": "2026-04-17T12:18:13.698Z",
+      "type": "task_status_change",
+      "task_id": "TASK-032",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-032 auto_verified → done: Acceptance mode is auto, so TASK-032 is complete after round-trip discuss orchestration verification passed."
+    },
+    {
+      "timestamp": "2026-04-17T12:18:18.024Z",
+      "type": "decision",
+      "task_id": "TASK-032",
+      "from_status": null,
+      "to_status": null,
+      "message": "Completed TASK-032: council discuss now establishes a controller initial_position, routes external critique against that position, feeds critique back into a controller response each round, and only allows early convergence once min_rounds is satisfied."
+    },
+    {
+      "timestamp": "2026-04-17T12:18:30.142Z",
+      "type": "task_status_change",
+      "task_id": "TASK-033",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-033 todo → in_progress: Starting discuss rollout docs: update CouncilFlow docs and shared project-* skills to explain initial_position, controller response rounds, min_rounds gating, and the continued use of project-level default discuss models."
+    },
+    {
+      "timestamp": "2026-04-17T12:23:21.733Z",
+      "type": "task_status_change",
+      "task_id": "TASK-033",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-033 in_progress → auto_verified: Updated CouncilFlow docs and workflow-core shared skills for the upgraded discuss protocol, then verified sync-skills, user guide protocol coverage, and cross-client skill hash parity."
+    },
+    {
+      "timestamp": "2026-04-17T12:23:21.738Z",
+      "type": "review_completed",
+      "task_id": "TASK-033",
+      "from_status": null,
+      "to_status": null,
+      "message": "TASK-033 verification passed: synced workflow-core project-* discuss skills, confirmed user guide covers initial_position/current_controller_position/min_rounds, and verified Codex/Claude/Gemini skill copies remain in sync."
+    },
+    {
+      "timestamp": "2026-04-17T12:23:24.375Z",
+      "type": "task_status_change",
+      "task_id": "TASK-033",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-033 auto_verified → done: Docs and shared workflow skills now describe the controller initial_position -> external critique -> controller response loop, min_rounds gating, and project-default discuss configuration behavior."
+    },
+    {
+      "timestamp": "2026-04-17T12:23:35.672Z",
+      "type": "task_status_change",
+      "task_id": "TASK-034",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-034 todo → in_progress: Starting final discuss gate verification: run repo-wide checks, sync shared skills, and perform a real Codex-hosted discuss smoke to confirm initial_position, external critique, controller response, and project-default discuss behavior."
+    },
+    {
+      "timestamp": "2026-04-17T12:29:43.065Z",
+      "type": "task_status_change",
+      "task_id": "TASK-034",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-034 in_progress → auto_verified: Passed repo-wide checks (ruff, pytest, sync-skills) and completed a real Codex-hosted discuss smoke using project-local default_models/min_rounds. Verified initial_position, participant critique, controller response, and upgraded summary artifacts."
+    },
+    {
+      "timestamp": "2026-04-17T12:29:43.070Z",
+      "type": "review_completed",
+      "task_id": "TASK-034",
+      "from_status": null,
+      "to_status": null,
+      "message": "TASK-034 automated verification passed: python -m ruff check ., python -m pytest (67 passed), sync-skills.ps1, and a real Codex->Gemini discuss smoke confirmed project-default model selection, min_rounds enforcement, controller response rounds, and upgraded summary artifacts."
+    },
+    {
+      "timestamp": "2026-04-17T12:29:46.779Z",
+      "type": "task_status_change",
+      "task_id": "TASK-034",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-034 auto_verified → awaiting_manual_acceptance: Automated verification is complete. Remaining gate is manual confirmation that the upgraded discuss protocol behaves as expected in an interactive controller session and that downstream workflows can read the upgraded artifact fields in practice."
     }
   ]
 }

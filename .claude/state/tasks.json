@@ -1259,11 +1259,11 @@
         "验证当 council 命令不可用时，共享 workflow 才会退回到主控本地执行"
       ],
       "stage_gate": true,
-      "status": "awaiting_manual_acceptance",
+      "status": "done",
       "created_at": "2026-04-17T11:00:03.204Z",
-      "updated_at": "2026-04-17T11:30:20.043Z",
+      "updated_at": "2026-04-17T12:10:14.229Z",
       "commit_hash": "",
-      "notes": "TASK-030 requires manual acceptance. Automated verification is green, so the workflow is paused at the manual gate for the Codex-side routing and fallback smoke checklist."
+      "notes": "Manual acceptance recorded after Codex-host smoke validation confirmed project-local config bootstrap, default discuss routing, non-controller role delegation, and explicit council-missing fallback guidance in the shared workflow skills."
     },
     {
       "id": "TASK-031",
@@ -1296,11 +1296,11 @@
         "python -m ruff check .",
         "python -m pytest tests/test_config_loader.py tests/test_discussion_orchestrator.py"
       ],
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-17T11:47:40.180Z",
-      "updated_at": "2026-04-17T11:47:40.180Z",
+      "updated_at": "2026-04-17T12:12:47.711Z",
       "commit_hash": "",
-      "notes": "",
+      "notes": "Acceptance mode is auto, so TASK-031 is complete after discuss-protocol schema verification passed.",
       "review_checklist": [],
       "stage_gate": false
     },
@@ -1336,11 +1336,11 @@
         "python -m ruff check .",
         "python -m pytest tests/test_cli_discuss.py tests/test_discussion_orchestrator.py tests/test_workflow_integration.py"
       ],
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-17T11:47:40.180Z",
-      "updated_at": "2026-04-17T11:47:40.180Z",
+      "updated_at": "2026-04-17T12:18:13.683Z",
       "commit_hash": "",
-      "notes": "",
+      "notes": "Acceptance mode is auto, so TASK-032 is complete after round-trip discuss orchestration verification passed.",
       "review_checklist": [],
       "stage_gate": false
     },
@@ -1380,11 +1380,11 @@
         "if (-not (Select-String -Path 'D:\\project\\CouncilFlow\\docs\\user-guide.zh-CN.md' -Pattern 'initial_position|min_rounds|主控回应' -Quiet)) { throw 'User guide must describe the upgraded discuss protocol.' }",
         "$skills = @('project-discuss','project-init','project-design','project-plan','project-ask','project-next','project-review','project-change'); foreach ($skill in $skills) { $paths = @(\"C:\\Users\\David Zhai\\.workflow-core\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.codex\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.claude\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.gemini\\skills\\$skill\\SKILL.md\"); $hashes = (Get-FileHash $paths).Hash | Select-Object -Unique; if ($hashes.Count -ne 1) { throw ('Synced skill mismatch for ' + $skill) } }"
       ],
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-17T11:47:40.180Z",
-      "updated_at": "2026-04-17T11:47:40.180Z",
+      "updated_at": "2026-04-17T12:23:24.357Z",
       "commit_hash": "",
-      "notes": "",
+      "notes": "Docs and shared workflow skills now describe the controller initial_position -> external critique -> controller response loop, min_rounds gating, and project-default discuss configuration behavior.",
       "review_checklist": [],
       "stage_gate": false
     },
@@ -1425,11 +1425,11 @@
         "验证升级后的 summary artifact 仍能被后续 project-* workflow 明确读取"
       ],
       "stage_gate": true,
-      "status": "todo",
+      "status": "awaiting_manual_acceptance",
       "created_at": "2026-04-17T11:47:40.180Z",
-      "updated_at": "2026-04-17T11:47:40.180Z",
+      "updated_at": "2026-04-17T12:29:46.760Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Automated verification is complete. Remaining gate is manual confirmation that the upgraded discuss protocol behaves as expected in an interactive controller session and that downstream workflows can read the upgraded artifact fields in practice."
     }
   ]
 }
