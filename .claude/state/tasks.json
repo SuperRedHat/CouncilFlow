@@ -681,11 +681,11 @@
         "确认备份目录路径已记录且可用于回滚，且未破坏现有非 workflow MCP 条目"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-16T20:23:06.631Z",
-      "updated_at": "2026-04-16T20:23:06.631Z",
+      "updated_at": "2026-04-17T07:32:14.221Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Manual acceptance confirmed by the user on 2026-04-17. The user verified fresh Gemini, Codex, and Claude Code sessions all expose the expected project-manager MCP/global workflow setup, and accepted the global workflow rollout result."
     },
     {
       "id": "TASK-018",

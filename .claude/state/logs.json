@@ -631,6 +631,54 @@
       "from_status": null,
       "to_status": null,
       "message": "TASK-016 completed on 2026-04-16. install-global-workflow.ps1 now creates a backup snapshot, syncs shared project-* skills, and ensures project-manager MCP for Codex, Claude, and Gemini. Codex and Claude CLI checks passed directly; Gemini was confirmed via settings.json because its mcp list command still printed no rows."
+    },
+    {
+      "timestamp": "2026-04-17T07:31:59.868Z",
+      "type": "task_status_change",
+      "task_id": "TASK-017",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-017 todo → in_progress: Regularizing TASK-017 on 2026-04-17 after the previous automation stopped before the manual gate state transition. User provided manual acceptance evidence from fresh Codex, Claude Code, and Gemini CLI sessions."
+    },
+    {
+      "timestamp": "2026-04-17T07:32:02.854Z",
+      "type": "task_status_change",
+      "task_id": "TASK-017",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-017 in_progress → auto_verified: Automatic checks for TASK-017 had already been completed in the previous run: install-global-workflow.ps1 succeeded, Codex and Claude MCP listings were verified directly, Gemini project-manager registration was confirmed via settings, and the backup path plus rollback docs were recorded."
+    },
+    {
+      "timestamp": "2026-04-17T07:32:05.867Z",
+      "type": "task_status_change",
+      "task_id": "TASK-017",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-017 auto_verified → awaiting_manual_acceptance: TASK-017 is awaiting the user's manual confirmation that fresh Codex, Claude Code, and Gemini CLI sessions can use the global project-* workflow and project-manager MCP."
+    },
+    {
+      "timestamp": "2026-04-17T07:32:14.235Z",
+      "type": "task_status_change",
+      "task_id": "TASK-017",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-017 awaiting_manual_acceptance → done: Manual acceptance confirmed by the user on 2026-04-17. The user verified fresh Gemini, Codex, and Claude Code sessions all expose the expected project-manager MCP/global workflow setup, and accepted the global workflow rollout result."
+    },
+    {
+      "timestamp": "2026-04-17T07:32:19.217Z",
+      "type": "review_completed",
+      "task_id": "TASK-017",
+      "from_status": null,
+      "to_status": null,
+      "message": "TASK-017 manual acceptance passed on 2026-04-17. The user confirmed fresh Gemini, Codex, and Claude Code sessions all show the expected global project-* workflow and project-manager MCP availability."
+    },
+    {
+      "timestamp": "2026-04-17T07:32:19.228Z",
+      "type": "task_status_change",
+      "task_id": "TASK-017",
+      "from_status": null,
+      "to_status": null,
+      "message": "TASK-017 closed on 2026-04-17 after regularizing the state machine and applying the user's pass feedback to the final global workflow gate."
     }
   ]
 }
