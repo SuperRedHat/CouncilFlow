@@ -12,4 +12,5 @@ roles:
   synthesizer: codex
 discussion:
   default_models: []
+  min_rounds: 2
   max_rounds: 5

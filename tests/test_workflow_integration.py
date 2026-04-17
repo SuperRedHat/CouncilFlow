@@ -73,6 +73,7 @@ def test_workflow_integration_contracts_are_machine_readable(
         controller=controller,
         external_models=[target_model],
         max_rounds=5,
+        min_rounds=2,
     )
     delegation = delegation_orchestrator.run(
         role=RoleName.IMPLEMENTER,
@@ -96,6 +97,9 @@ def test_workflow_integration_contracts_are_machine_readable(
 
     assert discussion_contract["artifact_kind"] == "discussion_summary"
     assert discussion_contract["summary_path"] == summary.summary_path
+    assert discussion_contract["initial_position"] is not None
+    assert discussion_contract["current_controller_position"] is not None
+    assert discussion_contract["min_rounds"] == 2
     assert "Controller owns final synthesis" in summary.agreements
     assert delegation_contract["artifact_kind"] == "delegation_handoff"
     assert delegation_contract["handoff_path"] == delegation.handoff_path

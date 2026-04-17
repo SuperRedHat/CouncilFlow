@@ -55,7 +55,15 @@ def test_discuss_command_returns_structured_summary(monkeypatch, tmp_path: Path)
     assert payload["error"] is None
     assert payload["data"]["question"] == "How should we split the architecture?"
     assert payload["data"]["participants"] == ["codex", "claude"]
+    assert payload["data"]["initial_position"] == "Proceed with the current architecture split."
+    assert (
+        payload["data"]["current_controller_position"]
+        == "Proceed with the current architecture split."
+    )
     assert payload["data"]["ended_reason"] == "converged"
+    assert payload["data"]["min_rounds"] == 2
+    assert payload["data"]["effective_min_rounds"] == 2
+    assert payload["data"]["rounds_completed"] == 2
     assert (tmp_path / payload["data"]["summary_path"]).is_file()
     assert payload["data"]["models_source"] == "explicit"
     assert payload["data"]["effective_max_rounds"] == 5
@@ -175,6 +183,7 @@ def test_discuss_command_uses_project_default_models_when_option_is_omitted(
     assert payload["data"]["participants"] == ["codex", "gemini"]
     assert payload["data"]["models_source"] == "project_default"
     assert payload["data"]["configured_default_models"] == ["gemini"]
+    assert payload["data"]["effective_min_rounds"] == 1
     assert payload["data"]["effective_max_rounds"] == 3
 
 
@@ -216,6 +225,7 @@ def test_discuss_command_prefers_explicit_models_over_project_defaults(
     assert payload["data"]["participants"] == ["codex", "claude"]
     assert payload["data"]["models_source"] == "explicit"
     assert payload["data"]["configured_default_models"] == ["gemini"]
+    assert payload["data"]["effective_min_rounds"] == 1
     assert payload["data"]["effective_max_rounds"] == 4
 
 
@@ -240,3 +250,4 @@ def test_discuss_command_warns_when_no_explicit_or_default_models_exist(
     assert payload["data"]["external_models"] == []
     assert "No additional discuss models" in payload["data"]["warning"]
     assert payload["data"]["models_source"] == "project_default"
+    assert payload["data"]["effective_min_rounds"] == 2

@@ -49,12 +49,14 @@ class DiscussionOrchestrator:
         controller: str,
         external_models: list[str],
         max_rounds: int,
+        min_rounds: int,
     ) -> DiscussionSummary:
         """Run the discussion loop, persist artifacts, and return the summary."""
 
         self.store.initialize()
         discussion_id = datetime.now(tz=UTC).strftime("disc_%Y%m%dT%H%M%S%fZ")
         allowed_rounds = min(max_rounds, 5) if len(external_models) == 1 else max_rounds
+        required_rounds = min(min_rounds, allowed_rounds)
         participants = [controller, *external_models]
         turns: list[DiscussionTurn] = []
         key_options: list[str] = []
@@ -64,6 +66,25 @@ class DiscussionOrchestrator:
         recommended_decisions: list[str] = []
         next_steps: list[str] = []
         ended_reason = "max_rounds_reached"
+        controller_participant = self.participant_factory(controller)
+        initial_response = controller_participant.respond(
+            DiscussionRequest(
+                discussion_id=discussion_id,
+                question=question,
+                controller=controller,
+                participant=controller,
+                round_number=0,
+                output_language=self.config.output_language,
+            )
+        )
+        initial_position = initial_response.message
+        current_controller_position = initial_position
+        _extend_unique(key_options, initial_response.key_options)
+        _extend_unique(agreements, initial_response.agreements)
+        _extend_unique(disagreements, initial_response.disagreements)
+        _extend_unique(open_questions, initial_response.open_questions)
+        _append_if_present(recommended_decisions, initial_response.recommended_decision)
+        _append_if_present(next_steps, initial_response.next_step)
 
         self.store.write_state(
             {
@@ -85,6 +106,8 @@ class DiscussionOrchestrator:
                         participant=model,
                         round_number=round_number,
                         output_language=self.config.output_language,
+                        initial_position=initial_position,
+                        current_controller_position=current_controller_position,
                         prior_turns=turns,
                     )
                 )
@@ -93,11 +116,13 @@ class DiscussionOrchestrator:
                     DiscussionTurn(
                         round_number=round_number,
                         speaker_model=response.model,
+                        speaker_role="participant",
                         message=response.message,
                         key_options=response.key_options,
                         agreements=response.agreements,
                         disagreements=response.disagreements,
                         open_questions=response.open_questions,
+                        responds_to_models=[controller],
                         introduced_new_info=response.has_new_information,
                         supports_current_direction=response.supports_current_direction,
                     )
@@ -109,7 +134,46 @@ class DiscussionOrchestrator:
                 _append_if_present(recommended_decisions, response.recommended_decision)
                 _append_if_present(next_steps, response.next_step)
 
-            if round_responses and _round_has_converged(round_responses):
+            controller_response = controller_participant.respond(
+                DiscussionRequest(
+                    discussion_id=discussion_id,
+                    question=question,
+                    controller=controller,
+                    participant=controller,
+                    round_number=round_number,
+                    output_language=self.config.output_language,
+                    initial_position=initial_position,
+                    current_controller_position=current_controller_position,
+                    prior_turns=turns,
+                )
+            )
+            round_responses.append(controller_response)
+            turns.append(
+                DiscussionTurn(
+                    round_number=round_number,
+                    speaker_model=controller,
+                    speaker_role="controller",
+                    message=controller_response.message,
+                    key_options=controller_response.key_options,
+                    agreements=controller_response.agreements,
+                    disagreements=controller_response.disagreements,
+                    open_questions=controller_response.open_questions,
+                    responds_to_models=external_models,
+                    introduced_new_info=controller_response.has_new_information,
+                    supports_current_direction=controller_response.supports_current_direction,
+                )
+            )
+            current_controller_position = controller_response.message
+            _extend_unique(key_options, controller_response.key_options)
+            _extend_unique(agreements, controller_response.agreements)
+            _extend_unique(disagreements, controller_response.disagreements)
+            _extend_unique(open_questions, controller_response.open_questions)
+            _append_if_present(recommended_decisions, controller_response.recommended_decision)
+            _append_if_present(next_steps, controller_response.next_step)
+
+            if round_number >= required_rounds and round_responses and _round_has_converged(
+                round_responses
+            ):
                 ended_reason = "converged"
                 break
 
@@ -119,6 +183,9 @@ class DiscussionOrchestrator:
             question=question,
             controller=controller,
             participants=participants,
+            initial_position=initial_position,
+            current_controller_position=current_controller_position,
+            min_rounds=required_rounds,
             rounds_completed=rounds_completed,
             ended_reason=ended_reason,
             key_options=key_options,
@@ -138,6 +205,7 @@ class DiscussionOrchestrator:
             summary=summary,
             controller=controller,
             allowed_rounds=allowed_rounds,
+            required_rounds=required_rounds,
             participants=participants,
             turns=turns,
         )
@@ -165,6 +233,7 @@ class DiscussionOrchestrator:
         summary: DiscussionSummary,
         controller: str,
         allowed_rounds: int,
+        required_rounds: int,
         participants: list[str],
         turns: list[DiscussionTurn],
     ) -> DiscussionSummary:
@@ -180,6 +249,9 @@ class DiscussionOrchestrator:
             question=summary.question,
             participants=participants,
             status="completed",
+            initial_position=summary.initial_position,
+            current_controller_position=summary.current_controller_position,
+            min_rounds=required_rounds,
             max_rounds=allowed_rounds,
             completed_rounds=summary.rounds_completed,
             ended_reason=summary.ended_reason,
@@ -192,7 +264,7 @@ class DiscussionOrchestrator:
 
 
 def _append_if_present(target: list[str], value: str | None) -> None:
-    if value and value not in target:
+    if value:
         target.append(value)
 
 

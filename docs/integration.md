@@ -37,6 +37,8 @@ Rules:
 - `roles.*` defines automatic delegation targets for execution roles.
 - `discussion.default_models` defines the default extra discuss participants when workflows omit
   `--models`.
+- `discussion.min_rounds` defines the minimum number of critique/respond rounds that must complete
+  before early convergence is allowed.
 - `discussion.max_rounds` defines the default round budget when workflows omit `--max-rounds`.
 - Local-only execution is a fallback for `council`-missing environments or explicit
   `local_execution` responses, not the default routing strategy.
@@ -67,6 +69,9 @@ Expected machine-readable contract:
 - `summary_path`
 - `question`
 - `participants`
+- `initial_position`
+- `current_controller_position`
+- `min_rounds`
 - `recommended_decision`
 - `open_questions`
 - `next_step`
@@ -86,9 +91,12 @@ must follow the same pattern:
 1. Invoke `council discuss`
    - Use `--models` only when the user explicitly chose participants
    - Otherwise omit `--models` and let the project-local config decide the default participants
-2. Wait for the summary artifact
-3. Read the summary artifact from disk
-4. Continue the main `project-*` step with the controller's own synthesis
+2. Let `CouncilFlow` establish the controller `initial_position`
+3. Let external models critique that position
+4. Let `CouncilFlow` feed the critique back into the controller for at least `min_rounds`
+5. Wait for the summary artifact
+6. Read the summary artifact from disk
+7. Continue the main `project-*` step with the controller's own synthesis
 
 ### Delegation
 
@@ -136,8 +144,11 @@ Expected machine-readable contract:
 ## Minimum Integration Flow
 
 1. `project-*` decides whether it needs `discuss` or `delegate`.
-2. `CouncilFlow` writes artifacts into `.council/`.
-3. `project-*` reads those artifacts explicitly.
-4. The controller uses those artifacts to continue the main workflow.
+2. For `discuss`, `CouncilFlow` generates a controller `initial_position`.
+3. External participants critique that position.
+4. The controller responds to the critique until `min_rounds` is satisfied and the discussion converges.
+5. `CouncilFlow` writes artifacts into `.council/`.
+6. `project-*` reads those artifacts explicitly.
+7. The controller uses those artifacts to continue the main workflow.
 
 This keeps the integration deterministic, inspectable, and portable across Codex, Claude Code, and Gemini CLI.

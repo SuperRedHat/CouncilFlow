@@ -16,6 +16,7 @@ def test_build_default_config_uses_packaged_template_defaults() -> None:
     assert config.output_language == "zh-CN"
     assert config.roles.implementer == "claude"
     assert config.discussion.default_models == []
+    assert config.discussion.min_rounds == 2
     assert config.discussion.max_rounds == 5
 
 
@@ -45,6 +46,7 @@ def test_load_config_normalizes_role_and_discussion_model_names(tmp_path: Path) 
                 "    - Gemini CLI",
                 "    - gemini-1.5-flash",
                 "    - Claude Code",
+                "  min_rounds: 3",
                 "  max_rounds: 7",
                 "",
             ]
@@ -58,4 +60,53 @@ def test_load_config_normalizes_role_and_discussion_model_names(tmp_path: Path) 
     assert loaded.roles.implementer == "gemini"
     assert loaded.roles.reviewer == "claude"
     assert loaded.discussion.default_models == ["gemini", "claude"]
+    assert loaded.discussion.min_rounds == 3
     assert loaded.discussion.max_rounds == 7
+
+
+def test_load_config_keeps_backward_compatible_min_rounds_default(tmp_path: Path) -> None:
+    config_path = tmp_path / ".council" / "config.yaml"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(
+        "\n".join(
+            [
+                "config_version: 1",
+                "discussion:",
+                "  default_models:",
+                "    - gemini",
+                "  max_rounds: 1",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    loaded = load_config(config_path)
+
+    assert loaded.discussion.default_models == ["gemini"]
+    assert loaded.discussion.min_rounds == 1
+    assert loaded.discussion.max_rounds == 1
+
+
+def test_load_config_rejects_min_rounds_greater_than_max_rounds(tmp_path: Path) -> None:
+    config_path = tmp_path / ".council" / "config.yaml"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(
+        "\n".join(
+            [
+                "config_version: 1",
+                "discussion:",
+                "  min_rounds: 4",
+                "  max_rounds: 2",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    try:
+        load_config(config_path)
+    except ValueError as exc:
+        assert "min_rounds" in str(exc)
+    else:
+        raise AssertionError("Config loading should reject min_rounds > max_rounds.")

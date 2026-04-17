@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from councilflow.models.roles import (
     DEFAULT_ROLE_MODELS,
@@ -50,6 +50,7 @@ class DiscussionSettings(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     default_models: list[str] = Field(default_factory=list)
+    min_rounds: int = Field(default=1, ge=1)
     max_rounds: int = Field(default=5, ge=1)
 
     @field_validator("default_models", mode="before")
@@ -79,6 +80,14 @@ class DiscussionSettings(BaseModel):
             seen_models.add(normalized)
             normalized_models.append(normalized)
         return normalized_models
+
+    @model_validator(mode="after")
+    def validate_round_bounds(self) -> DiscussionSettings:
+        """Ensure minimum discussion rounds do not exceed the configured maximum."""
+
+        if self.min_rounds > self.max_rounds:
+            raise ValueError("discussion.min_rounds cannot exceed discussion.max_rounds.")
+        return self
 
 
 class ControllerContext(BaseModel):

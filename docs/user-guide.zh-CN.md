@@ -154,6 +154,7 @@ roles:
 discussion:
   default_models:
     - gemini
+  min_rounds: 2
   max_rounds: 3
 ```
 
@@ -205,6 +206,7 @@ discussion:
 表示：
 
 - 不写 `--models` 时，默认先邀请 `gemini` 和 `claude`
+- 不写 `--min-rounds` 配置时，新项目默认至少完成一轮“主控回应外部意见”的闭环
 - 不写 `--max-rounds` 时，默认最多讨论 4 轮
 
 如果其中某个模型正好和当前主控重复，`CouncilFlow` 仍会正常做归一化、去重和短路提醒。
@@ -267,6 +269,7 @@ controller_override: codex
 默认讨论策略是：
 
 - `discussion.default_models = []`
+- `discussion.min_rounds = 2`（新生成项目模板）
 - `discussion.max_rounds = 5`
 
 这表示如果你不配置默认讨论模型，又没有显式传 `--models`，系统会返回结构化提示，告诉你当前没有额外讨论参与者可用。
@@ -372,6 +375,10 @@ python -m councilflow.cli.app discuss `
 - 主控永远会参与
 - `--models` 里只写额外模型
 - 不写 `--models` 时，会读取项目级 `discussion.default_models`
+- `CouncilFlow` 会先生成主控的 `initial_position`
+- 外部模型会围绕这版主控立场发表评论，而不是各自从零起草方案
+- 主控会在后续轮次读取外部反馈并给出回应或修正
+- 只有达到 `discussion.min_rounds` 之后，系统才允许提前收敛
 - 不写 `--max-rounds` 时，会读取项目级 `discussion.max_rounds`
 - 去重后如果没有非主控模型，sidecar 不会启动
 - “主控 + 1 个额外模型”最多 5 轮
@@ -405,6 +412,9 @@ python -m councilflow.cli.app discuss "..." --models codex,claude --project-root
 
 - `discussion_id`
 - `participants`
+- `initial_position`
+- `current_controller_position`
+- `min_rounds`
 - `summary_path`
 - `recommended_decision`
 - `next_step`
@@ -589,6 +599,7 @@ python -m councilflow.cli.app synthesize `
 在新的自动路由语义下：
 
 - 如果 `project-discuss` 或嵌入式 `discuss` 没有显式写模型，默认会读取项目级 `discussion.default_models`
+- discuss 本身现在遵循 `initial_position -> 外部评论 -> 主控回应 -> 达到 min_rounds 后才允许收敛` 的闭环协议
 - 如果 `project-next`、`project-review`、`project-change` 需要执行型角色，默认会优先尝试 `council delegate --role ...`
 - 只有在 `council` 缺失或不可调用时，主工作流才退回纯本地执行
 

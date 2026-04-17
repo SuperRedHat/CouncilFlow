@@ -120,6 +120,7 @@ def discuss(
     requested_models, models_source = select_discuss_models(explicit_models, config)
     resolution = resolve_discuss_models(requested_models, controller)
     effective_max_rounds = max_rounds or config.discussion.max_rounds
+    effective_min_rounds = min(config.discussion.min_rounds, effective_max_rounds)
 
     if not resolution.requires_sidecar:
         payload = {
@@ -131,6 +132,7 @@ def discuss(
             "warning": resolution.warning,
             "models_source": models_source,
             "configured_default_models": config.discussion.default_models,
+            "effective_min_rounds": effective_min_rounds,
             "effective_max_rounds": effective_max_rounds,
             "rounds_completed": 0,
         }
@@ -156,6 +158,7 @@ def discuss(
             controller=controller.value,
             external_models=resolution.external_models,
             max_rounds=effective_max_rounds,
+            min_rounds=effective_min_rounds,
         )
     except UnavailableParticipantError as exc:
         emit_console_text(
@@ -178,6 +181,7 @@ def discuss(
                 **summary.model_dump(mode="json"),
                 "models_source": models_source,
                 "configured_default_models": config.discussion.default_models,
+                "effective_min_rounds": effective_min_rounds,
                 "effective_max_rounds": effective_max_rounds,
             },
             meta={

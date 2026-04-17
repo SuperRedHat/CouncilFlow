@@ -32,13 +32,60 @@ def render_discussion_prompt(request: DiscussionRequest) -> str:
         {
             "round_number": turn.round_number,
             "speaker_model": turn.speaker_model,
+            "speaker_role": turn.speaker_role,
             "message": turn.message,
             "agreements": turn.agreements,
             "disagreements": turn.disagreements,
             "open_questions": turn.open_questions,
+            "responds_to_models": turn.responds_to_models,
         }
         for turn in request.prior_turns
     ]
+    if request.participant == request.controller and request.round_number == 0:
+        return (
+            "You are the controller in a structured multi-model discussion.\n\n"
+            f"Controller: {request.controller}\n"
+            f"Output Language: {request.output_language}\n\n"
+            f"Question:\n{request.question}\n\n"
+            "Produce the controller's initial position before any external critique.\n"
+            "Return raw JSON only with this schema:\n"
+            "{\n"
+            '  "message": "string",\n'
+            '  "key_options": ["string"],\n'
+            '  "agreements": ["string"],\n'
+            '  "disagreements": ["string"],\n'
+            '  "open_questions": ["string"],\n'
+            '  "recommended_decision": "string",\n'
+            '  "next_step": "string",\n'
+            '  "supports_current_direction": true,\n'
+            '  "has_new_information": true\n'
+            "}\n"
+        )
+    if request.participant == request.controller:
+        return (
+            "You are the controller in a structured multi-model discussion.\n\n"
+            f"Controller: {request.controller}\n"
+            f"Round: {request.round_number}\n"
+            f"Output Language: {request.output_language}\n\n"
+            f"Question:\n{request.question}\n\n"
+            f"Initial Position:\n{request.initial_position or '-'}\n\n"
+            f"Current Controller Position:\n{request.current_controller_position or '-'}\n\n"
+            "Prior Turns JSON:\n"
+            f"{json.dumps(prior_turns, ensure_ascii=False, indent=2)}\n\n"
+            "Review the external critique, then respond as the controller. Update or defend the "
+            "controller position and return raw JSON only with this schema:\n"
+            "{\n"
+            '  "message": "string",\n'
+            '  "key_options": ["string"],\n'
+            '  "agreements": ["string"],\n'
+            '  "disagreements": ["string"],\n'
+            '  "open_questions": ["string"],\n'
+            '  "recommended_decision": "string",\n'
+            '  "next_step": "string",\n'
+            '  "supports_current_direction": true,\n'
+            '  "has_new_information": false\n'
+            "}\n"
+        )
     return (
         "You are participating in a controller-led discussion.\n\n"
         f"Controller: {request.controller}\n"
@@ -46,8 +93,12 @@ def render_discussion_prompt(request: DiscussionRequest) -> str:
         f"Round: {request.round_number}\n"
         f"Output Language: {request.output_language}\n\n"
         f"Question:\n{request.question}\n\n"
+        f"Initial Controller Position:\n{request.initial_position or '-'}\n\n"
+        f"Current Controller Position:\n{request.current_controller_position or '-'}\n\n"
         "Prior Turns JSON:\n"
         f"{json.dumps(prior_turns, ensure_ascii=False, indent=2)}\n\n"
+        "Comment on the controller position rather than starting from zero. Support, critique, "
+        "refine, or challenge it as needed.\n\n"
         "Return raw JSON only with this schema:\n"
         "{\n"
         '  "message": "string",\n'
