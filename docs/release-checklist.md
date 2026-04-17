@@ -25,6 +25,9 @@
   fails, instead of letting the controller silently run tests and patch locally.
 - Verify `project-feedback` closes or reopens gates only, and creates follow-up repair work instead
   of directly acting as `tester` or `fixer`.
+- Verify route/discuss failures stop the workflow instead of silently switching to local execution.
+- Verify temporarily hiding or breaking the `council` command produces an explicit local fallback,
+  and that this downgrade is clearly distinguished from normal route failures.
 
 ## Gate Rule
 

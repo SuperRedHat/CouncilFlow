@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from councilflow.cli import delegate as delegate_module
@@ -27,6 +28,51 @@ class FakeFailureAdapter:
 
     def ask(self, request: ProviderRequest) -> ProviderResponse:
         raise ProviderError("mock delegation failure")
+
+
+@pytest.mark.parametrize(
+    "role",
+    ["implementer", "tester", "fixer", "reviewer", "architect", "advisor"],
+)
+def test_delegate_command_returns_structured_success_for_role(
+    monkeypatch,
+    tmp_path: Path,
+    role: str,
+) -> None:
+    monkeypatch.setattr(
+        delegate_module,
+        "get_provider_adapter",
+        lambda *args, **kwargs: FakeSuccessAdapter(),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "delegate",
+            "--role",
+            role,
+            "--model",
+            "claude",
+            "--objective",
+            f"Run the {role} stage.",
+            "--task-summary",
+            "Return a delegated artifact for workflow regression coverage.",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={"CODEX_SHELL": "1"},
+    )
+
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["error"] is None
+    assert payload["data"]["role"] == role
+    assert payload["data"]["status"] == "delegated"
+    assert payload["data"]["delegation_status"] == "completed"
+    assert payload["data"]["via_sidecar"] is True
+    assert (tmp_path / payload["data"]["handoff_path"]).is_file()
+    assert (tmp_path / payload["data"]["result_path"]).is_file()
 
 
 def test_delegate_command_returns_structured_success(monkeypatch, tmp_path: Path) -> None:
@@ -83,7 +129,15 @@ def test_delegate_command_returns_structured_success(monkeypatch, tmp_path: Path
     assert (tmp_path / payload["data"]["result_path"]).is_file()
 
 
-def test_delegate_command_returns_structured_error(monkeypatch, tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "role",
+    ["implementer", "tester", "fixer", "reviewer", "architect", "advisor"],
+)
+def test_delegate_command_returns_structured_error_for_role(
+    monkeypatch,
+    tmp_path: Path,
+    role: str,
+) -> None:
     monkeypatch.setattr(
         delegate_module,
         "get_provider_adapter",
@@ -95,7 +149,7 @@ def test_delegate_command_returns_structured_error(monkeypatch, tmp_path: Path) 
         [
             "delegate",
             "--role",
-            "implementer",
+            role,
             "--model",
             "claude",
             "--objective",
@@ -114,7 +168,7 @@ def test_delegate_command_returns_structured_error(monkeypatch, tmp_path: Path) 
     assert payload["data"] is None
     assert payload["error"]["status"] == "error"
     assert payload["error"]["via_sidecar"] is True
-    assert payload["error"]["role"] == "implementer"
+    assert payload["error"]["role"] == role
     assert payload["error"]["model"] == "claude"
     assert payload["error"]["message"] == "mock delegation failure"
     assert payload["error"]["error_kind"] == "process_exit"
@@ -142,6 +196,42 @@ def test_delegate_command_rejects_invalid_input_shape(tmp_path: Path) -> None:
 
     assert result.exit_code != 0
     assert "--input expects KEY=VALUE" in result.output
+
+
+@pytest.mark.parametrize(
+    "role",
+    ["implementer", "tester", "fixer", "reviewer", "architect", "advisor"],
+)
+def test_delegate_command_allows_same_controller_local_execution_for_role(
+    tmp_path: Path,
+    role: str,
+) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "delegate",
+            "--role",
+            role,
+            "--model",
+            "codex",
+            "--objective",
+            f"Run the {role} stage locally.",
+            "--task-summary",
+            "This should remain on the active controller.",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={"CODEX_SHELL": "1"},
+    )
+
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["error"] is None
+    assert payload["data"]["role"] == role
+    assert payload["data"]["model"] == "codex"
+    assert payload["data"]["status"] == "local_execution"
+    assert payload["data"]["via_sidecar"] is False
 
 
 def test_delegate_command_stays_local_when_role_maps_to_controller(tmp_path: Path) -> None:

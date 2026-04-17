@@ -1575,6 +1575,62 @@
       "from_status": null,
       "to_status": null,
       "message": "Completed TASK-037-FIX-005: aligned project-init/design/plan/change/ask/review/feedback with explicit phase roles and hard route-first outcome handling; sync-skills and cross-controller hash checks passed."
+    },
+    {
+      "timestamp": "2026-04-17T22:55:34.854Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-006",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-037-FIX-006 todo → in_progress: Starting workflow-hard-regression: adding automated regressions and smoke checklist alignment for delegated/local_execution/error handling, missing artifact stops, discuss failure stops, and explicit council-missing fallback semantics across role-driven workflows."
+    },
+    {
+      "timestamp": "2026-04-17T23:00:04.031Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-006",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-037-FIX-006 in_progress → auto_verified: Added automated regression coverage for delegated/local_execution/error outcomes across key roles, asserted shared workflow docs hard-stop on route/artifact failures and explicit council-missing fallback, updated release checklist smoke items, and verified with python -m ruff check ., python -m pytest (114 passed), and sync-skills."
+    },
+    {
+      "timestamp": "2026-04-17T23:00:07.092Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-006",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-037-FIX-006 auto_verified → done: Workflow hard-regression automation is complete. Regression tests now cover hard-stop semantics, explicit fallback distinction, and key role route outcomes; docs/checklist are aligned with the smoke surface."
+    },
+    {
+      "timestamp": "2026-04-17T23:00:12.617Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037-FIX-006",
+      "from_status": null,
+      "to_status": null,
+      "message": "Completed TASK-037-FIX-006: added route-outcome and skill-contract regressions, aligned release checklist smoke scenarios with failure-stop and explicit council-missing fallback semantics, and passed full repo verification plus sync-skills."
+    },
+    {
+      "timestamp": "2026-04-17T23:00:42.317Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-037 in_progress → auto_verified: All workflow-hardening implementation subtasks are complete. Automated verification now covers route-outcome regressions, failure-stop semantics, explicit fallback distinction, and full repo checks; remaining work is the manual real-controller smoke gate."
+    },
+    {
+      "timestamp": "2026-04-17T23:00:47.937Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-037 auto_verified → awaiting_manual_acceptance: Automated workflow-hardening regressions are complete. Awaiting the real-controller manual smoke checklist for Codex/Claude/Gemini route-first behavior, failure-stop handling, and explicit council-missing fallback."
+    },
+    {
+      "timestamp": "2026-04-17T23:00:51.334Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037",
+      "from_status": null,
+      "to_status": null,
+      "message": "Advanced TASK-037 to awaiting_manual_acceptance after completing all workflow-hardening implementation subtasks and full automated verification. Remaining work is the manual tri-controller smoke checklist."
     }
   ]
 }

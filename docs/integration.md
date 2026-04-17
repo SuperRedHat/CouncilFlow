@@ -245,6 +245,8 @@ Expected machine-readable contract:
 - Artifacts created under a Gemini-controlled session must remain consumable by Codex and Claude workflows.
 - When `council` is unavailable, workflows may fall back to local controller-only execution, but this
   fallback should be explicit in the calling workflow rather than treated as the primary path.
+- Route/discuss failures and a missing `council` command are different cases: only the latter may
+  trigger an explicit controller-only fallback, while the former must stop the workflow.
 - When `council` is available, workflows must not start role work until they receive either
   `data.status = local_execution` or a delegated artifact set.
 - Role-driven workflows must interpret `verification_commands` as `tester` inputs and must not let

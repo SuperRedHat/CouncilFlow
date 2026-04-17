@@ -11,14 +11,16 @@ from councilflow.cli.app import app
 from councilflow.config.loader import build_default_config
 from councilflow.controller.delegation_orchestrator import DelegationOrchestrator
 from councilflow.controller.discussion_orchestrator import DiscussionOrchestrator
+from councilflow.controller.routing import build_route_decision
 from councilflow.handoff.packages import build_delegation_contract, load_handoff_package
 from councilflow.handoff.summaries import build_discussion_contract
 from councilflow.models.discussion import DiscussionRequest, ParticipantResponse
-from councilflow.models.roles import RoleName
+from councilflow.models.roles import ControllerName, RoleName
 from councilflow.providers.base import ProviderRequest, ProviderResponse
 from councilflow.state.store import CouncilStateStore
 
 runner = CliRunner()
+WORKFLOW_CORE_ROOT = Path.home() / ".workflow-core"
 
 
 class IntegrationDiscussionParticipant:
@@ -117,6 +119,16 @@ def test_workflow_integration_contracts_are_machine_readable(
     assert delegation_contract["handoff_schema"]["next_actions_on_failure"] == [
         "Stop and report the failed implementer stage."
     ]
+    assert (
+        any(
+            "next-actions guidance" in rule
+            and "stage transitions" in rule
+            for rule in delegation_contract["consumption_rules"]
+        )
+    )
+    assert discussion_contract["consumption_rules"][-1] == (
+        "If summary_path is missing, the workflow must treat the discussion as incomplete."
+    )
     assert summary.controller == controller
 
 
@@ -228,3 +240,113 @@ def test_project_next_stage_contracts_are_explicit(
     assert contract["stage_guidance"]["next_actions_on_success"] == next_success
     assert contract["stage_guidance"]["next_actions_on_failure"] == next_failure
     assert "Required upstream artifacts must be read" in contract["consumption_rules"][3]
+
+
+@pytest.mark.parametrize(
+    ("role", "controller", "target_model", "expected_status"),
+    [
+        (RoleName.IMPLEMENTER, ControllerName.CODEX, "claude", "delegated"),
+        (RoleName.TESTER, ControllerName.CODEX, "claude", "delegated"),
+        (RoleName.FIXER, ControllerName.CODEX, "claude", "delegated"),
+        (RoleName.REVIEWER, ControllerName.CODEX, "claude", "delegated"),
+        (RoleName.ARCHITECT, ControllerName.CODEX, "claude", "delegated"),
+        (RoleName.ADVISOR, ControllerName.CODEX, "claude", "delegated"),
+        (RoleName.IMPLEMENTER, ControllerName.CODEX, "codex", "local_execution"),
+        (RoleName.TESTER, ControllerName.CODEX, "codex", "local_execution"),
+        (RoleName.FIXER, ControllerName.CODEX, "codex", "local_execution"),
+        (RoleName.REVIEWER, ControllerName.CODEX, "codex", "local_execution"),
+        (RoleName.ARCHITECT, ControllerName.CODEX, "codex", "local_execution"),
+        (RoleName.ADVISOR, ControllerName.CODEX, "codex", "local_execution"),
+    ],
+)
+def test_route_decision_covers_key_role_outcomes(
+    role: RoleName,
+    controller: ControllerName,
+    target_model: str,
+    expected_status: str,
+) -> None:
+    decision = build_route_decision(
+        role=role,
+        controller=controller,
+        target_model=target_model,
+    )
+
+    assert decision.role == role
+    assert decision.status == expected_status
+    assert decision.via_sidecar is (expected_status == "delegated")
+
+
+@pytest.mark.parametrize(
+    ("skill", "required_phrases"),
+    [
+        (
+            "project-next",
+            [
+                "status = local_execution",
+                "status = delegated",
+                "停止当前 workflow 并如实报告失败",
+                "council` 明确缺失或不可调用",
+                "缺少 handoff/result artifact",
+                "缺少 summary artifact",
+            ],
+        ),
+        (
+            "project-review",
+            [
+                "status = local_execution",
+                "status = delegated",
+                "停止当前 workflow 并报告失败",
+                "council` 明确缺失或不可调用",
+                "缺少 handoff/result artifact",
+                "缺少 summary artifact",
+            ],
+        ),
+        (
+            "project-change",
+            [
+                "status = local_execution",
+                "status = delegated",
+                "停止当前 workflow 并报告失败",
+                "council` 明确缺失或不可调用",
+                "缺少 handoff/result artifact",
+                "缺少 summary artifact",
+            ],
+        ),
+        (
+            "project-design",
+            [
+                "status = local_execution",
+                "status = delegated",
+                "停止当前 workflow 并报告失败",
+                "council` 明确缺失或不可调用",
+                "缺少 handoff/result artifact",
+                "缺少 summary artifact",
+            ],
+        ),
+    ],
+)
+def test_shared_skills_document_hard_stop_and_explicit_fallback(
+    skill: str,
+    required_phrases: list[str],
+) -> None:
+    text = (WORKFLOW_CORE_ROOT / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+
+    for phrase in required_phrases:
+        assert phrase in text
+
+
+def test_release_checklist_covers_failure_stop_and_council_missing_fallback() -> None:
+    checklist = (Path(__file__).resolve().parents[1] / "docs" / "release-checklist.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert (
+        "Verify route/discuss failures stop the workflow instead of silently switching to local "
+        "execution."
+        in checklist
+    )
+    assert (
+        "Verify temporarily hiding or breaking the `council` command produces an explicit local "
+        "fallback"
+        in checklist
+    )
