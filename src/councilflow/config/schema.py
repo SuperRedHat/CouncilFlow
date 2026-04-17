@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from councilflow.models.config import RoleMapping
+from councilflow.models.config import DiscussionSettings, RoleMapping
 from councilflow.models.roles import ControllerName
 
 
@@ -17,4 +17,4 @@ class CouncilConfig(BaseModel):
     output_language: str = "zh-CN"
     controller_override: ControllerName | None = None
     roles: RoleMapping = Field(default_factory=RoleMapping)
-
+    discussion: DiscussionSettings = Field(default_factory=DiscussionSettings)

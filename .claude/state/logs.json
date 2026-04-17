@@ -991,6 +991,46 @@
       "from_status": null,
       "to_status": null,
       "message": "Claude Code 已回到官方推荐的 skills 主路径：.workflow-core/skills 继续是唯一真相源，.claude/commands/project-*.md 仅作为 legacy 兼容备份对象，不再是新安装入口。"
+    },
+    {
+      "timestamp": "2026-04-17T11:00:11.272Z",
+      "type": "decision",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "Approved product change: .council/config.yaml is upgraded to the project-level authority for automatic role routing and default discussion strategy. Local execution is no longer the default when CouncilFlow is available; it becomes either a route result or a fallback when CouncilFlow is unavailable. For implementation, the requested 'discuss role' will be modeled as a dedicated project-level discussion configuration block rather than mixed into execution role mapping."
+    },
+    {
+      "timestamp": "2026-04-17T11:16:16.719Z",
+      "type": "task_status_change",
+      "task_id": "TASK-026",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-026 todo → in_progress: Starting config-bootstrap work: add project-local default config template, discussion settings schema, and automatic config materialization during CouncilFlow initialization."
+    },
+    {
+      "timestamp": "2026-04-17T11:18:28.838Z",
+      "type": "task_status_change",
+      "task_id": "TASK-026",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-026 in_progress → auto_verified: Added packaged default project config template, discussion settings schema, and automatic project-local config materialization during CouncilFlow initialization. Verification passed with python -m pytest tests/test_config_loader.py tests/test_state_store.py and python -m ruff check ."
+    },
+    {
+      "timestamp": "2026-04-17T11:18:35.766Z",
+      "type": "task_status_change",
+      "task_id": "TASK-026",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-026 auto_verified → done: Acceptance mode is auto, so TASK-026 is complete after config-bootstrap verification passed."
+    },
+    {
+      "timestamp": "2026-04-17T11:18:39.393Z",
+      "type": "decision",
+      "task_id": "TASK-026",
+      "from_status": null,
+      "to_status": null,
+      "message": "Completed TASK-026: CouncilFlow now ships a packaged default project config template, auto-materializes .council/config.yaml for new projects during initialization, and supports a dedicated discussion configuration block alongside execution role mappings."
     }
   ]
 }

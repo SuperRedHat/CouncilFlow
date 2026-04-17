@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from councilflow.config.loader import dump_config, load_config
+from councilflow.config.loader import dump_config, ensure_config_exists, load_config
 from councilflow.config.schema import CouncilConfig
 from councilflow.state.paths import CouncilPaths, build_council_paths, ensure_council_paths
 
@@ -39,6 +39,7 @@ class CouncilStateStore:
         """Ensure the standard directory layout exists and bootstrap state.json."""
 
         ensure_council_paths(self.paths)
+        ensure_config_exists(self.paths.config)
         if not self.paths.state.exists():
             self.write_state(default_state_payload())
             return self.paths

@@ -509,3 +509,22 @@ V1 完成时，至少满足：
 2. 已生成的 `.claude\commands\project-*.md` 只视为需要清理的 legacy wrapper，不再作为安装目标；
 3. `.workflow-core\skills\project-*` 继续作为三端共享真相源；
 4. 为降低 Claude 对 frontmatter 的解析异常风险，共享 `project-*` skills 的 `description` 将统一为更稳定的单行写法。
+
+## 22. 变更记录（2026-04-17，自动角色分发与项目级默认配置）
+本次变更聚焦 `config.yaml` 的产品语义修正，目标是把它从“可选路由提示”升级为“项目级自动分发策略”。用户在每个项目目录中的 `.council/config.yaml` 应真正决定角色执行去向和默认讨论参与者，而不是只在手工输入 `--model` 时才偶尔生效。
+
+新增产品要求：
+1. **项目级配置成为自动分发真源**：当当前机器已安装并可调用 `CouncilFlow` 时，`project-*` 工作流在进入实现、评审、修复、架构等角色步骤前，必须优先读取当前项目 `.council/config.yaml` 的映射结果，而不是默认让主控先亲自执行。
+2. **本地执行从“默认行为”改为“路由结果或降级结果”**：
+   - 如果某角色映射到当前主控，则本地执行；
+   - 如果某角色映射到非主控模型，则自动委派；
+   - 如果当前环境没有安装或无法调用 `CouncilFlow`，才允许退回到“主控直接执行”的降级路径。
+3. **讨论默认模型进入项目配置**：为满足用户“即使只写 `/project-discuss` 或 `project-init discuss` 也能自动选模型”的需求，项目配置需要新增一组讨论策略字段，用来承担用户所说的 “discuss 角色” 职责。`project-discuss` 与嵌入式 `discuss` 在未显式给出模型列表时，必须优先使用该项目级默认配置。
+4. **`config.yaml` 必须项目本地化**：每个开发项目目录下都应有自己的 `.council/config.yaml`，允许不同项目维护不同的角色分工与讨论策略。
+5. **缺失配置时自动补齐**：如果用户在某个项目目录下首次调用 `CouncilFlow` 或依赖它的 `project-*` 工作流，但项目中还没有 `.council/config.yaml`，系统应从 `CouncilFlow` 安装目录内置的默认模板复制一份到项目目录，再继续运行，而不是静默回退到硬编码默认值。
+6. **共享 workflow 需要自动遵循配置**：`.workflow-core` 中的 `project-init`、`project-design`、`project-plan`、`project-next`、`project-review`、`project-change`、`project-discuss` 等共享 skills，在 `CouncilFlow` 可用时必须优先采用自动角色分发与默认讨论配置，不再把“主控亲自执行”写成默认主路径。
+
+范围说明：
+1. 本次变更不仅涉及 `CouncilFlow` Python 本体，还涉及 `.workflow-core` 中的共享 `project-*` skills、集成文档和默认配置模板。
+2. 为避免把“执行角色”和“讨论参与者”混成同一语义层，本次设计优先把讨论默认策略建模为项目级 discussion 配置，而不是简单复用现有 execution role 字段。
+3. 本次变更完成后，当前文档中所有“默认由当前主控直接执行步骤”的旧表述，均应理解为已被本节 supersede；新语义应为“默认先按项目配置路由，只有工具缺失或显式路由到主控时才本地执行”。

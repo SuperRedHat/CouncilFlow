@@ -44,6 +44,43 @@ class RoleMapping(BaseModel):
         return getattr(self, role.value)
 
 
+class DiscussionSettings(BaseModel):
+    """Project-level defaults for structured multi-model discussions."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    default_models: list[str] = Field(default_factory=list)
+    max_rounds: int = Field(default=5, ge=1)
+
+    @field_validator("default_models", mode="before")
+    @classmethod
+    def normalize_default_models(cls, value: object) -> list[str]:
+        """Normalize and de-duplicate configured default discussion models."""
+
+        if value is None:
+            return []
+        if isinstance(value, str):
+            raw_items = value.split(",")
+        elif isinstance(value, list):
+            raw_items = value
+        else:
+            raise TypeError("discussion.default_models must be a string or list of strings.")
+
+        normalized_models: list[str] = []
+        seen_models: set[str] = set()
+        for item in raw_items:
+            if not isinstance(item, str):
+                raise TypeError("discussion.default_models must contain only strings.")
+            normalized = normalize_model_name(item)
+            if not normalized:
+                raise ValueError("discussion.default_models cannot contain empty entries.")
+            if normalized in seen_models:
+                continue
+            seen_models.add(normalized)
+            normalized_models.append(normalized)
+        return normalized_models
+
+
 class ControllerContext(BaseModel):
     """Detected controller information for the current host environment."""
 

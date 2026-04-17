@@ -1,0 +1,15 @@
+config_version: 1
+output_language: zh-CN
+controller_override: null
+roles:
+  planner: codex
+  architect: codex
+  implementer: claude
+  tester: claude
+  reviewer: codex
+  fixer: codex
+  advisor: gpt
+  synthesizer: codex
+discussion:
+  default_models: []
+  max_rounds: 5

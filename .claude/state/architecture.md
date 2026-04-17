@@ -663,3 +663,27 @@ graph TD
 3. `.claude\commands\project-*.md` 只作为需要清理的 legacy wrapper，不再由安装流程生成；
 4. 为减少 Claude slash 列表对 frontmatter 的兼容性问题，共享 `project-*` skills 的 `description` frontmatter 改为官方示例风格的单行写法；
 5. backup/install/restore 流程需要兼容清理旧的 commands 包装层，但新的安装结果不再保留这层派生产物。
+
+## 18. 变更记录（2026-04-17，自动角色分发与项目级默认配置）
+本次变更把系统执行策略从“controller-first 默认亲自执行”调整为“config-first 自动路由，controller 负责综合与兜底”。这是一条产品级语义修正，不只是某个 skill 的提示词调整。
+
+新增架构要求：
+1. **项目级配置自动实体化**：`CouncilFlow` 本体需要内置一份默认项目配置模板；当目标项目缺少 `.council/config.yaml` 时，首次调用 `CouncilFlow` 的入口必须自动创建该文件，而不是只在内存中回退到默认配置。
+2. **配置模型扩展为两层策略**：
+   - `roles.*`：执行角色到模型的自动分发映射；
+   - `discussion.*`：默认讨论参与模型、轮次等讨论策略，用来承接用户要求的 “discuss 角色” 能力。
+3. **CLI 路由语义改为配置优先**：
+   - `delegate` 在未显式传 `--model` 时，必须稳定读取项目级 `roles.*`；
+   - `discuss` 在未显式传模型列表时，必须从项目级 `discussion.*` 读取默认参与者；
+   - 本地执行不再被视为默认行为，而是“路由结果等于主控”或“CouncilFlow 缺失时的降级行为”。
+4. **共享 workflow 自动遵循路由**：`.workflow-core` 中的 `project-*` skills 需要统一调整为：
+   - 当 `CouncilFlow` 可用时，优先通过 `council delegate --role <role>` 或无模型参数的 `council discuss` 走项目级配置；
+   - 只有在检测到 `CouncilFlow` 不可用时，才回退到主控原生执行。
+5. **讨论默认值与显式参数并存**：显式 `discuss claude,gemini` 仍然具有最高优先级；当用户只写 `/project-discuss` 或 `project-init discuss` 而未给模型列表时，工作流应自动读取项目级默认讨论配置。
+6. **项目隔离必须真实生效**：每个项目目录下的 `.council/config.yaml` 都应独立决定该项目的分工与讨论策略；不得继续依赖安装目录内的单一全局默认文件作为运行时真源。
+7. **文档与契约同步修正**：`docs/integration.md`、中文用户指南以及共享 `project-*` skills 需要统一改写，把旧的“主控默认执行”描述替换为“配置优先路由 + 工具缺失时降级”。
+
+实现边界：
+1. 本次变更同时涉及 Python 配置 schema、配置加载与自动落盘逻辑、`discuss`/`delegate` CLI 行为、共享 skills 提示策略，以及默认模板发布路径。
+2. 由于“讨论参与者默认值”与“执行角色映射”在语义上不同，本次架构优先采用独立的 `discussion` 配置块，而不是把 `discuss` 简单塞进现有执行角色枚举。
+3. 本节覆盖并 supersede 文中所有“当前主控默认直接工作”的旧架构表述；新的主路径应理解为“当前主控默认负责 orchestrate 与 synthesize，而不是默认亲自承担所有执行角色”。

@@ -1055,6 +1055,215 @@
       "updated_at": "2026-04-17T09:26:19.788Z",
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so TASK-025-FIX-002 is complete after skills-first sync/install verification, legacy Claude command wrapper cleanup, and shared frontmatter normalization all passed."
+    },
+    {
+      "id": "TASK-026",
+      "title": "扩展项目级配置 schema 与默认模板自动落盘",
+      "description": "把 .council/config.yaml 从可选默认值提升为项目级权威配置。新增讨论策略配置块，提供 CouncilFlow 内置默认模板，并在目标项目缺失配置文件时自动复制模板到项目目录，而不是只在内存中回退。",
+      "dependencies": [
+        "TASK-025-FIX-002"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "CouncilFlow 配置 schema 同时支持执行角色映射和项目级默认讨论策略",
+        "当项目目录缺失 .council/config.yaml 时，首次调用 CouncilFlow 会自动创建项目本地配置文件",
+        "不同项目目录下生成的配置彼此独立，不再共享单一运行时默认文件",
+        "自动生成的默认配置模板可被后续 workflow 和用户手工编辑复用"
+      ],
+      "files": [
+        "src/councilflow/config/schema.py",
+        "src/councilflow/models/config.py",
+        "src/councilflow/config/loader.py",
+        "src/councilflow/state/store.py",
+        "src/councilflow/state/paths.py",
+        "src/councilflow/templates/default-config.yaml",
+        "tests/test_config_loader.py",
+        "tests/test_state_store.py"
+      ],
+      "module": "config-bootstrap",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_config_loader.py tests/test_state_store.py"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "done",
+      "created_at": "2026-04-17T11:00:03.204Z",
+      "updated_at": "2026-04-17T11:18:35.747Z",
+      "commit_hash": "",
+      "notes": "Acceptance mode is auto, so TASK-026 is complete after config-bootstrap verification passed."
+    },
+    {
+      "id": "TASK-027",
+      "title": "支持无模型参数的 discuss 默认路由",
+      "description": "调整 council discuss 与相关路由逻辑，使其在未显式提供 --models 时自动读取项目级默认讨论配置；显式模型参数仍具有最高优先级，并继续保留与当前主控重复模型的去重与提醒逻辑。",
+      "dependencies": [
+        "TASK-026"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "council discuss 在未传 --models 时可以从项目配置读取默认讨论参与模型",
+        "显式传入 --models 时会覆盖项目默认讨论配置",
+        "默认 discuss 模型仍会经过归一化、去重和当前主控过滤",
+        "当显式和默认配置都缺失额外模型时，CLI 返回结构化提示而不是静默退回旧行为"
+      ],
+      "files": [
+        "src/councilflow/cli/discuss.py",
+        "src/councilflow/controller/routing.py",
+        "src/councilflow/models/config.py",
+        "tests/test_cli_discuss.py",
+        "tests/test_routing.py",
+        "tests/test_workflow_integration.py"
+      ],
+      "module": "discussion-defaults",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_cli_discuss.py tests/test_routing.py tests/test_workflow_integration.py"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-17T11:00:03.204Z",
+      "updated_at": "2026-04-17T11:00:03.204Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-028",
+      "title": "把共享 project-* workflow 改为配置优先自动分发",
+      "description": "更新 .workflow-core 中的 project-* 共享 skills，使它们在 CouncilFlow 可用时默认按项目配置自动路由执行角色与默认讨论模型；只有在检测到 CouncilFlow 缺失或不可调用时，才回退到主控本地执行。",
+      "dependencies": [
+        "TASK-026",
+        "TASK-027"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "project-next、project-review、project-change 等角色型 workflow 在 CouncilFlow 可用时默认调用 council delegate --role <role>，不再把主控亲自执行写成默认路径",
+        "project-discuss 以及 project-init / project-plan / project-design / project-ask / project-next 的嵌入式 discuss 在未显式给模型时会读取项目级默认讨论配置",
+        "共享 workflow 明确写出 CouncilFlow 缺失时的回退路径，而不是在有工具可用时继续默认本地执行",
+        "共享 skill 文案中不再把 config.yaml 描述成可选提示，而是项目级自动分发真源"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/skills/project-init/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-design/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-plan/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-next/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-review/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-change/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-ask/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-discuss/SKILL.md"
+      ],
+      "module": "workflow-auto-routing",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "$paths = @('C:\\Users\\David Zhai\\.workflow-core\\skills\\project-init\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-design\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-plan\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-next\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-review\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-change\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-ask\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-discuss\\SKILL.md'); $bad = $paths | Where-Object { -not (Select-String -Path $_ -Pattern 'council delegate --role|council discuss' -Quiet) }; if ($bad) { throw ('Missing CouncilFlow auto-routing guidance in: ' + ($bad -join ', ')) }",
+        "$paths = @('C:\\Users\\David Zhai\\.workflow-core\\skills\\project-next\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-review\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-change\\SKILL.md'); $legacy = $paths | Where-Object { Select-String -Path $_ -Pattern '默认由当前主控直接执行|主控亲自执行' -Quiet }; if ($legacy) { throw ('Found legacy local-first wording in: ' + ($legacy -join ', ')) }"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-17T11:00:03.204Z",
+      "updated_at": "2026-04-17T11:00:03.204Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-029",
+      "title": "更新集成文档并同步自动路由 workflow 到三端",
+      "description": "把新的项目级配置语义、默认讨论策略和自动角色分发行为写入 CouncilFlow 仓库文档与 workflow-core 发布产物，并执行同步以确保 Codex、Claude Code、Gemini CLI 三端全局技能目录保持一致。",
+      "dependencies": [
+        "TASK-028"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "docs/integration.md 与 docs/user-guide.zh-CN.md 明确说明项目级 config 自动落盘、默认 discuss 模型和配置优先路由语义",
+        "sync-skills.ps1 执行成功后，共享源与 Codex/Claude/Gemini 三端修改后的 project-* skills 内容保持一致",
+        "全局文档不再把 .council/config.yaml 描述成可有可无的提示文件",
+        "用户可根据文档理解何时是配置路由结果、何时是 CouncilFlow 缺失时的降级行为"
+      ],
+      "files": [
+        "docs/integration.md",
+        "docs/user-guide.zh-CN.md",
+        "C:/Users/David Zhai/.workflow-core/scripts/sync-skills.ps1",
+        "C:/Users/David Zhai/.workflow-core/skills/project-init/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-design/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-plan/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-next/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-review/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-change/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-ask/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-discuss/SKILL.md"
+      ],
+      "module": "auto-routing-rollout",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'",
+        "$skills = @('project-init','project-design','project-plan','project-next','project-review','project-change','project-ask','project-discuss'); foreach ($skill in $skills) { $paths = @(\"C:\\Users\\David Zhai\\.workflow-core\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.codex\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.claude\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.gemini\\skills\\$skill\\SKILL.md\"); $hashes = (Get-FileHash $paths).Hash | Select-Object -Unique; if ($hashes.Count -ne 1) { throw ('Synced skill mismatch for ' + $skill) } }",
+        "if (-not (Select-String -Path 'D:\\project\\CouncilFlow\\docs\\user-guide.zh-CN.md' -Pattern '自动分发|默认讨论|CouncilFlow 缺失' -Quiet)) { throw 'User guide must describe auto-routing and fallback semantics.' }"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-17T11:00:03.204Z",
+      "updated_at": "2026-04-17T11:00:03.204Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-030",
+      "title": "验证自动角色分发与项目级配置隔离",
+      "description": "在功能与共享 workflow 全部更新后，执行一轮端到端验证，确认不同项目的 .council/config.yaml 可以真正驱动不同分工；并验证 Codex 主控下的 project-next / project-discuss 能在有 CouncilFlow 时自动走配置路由，在工具缺失时才退回本地执行。",
+      "dependencies": [
+        "TASK-027",
+        "TASK-029"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "在 Codex 主控下，当 implementer 或 reviewer 映射到 gemini/claude 时，project-next 与 project-review 会自动触发对应角色委派，而不是默认本地执行",
+        "在未显式给讨论模型的 project-discuss 或嵌入式 discuss 场景中，系统会自动读取项目级默认讨论配置",
+        "首次在新项目中使用 CouncilFlow 时，缺失的 .council/config.yaml 会被自动创建，且第二个项目可使用不同配置而互不污染",
+        "只有在当前环境无法调用 CouncilFlow 时，共享 workflow 才回退到主控本地执行"
+      ],
+      "files": [
+        "docs/release-checklist.md",
+        "tests/test_cli_discuss.py",
+        "tests/test_cli_delegate.py",
+        "tests/test_workflow_integration.py",
+        "C:/Users/David Zhai/.workflow-core/skills/project-next/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-review/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-discuss/SKILL.md"
+      ],
+      "module": "auto-routing-gate",
+      "needs_manual_review": true,
+      "acceptance_mode": "manual",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest",
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'"
+      ],
+      "review_checklist": [
+        "在 Codex 主控下手动验证 project-next 会按 implementer/reviewer 的项目配置自动分发到非主控模型",
+        "在未显式传 discuss 模型时手动验证 project-discuss / project-init discuss 会读取项目默认讨论配置",
+        "验证一个全新项目目录首次调用 CouncilFlow 时会自动生成 .council/config.yaml",
+        "验证当 council 命令不可用时，共享 workflow 才会退回到主控本地执行"
+      ],
+      "stage_gate": true,
+      "status": "todo",
+      "created_at": "2026-04-17T11:00:03.204Z",
+      "updated_at": "2026-04-17T11:00:03.204Z",
+      "commit_hash": "",
+      "notes": ""
     }
   ]
 }
