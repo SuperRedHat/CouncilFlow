@@ -65,6 +65,9 @@ def build_delegation_contract(
     return {
         "artifact_kind": "delegation_handoff",
         "command": "council delegate",
+        "status": "delegated",
+        "delegation_status": "completed",
+        "via_sidecar": True,
         "handoff_path": handoff_path,
         "result_path": result_path,
         "handoff_schema": {
@@ -81,5 +84,10 @@ def build_delegation_contract(
             "The workflow must read the handoff package explicitly from disk.",
             "The delegated model must not rely on hidden shared chat context.",
             "The result artifact should be treated as the authoritative delegated output.",
+            "Only local_execution allows the host workflow to continue locally.",
+            (
+                "If council delegate returns an error or missing artifacts, the host "
+                "workflow must stop instead of silently falling back to local execution."
+            ),
         ],
     }

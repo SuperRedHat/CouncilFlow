@@ -55,6 +55,9 @@ def test_delegate_command_returns_structured_success(monkeypatch, tmp_path: Path
     assert result.exit_code == 0
     assert payload["error"] is None
     assert payload["data"]["role"] == "implementer"
+    assert payload["data"]["status"] == "delegated"
+    assert payload["data"]["delegation_status"] == "completed"
+    assert payload["data"]["via_sidecar"] is True
     assert (tmp_path / payload["data"]["handoff_path"]).is_file()
     assert (tmp_path / payload["data"]["result_path"]).is_file()
 
@@ -84,6 +87,10 @@ def test_delegate_command_returns_structured_error(monkeypatch, tmp_path: Path) 
 
     assert result.exit_code == 1
     assert payload["data"] is None
+    assert payload["error"]["status"] == "error"
+    assert payload["error"]["via_sidecar"] is True
+    assert payload["error"]["role"] == "implementer"
+    assert payload["error"]["model"] == "claude"
     assert payload["error"]["message"] == "mock delegation failure"
     assert payload["error"]["handoff_path"].endswith("handoff.yaml")
 

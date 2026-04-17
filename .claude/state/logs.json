@@ -1335,6 +1335,70 @@
       "from_status": "auto_verified",
       "to_status": "awaiting_manual_acceptance",
       "message": "TASK-034 auto_verified → awaiting_manual_acceptance: Automated verification is complete. Remaining gate is manual confirmation that the upgraded discuss protocol behaves as expected in an interactive controller session and that downstream workflows can read the upgraded artifact fields in practice."
+    },
+    {
+      "timestamp": "2026-04-17T14:42:04.849Z",
+      "type": "task_status_change",
+      "task_id": "TASK-035",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-035 todo → in_progress: Starting TASK-035 to harden the route-first contract: make delegate outcomes machine-decidable for host workflows, document that local work requires explicit local_execution, and add tests for failure paths that must not silently fall back to controller-only execution."
+    },
+    {
+      "timestamp": "2026-04-17T14:45:07.035Z",
+      "type": "task_status_change",
+      "task_id": "TASK-035",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-035 in_progress → auto_verified: Hardened the route-first contract for host workflows. council delegate now exposes explicit delegated/local_execution/error outcomes, docs define local_execution as the only legal local continuation signal when CouncilFlow is available, and regression tests cover failure paths that must not silently fall back to controller-only execution."
+    },
+    {
+      "timestamp": "2026-04-17T14:45:10.779Z",
+      "type": "task_status_change",
+      "task_id": "TASK-035",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-035 auto_verified → done: Acceptance mode is auto, so TASK-035 is complete after the delegate route contract, docs, and regression tests passed verification."
+    },
+    {
+      "timestamp": "2026-04-17T14:45:14.053Z",
+      "type": "decision",
+      "task_id": "TASK-035",
+      "from_status": null,
+      "to_status": null,
+      "message": "Completed TASK-035: host workflows can now distinguish delegated, local_execution, and error outcomes from council delegate. Local controller execution is documented as legal only after an explicit local_execution route result, and delegate failure paths are verified to remain explicit instead of silently falling back to controller-only execution."
+    },
+    {
+      "timestamp": "2026-04-17T14:45:29.141Z",
+      "type": "task_status_change",
+      "task_id": "TASK-036",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-036 todo → in_progress: Starting TASK-036 to harden the shared workflow skills: convert discuss and delegate steps from soft suggestions into route-first requirements, require explicit local_execution before local controller work, and make route failures an explicit stop condition unless council itself is unavailable."
+    },
+    {
+      "timestamp": "2026-04-17T14:48:33.020Z",
+      "type": "task_status_change",
+      "task_id": "TASK-036",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-036 in_progress → auto_verified: Updated the shared project-* skills to a route-first hard-gate contract. Discuss and delegate steps now explicitly require CouncilFlow before continuing, route failures are documented as stop conditions, sync-skills completed successfully, and workflow-core/Codex/Claude/Gemini copies were verified to stay in sync."
+    },
+    {
+      "timestamp": "2026-04-17T14:48:36.697Z",
+      "type": "task_status_change",
+      "task_id": "TASK-036",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-036 auto_verified → done: Acceptance mode is auto, so TASK-036 is complete after hard-gate workflow skill wording, sync-skills synchronization, and cross-client hash verification all passed."
+    },
+    {
+      "timestamp": "2026-04-17T14:48:39.921Z",
+      "type": "decision",
+      "task_id": "TASK-036",
+      "from_status": null,
+      "to_status": null,
+      "message": "Completed TASK-036: shared project-* skills now enforce a route-first workflow contract. When CouncilFlow is available, discuss/delegate steps must be called before local controller work can continue, and failures are documented as explicit stop conditions instead of silent local fallback."
     }
   ]
 }

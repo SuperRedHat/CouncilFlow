@@ -11,6 +11,7 @@ from councilflow.controller.delegation_orchestrator import (
     DelegationOrchestrator,
 )
 from councilflow.controller.host_context import detect_controller
+from councilflow.controller.routing import build_route_decision
 from councilflow.models.roles import RoleName, normalize_model_name
 from councilflow.providers.base import ProviderAdapter, ProviderError
 from councilflow.providers.claude_code_cli import ClaudeCodeCliAdapter
@@ -89,16 +90,20 @@ def delegate(
     config = store.load_config()
     controller_context = detect_controller(config=config)
     controller = controller_context.controller.value
-    target_model = normalize_model_name(model or config.roles.for_role(role))
+    decision = build_route_decision(
+        role=role,
+        controller=controller_context.controller,
+        target_model=model or config.roles.for_role(role),
+    )
     output_language = resolve_output_language(config.output_language)
-    if target_model == controller:
+    if decision.status == "local_execution":
         emit_console_text(
             emit_response(
                 data={
                     "role": role.value,
-                    "model": target_model,
-                    "status": "local_execution",
-                    "via_sidecar": False,
+                    "model": decision.target_model,
+                    "status": decision.status,
+                    "via_sidecar": decision.via_sidecar,
                     "reason": (
                         "Target model resolves to the active controller, so execution "
                         "stays local and no sidecar is started."
@@ -120,7 +125,7 @@ def delegate(
         result = orchestrator.run(
             role=role,
             controller=controller,
-            target_model=target_model,
+            target_model=decision.target_model,
             objective=objective,
             task_summary=task_summary,
             constraints=list(constraint or []),
@@ -137,6 +142,10 @@ def delegate(
                     "output_language": output_language,
                 },
                 error={
+                    "status": "error",
+                    "via_sidecar": True,
+                    "role": role.value,
+                    "model": decision.target_model,
                     "message": str(exc),
                     "delegation_id": exc.delegation_id,
                     "handoff_path": exc.handoff_path,

@@ -115,6 +115,15 @@ council delegate --role implementer --objective "<objective>" --task-summary "<s
 
 If `--model` is omitted, `CouncilFlow` reads the target model from the project's local role mapping.
 
+Expected route outcomes:
+
+- `data.status = "delegated"`: a real sidecar delegation happened, `via_sidecar = true`, and the
+  workflow must read the emitted artifacts before continuing.
+- `data.status = "local_execution"`: the role resolves to the active controller, `via_sidecar =
+  false`, and the workflow may continue locally.
+- `error.status = "error"`: routing or execution failed; the workflow must stop and report the
+  failure instead of silently falling back to controller-only execution.
+
 Expected persisted artifacts:
 
 - `.council/delegations/<delegation_id>/handoff.yaml`
@@ -123,6 +132,9 @@ Expected persisted artifacts:
 Expected machine-readable contract:
 
 - `artifact_kind = delegation_handoff`
+- `status = delegated`
+- `delegation_status = completed`
+- `via_sidecar = true`
 - `handoff_path`
 - `result_path`
 - `handoff_schema.id`
@@ -141,10 +153,14 @@ Expected machine-readable contract:
 - The controller decides whether a discussion or delegation result is accepted, retried, or ignored.
 - Missing artifacts should be treated as failed or incomplete execution.
 - Same-controller discuss requests should not trigger sidecar execution.
-- Same-controller delegate requests should return local execution instead of starting a sidecar.
+- Same-controller delegate requests should return explicit `local_execution` instead of starting a sidecar.
 - Artifacts created under a Gemini-controlled session must remain consumable by Codex and Claude workflows.
 - When `council` is unavailable, workflows may fall back to local controller-only execution, but this
   fallback should be explicit in the calling workflow rather than treated as the primary path.
+- When `council` is available, workflows must not start role work until they receive either
+  `data.status = local_execution` or a delegated artifact set.
+- If `council delegate` or `council discuss` returns an error, workflows must stop and surface that
+  failure instead of silently switching to local execution.
 
 ## Minimum Integration Flow
 

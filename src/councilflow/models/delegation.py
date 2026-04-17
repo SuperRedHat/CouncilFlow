@@ -28,6 +28,8 @@ class DelegationResult(BaseModel):
     result_path: str
     content: str
     status: str
+    delegation_status: str
+    via_sidecar: bool
 
 
 class DelegationRecord(BaseModel):
@@ -40,4 +42,3 @@ class DelegationRecord(BaseModel):
     handoff_path: str
     result_path: str | None = None
     error: str | None = None
-

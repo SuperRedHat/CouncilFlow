@@ -78,12 +78,31 @@ def route_role(
 ) -> RouteDecision:
     """Route a role either to the current controller or to the sidecar."""
 
-    target_model = config.roles.for_role(role)
-    if target_model == controller.value:
+    return build_route_decision(
+        role=role,
+        controller=controller,
+        target_model=config.roles.for_role(role),
+    )
+
+
+def build_route_decision(
+    *,
+    role: RoleName,
+    controller: ControllerName,
+    target_model: str,
+) -> RouteDecision:
+    """Build a machine-decidable route contract for host workflows."""
+
+    normalized_target = normalize_model_name(target_model)
+    if not normalized_target:
+        raise ValueError("Route target model cannot be empty.")
+
+    if normalized_target == controller.value:
         return RouteDecision(
             role=role,
             controller=controller,
-            target_model=target_model,
+            target_model=normalized_target,
+            status="local_execution",
             via_sidecar=False,
             reason="Role is mapped to the active controller.",
         )
@@ -91,7 +110,8 @@ def route_role(
     return RouteDecision(
         role=role,
         controller=controller,
-        target_model=target_model,
+        target_model=normalized_target,
+        status="delegated",
         via_sidecar=True,
         reason="Role is mapped to a non-controller model and must be delegated.",
     )

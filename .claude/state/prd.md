@@ -550,3 +550,19 @@ V1 完成时，至少满足：
 1. 本次变更同时涉及 `CouncilFlow` 本体的 discussion 模型、prompt 协议、orchestrator、CLI 输出、配置 schema，以及与之对应的测试与文档。
 2. 本次变更不要求把 discuss 变成无限辩论系统；目标是保证最小闭环质量，而不是追求过度复杂的 debate 框架。
 3. 本节覆盖并 supersede 文中所有“外部模型首轮同意即可直接结束”的旧理解；新的产品语义应为：**只要存在额外参与者，至少完成一次主控回应外部意见的闭环后，才允许进入收敛判断。**
+
+## 24. 变更记录（2026-04-17，workflow 强制路由硬约束）
+本次变更聚焦共享 `project-*` 工作流的执行纪律，目标是把当前“建议先委派 / 建议先讨论”的软约束，升级为真正影响执行分支的硬约束。否则即使项目级 `.council/config.yaml` 已经声明角色分工，主控仍可能绕过 `CouncilFlow` 直接编码，导致配置失去产品意义。
+
+新增产品要求：
+1. **角色型步骤必须先走 `CouncilFlow` 路由**：当 `CouncilFlow` 可用时，任何进入执行角色的 `project-*` skill 都必须先调用对应的 `council delegate --role <role>`，再根据返回结果决定后续动作；主控不得在未调用路由命令前直接开始该角色的工作。
+2. **本地执行只能来自显式路由结果**：在已安装 `CouncilFlow` 的环境里，主控本地执行不再是 skill 可自由选择的默认分支；只有在 `council delegate` 返回 `status = local_execution` 时，当前主控才允许继续本地承担该角色。
+3. **缺少工具才允许降级**：如果当前机器没有安装、无法调用或明确检测不到 `council` 命令，workflow 才允许退回纯主控本地执行；这种降级必须在输出中明确说明，而不是静默发生。
+4. **路由失败应视为 workflow 失败，而不是可接受绕过**：当 `council delegate` 或 `council discuss` 调用失败时，workflow 应如实中止并报告失败原因；不能因为主控“也能做”就直接绕过 sidecar 继续执行。
+5. **所有相关共享 skills 都要遵守同一纪律**：至少 `project-next`、`project-review`、`project-change`、`project-design`、`project-plan`、`project-init`、`project-discuss`、`project-ask` 中涉及角色执行或显式 discuss 的部分，都必须把 `CouncilFlow` 调用写成硬前置步骤，而不是“如果愿意可以先调用”的可选建议。
+6. **`config.yaml` 的意义是约束分工，不是建议偏好**：项目级 `.council/config.yaml` 应继续作为不同项目的独立真相源；一旦 `CouncilFlow` 可用，主工作流就必须服从该项目配置所定义的分工与默认讨论策略。
+7. **验收必须验证“主控不能偷偷跳过”**：新的 workflow 验收不只检查最终能否成功委派，还要检查在真实主控会话里，技能不会在未获得 `local_execution` 前就直接进入本地编码、评审或测试。
+
+范围说明：
+1. 本次变更优先修改共享 workflow 契约、集成文档和相关自动化验证；必要时再补充 `CouncilFlow` 本体返回字段或辅助命令，以便主控能稳定判定“允许本地执行”与“必须停下报告失败”。
+2. 本节覆盖并 supersede 文中所有“默认由当前主控直接执行步骤”或“主控可按经验直接继续”的旧 workflow 解释；新的产品语义应为：**已安装 `CouncilFlow` 时，先路由、后执行；只有拿到显式路由结果，主控才知道自己能不能继续。**

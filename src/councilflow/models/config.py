@@ -118,5 +118,6 @@ class RouteDecision(BaseModel):
     role: RoleName
     controller: ControllerName
     target_model: str
+    status: str
     via_sidecar: bool
     reason: str

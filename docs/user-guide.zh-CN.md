@@ -478,6 +478,7 @@ python -m councilflow.cli.app delegate `
 
 - `status = local_execution`
 - `via_sidecar = false`
+- 这代表当前 workflow 已经拿到显式本地执行许可，此时主控才允许继续自己做这项角色工作
 
 ### 9.5 委派产物
 
@@ -492,6 +493,18 @@ python -m councilflow.cli.app delegate `
 - `handoff.yaml`：结构化交接包
 - `result.md`：目标模型返回的结果
 - `record.json`：此次委派的机器可读记录
+
+当 sidecar 路径真实发生时，CLI 返回里会明确给出：
+
+- `status = delegated`
+- `delegation_status = completed`
+- `via_sidecar = true`
+
+这几个字段的含义是：
+
+- `delegated`：说明 workflow 已完成真实委派，后续应读取 `.council/delegations/...` 产物继续
+- `local_execution`：说明该角色最终解析到当前主控，workflow 可以继续本地执行
+- `error`：说明委派失败，workflow 应停止并报告失败，不能因为主控“也会做”就偷偷跳过 sidecar
 
 ### 9.6 常见参数
 
@@ -602,6 +615,7 @@ python -m councilflow.cli.app synthesize `
 - 如果 `project-discuss` 或嵌入式 `discuss` 没有显式写模型，默认会读取项目级 `discussion.default_models`
 - discuss 仍以 `initial_position` 为核心，但在交互式主控里推荐由主控先本地生成这一步，再通过 `--controller-position` 交给 `CouncilFlow` 分发给外部模型
 - 如果 `project-next`、`project-review`、`project-change` 需要执行型角色，默认会优先尝试 `council delegate --role ...`
+- 只要 `CouncilFlow` 可用，主工作流必须先拿到显式路由结果；没有 `status = local_execution` 或真实委派产物前，不应直接开始本地编码、评审或测试
 - 只有在 `council` 缺失或不可调用时，主工作流才退回纯本地执行
 
 ---

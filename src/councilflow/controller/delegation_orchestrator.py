@@ -160,6 +160,7 @@ class DelegationOrchestrator:
             handoff_path=relative_handoff_path,
             result_path=relative_result_path,
             content=response.content,
-            status="completed",
+            status="delegated",
+            delegation_status="completed",
+            via_sidecar=True,
         )
-

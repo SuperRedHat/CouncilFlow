@@ -6,6 +6,7 @@ import yaml
 
 from councilflow.config.loader import build_default_config, load_config
 from councilflow.controller.routing import (
+    build_route_decision,
     resolve_discuss_models,
     route_role,
     select_discuss_models,
@@ -114,6 +115,7 @@ def test_route_role_runs_locally_when_target_matches_controller() -> None:
     )
 
     assert decision.target_model == "codex"
+    assert decision.status == "local_execution"
     assert decision.via_sidecar is False
 
 
@@ -125,7 +127,20 @@ def test_route_role_delegates_when_target_differs_from_controller() -> None:
     )
 
     assert decision.target_model == "claude"
+    assert decision.status == "delegated"
     assert decision.via_sidecar is True
+
+
+def test_build_route_decision_normalizes_aliases_and_exposes_status() -> None:
+    decision = build_route_decision(
+        role=RoleName.TESTER,
+        controller=ControllerName.CLAUDE,
+        target_model="claude-code",
+    )
+
+    assert decision.target_model == "claude"
+    assert decision.status == "local_execution"
+    assert decision.via_sidecar is False
 
 
 def test_select_discuss_models_uses_project_defaults_when_explicit_is_missing() -> None:

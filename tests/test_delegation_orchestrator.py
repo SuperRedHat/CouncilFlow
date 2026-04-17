@@ -51,7 +51,9 @@ def test_delegation_orchestrator_persists_handoff_and_result(tmp_path: Path) -> 
     handoff_path = tmp_path / result.handoff_path
     result_path = tmp_path / result.result_path
 
-    assert result.status == "completed"
+    assert result.status == "delegated"
+    assert result.delegation_status == "completed"
+    assert result.via_sidecar is True
     assert handoff_path.is_file()
     assert result_path.is_file()
     handoff_payload = yaml.safe_load(handoff_path.read_text(encoding="utf-8"))

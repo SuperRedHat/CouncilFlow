@@ -723,3 +723,22 @@ graph TD
    - `CouncilFlow` 只负责把这份立场分发给外部参与者并收集反馈
    - 后续综合仍由当前主控在宿主工作流中完成
 3. 为兼容独立 CLI 使用，`council discuss` 可以保留 provider 驱动的主控回合模式作为 fallback；但对 `project-*` 这类宿主集成调用，默认优先使用本地主控立场输入（如 `--controller-position`）以避免同模型自嵌套。
+
+## 20. 变更记录（2026-04-17，workflow 强制路由硬约束）
+本次变更聚焦宿主 workflow 的执行约束，目标是把“配置优先自动路由”从文案层建议提升为**可观察、可验证、不可静默绕过**的集成契约。换句话说，`project-*` 不再自己猜“这一步是不是该本地做”，而是必须先向 `CouncilFlow` 询问路由结果。
+
+新增架构要求：
+1. **角色型 workflow 改为 route-first**：凡是进入 `planner`、`architect`、`implementer`、`tester`、`reviewer`、`fixer` 等执行角色的 workflow 步骤，必须先调用 `CouncilFlow` 获取显式路由结果，再决定本地执行还是 sidecar 执行。
+2. **`local_execution` 成为唯一合法的本地继续信号**：在 `CouncilFlow` 可用的前提下，主控只有在收到 `council delegate` 返回的 `status = local_execution` 后，才允许继续本地承担该角色；否则必须等待真实委派结果或停止并报告错误。
+3. **路由失败不能被主控“善意兜底”吞掉**：如果 `council delegate` / `council discuss` 返回错误、超时或缺少预期产物，宿主 workflow 必须把它视为失败并显式中止，而不是改走一条未授权的“主控直接做完”路径。
+4. **降级路径只保留给 `CouncilFlow` 缺失场景**：只有明确检测到当前环境没有安装、无法调用或无法解析 `council` 命令时，workflow 才允许退回 controller-only 模式；这条降级路径必须在技能文案和最终输出中明确可见。
+5. **共享 skills 需要写出硬门槛，而不是建议语气**：`.workflow-core` 中所有涉及角色执行或显式 discuss 的 `project-*` skills，都必须使用“先调用 / 必须等待结果 / 否则停止”的强语义，不再保留“可先调用”或“如有需要可委派”的默认分支。
+6. **集成文档要定义失败语义**：`docs/integration.md` 和共享 skill 契约需要把以下三类结果区分清楚：
+   - `delegated`: sidecar 已被真实启动，宿主等待产物
+   - `local_execution`: 当前角色映射到主控，宿主可继续本地执行
+   - `error` / missing artifacts: 宿主必须停止并报告，不能静默转本地
+7. **验收从“结果正确”扩展到“过程不可绕过”**：workflow 验证不仅要证明 `council delegate` / `council discuss` 能成功，还要证明 `project-*` 不会在未调用它们、或未拿到合法结果前，直接进入编码、评审、测试或修复。
+
+实现边界：
+1. 本次变更优先依赖现有 `council delegate` 与 `council discuss` 返回契约实现硬约束；若共享 workflow 仍缺少足够稳定的判定信号，再考虑为 `CouncilFlow` 增加更细的 route-only 或 enforcement 辅助表面。
+2. 本节覆盖并 supersede 文中所有“主控默认直接工作”的旧集成语义；新的主路径应理解为：**controller 负责 orchestrate，但是否亲自执行任何角色，必须先由 `CouncilFlow` 给出显式许可。**

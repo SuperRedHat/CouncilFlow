@@ -1430,6 +1430,132 @@
       "updated_at": "2026-04-17T12:29:46.760Z",
       "commit_hash": "",
       "notes": "Automated verification is complete. Remaining gate is manual confirmation that the upgraded discuss protocol behaves as expected in an interactive controller session and that downstream workflows can read the upgraded artifact fields in practice."
+    },
+    {
+      "id": "TASK-035",
+      "title": "固化硬约束路由的 CLI 判定契约",
+      "description": "收紧 CouncilFlow 的角色路由与集成契约，让共享 workflow 能稳定区分 delegated、local_execution 与 error 三类结果，并把“未完成路由前不得直接执行角色工作”的语义写入测试与文档。",
+      "dependencies": [
+        "TASK-033"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "council delegate 的结构化结果可稳定区分 delegated、local_execution 与 error，供宿主 workflow 做硬分支判断",
+        "docs/integration.md 与用户文档明确说明：在 CouncilFlow 可用时，主控只有拿到 local_execution 才能继续本地承担该角色",
+        "自动化测试覆盖路由失败不会被静默转成本地执行的场景",
+        "讨论与委派的失败路径都能以显式错误/缺少产物的形式暴露给宿主 workflow"
+      ],
+      "files": [
+        "src/councilflow/cli/delegate.py",
+        "src/councilflow/controller/routing.py",
+        "docs/integration.md",
+        "docs/user-guide.zh-CN.md",
+        "tests/test_cli_delegate.py",
+        "tests/test_workflow_integration.py"
+      ],
+      "module": "workflow-hard-contract",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_cli_delegate.py tests/test_workflow_integration.py"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "done",
+      "created_at": "2026-04-17T14:32:54.056Z",
+      "updated_at": "2026-04-17T14:45:10.764Z",
+      "commit_hash": "",
+      "notes": "Acceptance mode is auto, so TASK-035 is complete after the delegate route contract, docs, and regression tests passed verification."
+    },
+    {
+      "id": "TASK-036",
+      "title": "把共享 project-* skills 收紧为 route-first 硬门槛",
+      "description": "更新 workflow-core 共享 skills，把所有涉及角色执行或显式 discuss 的 project-* workflow 改成真正的 route-first 硬约束：必须先调用 CouncilFlow，只有拿到 local_execution 或明确 artifact 后才能继续，本地降级只保留给 council 缺失场景。",
+      "dependencies": [
+        "TASK-035"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "project-next、project-review、project-change、project-design、project-plan、project-init、project-discuss、project-ask 中涉及角色执行或 discuss 的步骤都改为“先调用 CouncilFlow，再决定是否继续”",
+        "共享 skill 文案不再把委派或讨论写成“可选建议”，而是写成必须先完成的前置步骤",
+        "当 route 失败时，共享 workflow 会明确要求停止并报告失败，不再允许主控静默改走本地路径",
+        "sync-skills.ps1 执行后，workflow-core 与 Codex/Claude/Gemini 三端的受影响 skills 内容保持一致"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/skills/project-next/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-review/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-change/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-design/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-plan/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-init/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-discuss/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-ask/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/scripts/sync-skills.ps1"
+      ],
+      "module": "workflow-hard-enforcement",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'",
+        "$paths = @('C:\\Users\\David Zhai\\.workflow-core\\skills\\project-next\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-review\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-change\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-design\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-plan\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-init\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-discuss\\SKILL.md','C:\\Users\\David Zhai\\.workflow-core\\skills\\project-ask\\SKILL.md'); $bad = $paths | Where-Object { -not (Select-String -Path $_ -Pattern '必须先调用|先调用 CouncilFlow|local_execution|否则停止|否则中止' -Quiet) }; if ($bad) { throw ('Missing hard-gate wording in: ' + ($bad -join ', ')) }",
+        "$skills = @('project-next','project-review','project-change','project-design','project-plan','project-init','project-discuss','project-ask'); foreach ($skill in $skills) { $paths = @(\"C:\\Users\\David Zhai\\.workflow-core\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.codex\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.claude\\skills\\$skill\\SKILL.md\",\"C:\\Users\\David Zhai\\.gemini\\skills\\$skill\\SKILL.md\"); $hashes = (Get-FileHash $paths).Hash | Select-Object -Unique; if ($hashes.Count -ne 1) { throw ('Synced skill mismatch for ' + $skill) } }"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "done",
+      "created_at": "2026-04-17T14:32:54.056Z",
+      "updated_at": "2026-04-17T14:48:36.678Z",
+      "commit_hash": "",
+      "notes": "Acceptance mode is auto, so TASK-036 is complete after hard-gate workflow skill wording, sync-skills synchronization, and cross-client hash verification all passed."
+    },
+    {
+      "id": "TASK-037",
+      "title": "验证硬约束 workflow 在真实主控下不可静默绕过",
+      "description": "在真实项目和真实主控会话中验证 route-first 硬约束：确认 project-* workflow 不会在未调用 CouncilFlow、或未获得 local_execution / 真实产物前，直接进入本地编码、评审或测试；同时验证 council 缺失时的显式降级仍然成立。",
+      "dependencies": [
+        "TASK-036"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "在 Codex 主控且项目配置 implementer=claude 的真实项目中，project-next 会先触发 council delegate --role implementer，而不是直接开始写代码",
+        "在 reviewer / architect 等映射到非主控模型的场景中，共享 workflow 同样会先走 CouncilFlow 路由，再决定是否继续本地工作",
+        "显式 discuss 场景会先调用 council discuss，且 route/discuss 失败时 workflow 会停下并报告失败，而不是继续本地执行",
+        "只有在 council 命令缺失或不可调用时，workflow 才会明确降级到主控本地执行"
+      ],
+      "files": [
+        "docs/release-checklist.md",
+        "docs/integration.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-next/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-review/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-change/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-design/SKILL.md",
+        "tests/test_cli_delegate.py",
+        "tests/test_workflow_integration.py"
+      ],
+      "module": "workflow-hard-gate",
+      "needs_manual_review": true,
+      "acceptance_mode": "manual",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest",
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'"
+      ],
+      "review_checklist": [
+        "在 Codex 主控下，用 implementer=claude 的真实项目验证 project-next 在任何代码修改前都会先调用 council delegate --role implementer",
+        "在 reviewer/architect 映射到非主控模型的真实项目场景中验证 project-review 或 project-change / project-design 也会先路由后执行",
+        "故意制造一次 route/discuss 失败，确认 workflow 会停下并如实报告，而不是直接改走主控本地路径",
+        "临时隐藏或断开 council 命令，验证共享 workflow 会明确说明正在降级到主控本地执行"
+      ],
+      "stage_gate": true,
+      "status": "todo",
+      "created_at": "2026-04-17T14:32:54.056Z",
+      "updated_at": "2026-04-17T14:32:54.056Z",
+      "commit_hash": "",
+      "notes": ""
     }
   ]
 }

@@ -102,6 +102,9 @@ def test_workflow_integration_contracts_are_machine_readable(
     assert discussion_contract["min_rounds"] == 2
     assert "Controller owns final synthesis" in summary.agreements
     assert delegation_contract["artifact_kind"] == "delegation_handoff"
+    assert delegation_contract["status"] == "delegated"
+    assert delegation_contract["delegation_status"] == "completed"
+    assert delegation_contract["via_sidecar"] is True
     assert delegation_contract["handoff_path"] == delegation.handoff_path
     assert delegation_contract["result_path"] == delegation.result_path
     assert delegation_contract["handoff_schema"]["task_summary"].startswith("Demonstrate")
