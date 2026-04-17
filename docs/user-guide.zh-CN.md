@@ -375,9 +375,9 @@ python -m councilflow.cli.app discuss `
 - 主控永远会参与
 - `--models` 里只写额外模型
 - 不写 `--models` 时，会读取项目级 `discussion.default_models`
-- `CouncilFlow` 会先生成主控的 `initial_position`
+- 在独立 CLI fallback 模式下，`CouncilFlow` 可以自行生成主控的 `initial_position`
 - 外部模型会围绕这版主控立场发表评论，而不是各自从零起草方案
-- 主控会在后续轮次读取外部反馈并给出回应或修正
+- 在交互式主控里，推荐由当前主控先本地写一句简短 `initial_position`，再通过 `--controller-position` 传给 `council discuss`；summary 产出后由宿主 workflow 继续综合，避免同模型自嵌套
 - 只有达到 `discussion.min_rounds` 之后，系统才允许提前收敛
 - 不写 `--max-rounds` 时，会读取项目级 `discussion.max_rounds`
 - 去重后如果没有非主控模型，sidecar 不会启动
@@ -418,6 +418,7 @@ python -m councilflow.cli.app discuss "..." --models codex,claude --project-root
 - `summary_path`
 - `recommended_decision`
 - `next_step`
+- `controller_mode`
 
 ---
 
@@ -599,7 +600,7 @@ python -m councilflow.cli.app synthesize `
 在新的自动路由语义下：
 
 - 如果 `project-discuss` 或嵌入式 `discuss` 没有显式写模型，默认会读取项目级 `discussion.default_models`
-- discuss 本身现在遵循 `initial_position -> 外部评论 -> 主控回应 -> 达到 min_rounds 后才允许收敛` 的闭环协议
+- discuss 仍以 `initial_position` 为核心，但在交互式主控里推荐由主控先本地生成这一步，再通过 `--controller-position` 交给 `CouncilFlow` 分发给外部模型
 - 如果 `project-next`、`project-review`、`project-change` 需要执行型角色，默认会优先尝试 `council delegate --role ...`
 - 只有在 `council` 缺失或不可调用时，主工作流才退回纯本地执行
 

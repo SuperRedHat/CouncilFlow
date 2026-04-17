@@ -58,6 +58,11 @@ council discuss "<question>"
 If `--models` is omitted, `CouncilFlow` reads `discussion.default_models` from the project's local
 `.council/config.yaml`.
 
+When the caller is an interactive controller workflow such as `project-discuss` or embedded
+`project-* discuss`, it should first produce a concise local controller position and pass it via
+`--controller-position` so `CouncilFlow` does not spawn a same-controller subprocess just to
+simulate the controller's first turn.
+
 Expected persisted artifact:
 
 - `.council/discuss/<discussion_id>/summary.md`
@@ -91,12 +96,12 @@ must follow the same pattern:
 1. Invoke `council discuss`
    - Use `--models` only when the user explicitly chose participants
    - Otherwise omit `--models` and let the project-local config decide the default participants
-2. Let `CouncilFlow` establish the controller `initial_position`
-3. Let external models critique that position
-4. Let `CouncilFlow` feed the critique back into the controller for at least `min_rounds`
+2. Let the current controller generate a concise local `initial_position`
+3. Pass that position into `council discuss --controller-position "<initial_position>"`
+4. Let external models critique that position
 5. Wait for the summary artifact
 6. Read the summary artifact from disk
-7. Continue the main `project-*` step with the controller's own synthesis
+7. Continue the main `project-*` step with the controller's own synthesis, rather than nesting the same controller through a subprocess
 
 ### Delegation
 
@@ -144,11 +149,10 @@ Expected machine-readable contract:
 ## Minimum Integration Flow
 
 1. `project-*` decides whether it needs `discuss` or `delegate`.
-2. For `discuss`, `CouncilFlow` generates a controller `initial_position`.
-3. External participants critique that position.
-4. The controller responds to the critique until `min_rounds` is satisfied and the discussion converges.
-5. `CouncilFlow` writes artifacts into `.council/`.
-6. `project-*` reads those artifacts explicitly.
-7. The controller uses those artifacts to continue the main workflow.
+2. For host-integrated `discuss`, the active controller generates a local `initial_position`.
+3. `CouncilFlow` distributes that position to external participants for critique.
+4. `CouncilFlow` writes artifacts into `.council/`.
+5. `project-*` reads those artifacts explicitly.
+6. The controller uses those artifacts to continue the main workflow without same-model self-nesting.
 
 This keeps the integration deterministic, inspectable, and portable across Codex, Claude Code, and Gemini CLI.

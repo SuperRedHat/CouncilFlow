@@ -251,3 +251,47 @@ def test_discuss_command_warns_when_no_explicit_or_default_models_exist(
     assert "No additional discuss models" in payload["data"]["warning"]
     assert payload["data"]["models_source"] == "project_default"
     assert payload["data"]["effective_min_rounds"] == 2
+
+
+def test_discuss_command_can_use_locally_generated_controller_position(
+    monkeypatch, tmp_path: Path
+) -> None:
+    def fake_participant(model: str) -> FakeParticipant:
+        if model == "codex":
+            raise AssertionError("Controller subprocess should be skipped in local mode.")
+        return FakeParticipant()
+
+    monkeypatch.setattr(discuss_module, "get_participant", fake_participant)
+
+    result = runner.invoke(
+        app,
+        [
+            "discuss",
+            "What is the smallest safe MVP change?",
+            "--models",
+            "claude",
+            "--controller-position",
+            "Keep the current MVP structure and only tighten the state boundary.",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={"CODEX_SHELL": "1"},
+    )
+
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["error"] is None
+    assert payload["data"]["participants"] == ["codex", "claude"]
+    assert (
+        payload["data"]["initial_position"]
+        == "Keep the current MVP structure and only tighten the state boundary."
+    )
+    assert (
+        payload["data"]["current_controller_position"]
+        == "Keep the current MVP structure and only tighten the state boundary."
+    )
+    assert payload["data"]["controller_mode"] == "local_initial_position"
+    assert payload["data"]["effective_max_rounds"] == 1
+    assert payload["data"]["effective_min_rounds"] == 1
+    assert payload["data"]["rounds_completed"] == 1

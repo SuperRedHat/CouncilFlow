@@ -53,6 +53,15 @@ PROJECT_ROOT_OPTION = typer.Option(
     dir_okay=True,
     help="Project root used to resolve the .council local state directory.",
 )
+CONTROLLER_POSITION_OPTION = typer.Option(
+    None,
+    "--controller-position",
+    help=(
+        "A locally generated controller initial position. When provided, CouncilFlow "
+        "skips spawning a same-controller subprocess for the first turn and only asks "
+        "external participants to critique this position."
+    ),
+)
 
 
 class ProviderDiscussionParticipant:
@@ -106,6 +115,7 @@ def discuss(
     models: str | None = MODELS_OPTION,
     max_rounds: int | None = MAX_ROUNDS_OPTION,
     project_root: Path = PROJECT_ROOT_OPTION,
+    controller_position: str | None = CONTROLLER_POSITION_OPTION,
 ) -> None:
     """Run a structured multi-model discussion and persist its artifacts locally."""
 
@@ -119,8 +129,30 @@ def discuss(
         explicit_models = [item for item in models.split(",") if item.strip()]
     requested_models, models_source = select_discuss_models(explicit_models, config)
     resolution = resolve_discuss_models(requested_models, controller)
+    normalized_controller_position = None
+    if controller_position is not None:
+        normalized_controller_position = controller_position.strip()
+        if not normalized_controller_position:
+            emit_console_text(
+                emit_response(
+                    data=None,
+                    meta={
+                        "command": "discuss",
+                        "output_language": output_language,
+                    },
+                    error={"message": "--controller-position cannot be empty."},
+                )
+            )
+            raise typer.Exit(code=2)
     effective_max_rounds = max_rounds or config.discussion.max_rounds
+    if normalized_controller_position is not None and max_rounds is None:
+        effective_max_rounds = 1
     effective_min_rounds = min(config.discussion.min_rounds, effective_max_rounds)
+    controller_mode = (
+        "local_initial_position"
+        if normalized_controller_position is not None
+        else "provider_round_trip"
+    )
 
     if not resolution.requires_sidecar:
         payload = {
@@ -134,6 +166,7 @@ def discuss(
             "configured_default_models": config.discussion.default_models,
             "effective_min_rounds": effective_min_rounds,
             "effective_max_rounds": effective_max_rounds,
+            "controller_mode": controller_mode,
             "rounds_completed": 0,
         }
         emit_console_text(
@@ -159,6 +192,7 @@ def discuss(
             external_models=resolution.external_models,
             max_rounds=effective_max_rounds,
             min_rounds=effective_min_rounds,
+            controller_initial_position=normalized_controller_position,
         )
     except UnavailableParticipantError as exc:
         emit_console_text(
@@ -183,6 +217,7 @@ def discuss(
                 "configured_default_models": config.discussion.default_models,
                 "effective_min_rounds": effective_min_rounds,
                 "effective_max_rounds": effective_max_rounds,
+                "controller_mode": controller_mode,
             },
             meta={
                 "command": "discuss",

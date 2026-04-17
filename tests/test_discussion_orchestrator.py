@@ -74,6 +74,26 @@ class MixedFactory:
         return self._participant
 
 
+class ExternalOnlyFactory:
+    def __call__(self, model: str) -> ScriptedParticipant:
+        if model == "codex":
+            raise AssertionError("Controller subprocess should not be requested in local mode.")
+        return ScriptedParticipant(
+            [
+                ParticipantResponse(
+                    model=model,
+                    message="Keep the current design and only tighten the state boundary.",
+                    key_options=["Preserve the current shape"],
+                    agreements=["Avoid over-engineering the MVP"],
+                    recommended_decision="Keep the current design.",
+                    next_step="Let the controller synthesize the critique.",
+                    supports_current_direction=True,
+                    has_new_information=False,
+                )
+            ]
+        )
+
+
 def test_single_external_model_discussion_caps_rounds_at_five(tmp_path: Path) -> None:
     store = CouncilStateStore(tmp_path)
     factory = ScriptedFactory(
@@ -306,3 +326,31 @@ def test_failed_discussion_persists_record_and_resets_state(tmp_path: Path) -> N
     run_record = store.load_run_record(run_record_path)
     assert run_record["payload"]["status"] == "failed"
     assert "timed out" in run_record["payload"]["error"]
+
+
+def test_local_controller_initial_position_skips_same_model_subprocess(tmp_path: Path) -> None:
+    store = CouncilStateStore(tmp_path)
+    orchestrator = DiscussionOrchestrator(
+        store=store,
+        config=build_default_config(),
+        participant_factory=ExternalOnlyFactory(),
+    )
+
+    summary = orchestrator.run(
+        question="Should we restructure the MVP architecture?",
+        controller="codex",
+        external_models=["claude"],
+        max_rounds=3,
+        min_rounds=1,
+        controller_initial_position="Keep the MVP architecture stable and only tighten boundaries.",
+    )
+
+    assert (
+        summary.initial_position
+        == "Keep the MVP architecture stable and only tighten boundaries."
+    )
+    assert summary.current_controller_position == summary.initial_position
+    assert summary.rounds_completed == 1
+    assert summary.ended_reason == "converged"
+    assert summary.recommended_decision == "Keep the current design."
+    assert summary.summary_path is not None

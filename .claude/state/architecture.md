@@ -715,3 +715,11 @@ graph TD
 1. 本次变更优先增强当前单控制器 orchestrator，不引入新的后台服务、队列或多线程协商系统。
 2. 外部模型仍然只接收显式结构化上下文，不读取隐藏聊天历史。
 3. 本节覆盖并 supersede 文中对“提前结束规则”的旧解释；新的架构语义应为：**提前结束建立在最小闭环已完成的前提之上，而不是仅由首轮外部回应决定。**
+
+补充修正（2026-04-17）：
+1. 在 `Codex`、`Claude Code`、`Gemini CLI` 这样的交互式主控环境中，`initial_position` 不应再通过“同模型 provider 子进程”来模拟生成，否则会形成 `codex -> codex` / `claude -> claude` / `gemini -> gemini` 的自嵌套调用。
+2. 新的推荐实现语义是：
+   - 当前主控在宿主工作流中先本地生成简短 `initial_position`
+   - `CouncilFlow` 只负责把这份立场分发给外部参与者并收集反馈
+   - 后续综合仍由当前主控在宿主工作流中完成
+3. 为兼容独立 CLI 使用，`council discuss` 可以保留 provider 驱动的主控回合模式作为 fallback；但对 `project-*` 这类宿主集成调用，默认优先使用本地主控立场输入（如 `--controller-position`）以避免同模型自嵌套。

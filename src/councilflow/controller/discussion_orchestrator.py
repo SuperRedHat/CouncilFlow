@@ -51,6 +51,7 @@ class DiscussionOrchestrator:
         external_models: list[str],
         max_rounds: int,
         min_rounds: int,
+        controller_initial_position: str | None = None,
     ) -> DiscussionSummary:
         """Run the discussion loop, persist artifacts, and return the summary."""
 
@@ -72,6 +73,7 @@ class DiscussionOrchestrator:
         recommended_decisions: list[str] = []
         next_steps: list[str] = []
         ended_reason = "max_rounds_reached"
+        controller_managed_locally = controller_initial_position is not None
 
         self.store.write_state(
             {
@@ -96,27 +98,34 @@ class DiscussionOrchestrator:
         )
 
         try:
-            controller_participant = self.participant_factory(controller)
-            initial_response = self._respond(
-                participant=controller_participant,
-                request=DiscussionRequest(
-                    discussion_id=discussion_id,
-                    question=question,
-                    controller=controller,
-                    participant=controller,
-                    round_number=0,
-                    output_language=self.config.output_language,
-                ),
-                phase_label="controller_initial_position",
-            )
-            initial_position = initial_response.message
-            current_controller_position = initial_position
-            _extend_unique(key_options, initial_response.key_options)
-            _extend_unique(agreements, initial_response.agreements)
-            _extend_unique(disagreements, initial_response.disagreements)
-            _extend_unique(open_questions, initial_response.open_questions)
-            _append_if_present(recommended_decisions, initial_response.recommended_decision)
-            _append_if_present(next_steps, initial_response.next_step)
+            controller_participant: DiscussionParticipant | None = None
+            if controller_managed_locally:
+                initial_position = controller_initial_position.strip()
+                if not initial_position:
+                    raise ValueError("controller_initial_position cannot be empty.")
+                current_controller_position = initial_position
+            else:
+                controller_participant = self.participant_factory(controller)
+                initial_response = self._respond(
+                    participant=controller_participant,
+                    request=DiscussionRequest(
+                        discussion_id=discussion_id,
+                        question=question,
+                        controller=controller,
+                        participant=controller,
+                        round_number=0,
+                        output_language=self.config.output_language,
+                    ),
+                    phase_label="controller_initial_position",
+                )
+                initial_position = initial_response.message
+                current_controller_position = initial_position
+                _extend_unique(key_options, initial_response.key_options)
+                _extend_unique(agreements, initial_response.agreements)
+                _extend_unique(disagreements, initial_response.disagreements)
+                _extend_unique(open_questions, initial_response.open_questions)
+                _append_if_present(recommended_decisions, initial_response.recommended_decision)
+                _append_if_present(next_steps, initial_response.next_step)
             self._persist_record(
                 record_path=record_path,
                 discussion_id=discussion_id,
@@ -174,44 +183,48 @@ class DiscussionOrchestrator:
                     _append_if_present(recommended_decisions, response.recommended_decision)
                     _append_if_present(next_steps, response.next_step)
 
-                controller_response = self._respond(
-                    participant=controller_participant,
-                    request=DiscussionRequest(
-                        discussion_id=discussion_id,
-                        question=question,
-                        controller=controller,
-                        participant=controller,
-                        round_number=round_number,
-                        output_language=self.config.output_language,
-                        initial_position=initial_position,
-                        current_controller_position=current_controller_position,
-                        prior_turns=turns,
-                    ),
-                    phase_label=f"controller_round_{round_number}",
-                )
-                round_responses.append(controller_response)
-                turns.append(
-                    DiscussionTurn(
-                        round_number=round_number,
-                        speaker_model=controller,
-                        speaker_role="controller",
-                        message=controller_response.message,
-                        key_options=controller_response.key_options,
-                        agreements=controller_response.agreements,
-                        disagreements=controller_response.disagreements,
-                        open_questions=controller_response.open_questions,
-                        responds_to_models=external_models,
-                        introduced_new_info=controller_response.has_new_information,
-                        supports_current_direction=controller_response.supports_current_direction,
+                if not controller_managed_locally and controller_participant is not None:
+                    controller_response = self._respond(
+                        participant=controller_participant,
+                        request=DiscussionRequest(
+                            discussion_id=discussion_id,
+                            question=question,
+                            controller=controller,
+                            participant=controller,
+                            round_number=round_number,
+                            output_language=self.config.output_language,
+                            initial_position=initial_position,
+                            current_controller_position=current_controller_position,
+                            prior_turns=turns,
+                        ),
+                        phase_label=f"controller_round_{round_number}",
                     )
-                )
-                current_controller_position = controller_response.message
-                _extend_unique(key_options, controller_response.key_options)
-                _extend_unique(agreements, controller_response.agreements)
-                _extend_unique(disagreements, controller_response.disagreements)
-                _extend_unique(open_questions, controller_response.open_questions)
-                _append_if_present(recommended_decisions, controller_response.recommended_decision)
-                _append_if_present(next_steps, controller_response.next_step)
+                    round_responses.append(controller_response)
+                    turns.append(
+                        DiscussionTurn(
+                            round_number=round_number,
+                            speaker_model=controller,
+                            speaker_role="controller",
+                            message=controller_response.message,
+                            key_options=controller_response.key_options,
+                            agreements=controller_response.agreements,
+                            disagreements=controller_response.disagreements,
+                            open_questions=controller_response.open_questions,
+                            responds_to_models=external_models,
+                            introduced_new_info=controller_response.has_new_information,
+                            supports_current_direction=controller_response.supports_current_direction,
+                        )
+                    )
+                    current_controller_position = controller_response.message
+                    _extend_unique(key_options, controller_response.key_options)
+                    _extend_unique(agreements, controller_response.agreements)
+                    _extend_unique(disagreements, controller_response.disagreements)
+                    _extend_unique(open_questions, controller_response.open_questions)
+                    _append_if_present(
+                        recommended_decisions,
+                        controller_response.recommended_decision,
+                    )
+                    _append_if_present(next_steps, controller_response.next_step)
                 self._persist_record(
                     record_path=record_path,
                     discussion_id=discussion_id,
