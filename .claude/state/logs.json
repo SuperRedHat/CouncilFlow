@@ -1031,6 +1031,38 @@
       "from_status": null,
       "to_status": null,
       "message": "Completed TASK-026: CouncilFlow now ships a packaged default project config template, auto-materializes .council/config.yaml for new projects during initialization, and supports a dedicated discussion configuration block alongside execution role mappings."
+    },
+    {
+      "timestamp": "2026-04-17T11:20:28.321Z",
+      "type": "task_status_change",
+      "task_id": "TASK-027",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-027 todo → in_progress: Starting default discuss routing: council discuss should read project-local discussion defaults when --models is omitted, while explicit --models keeps highest precedence."
+    },
+    {
+      "timestamp": "2026-04-17T11:23:17.591Z",
+      "type": "task_status_change",
+      "task_id": "TASK-027",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-027 in_progress → auto_verified: Verified default discuss routing with explicit-override, project-default fallback, missing-default warning, and workflow integration coverage. Commands passed: python -m pytest tests/test_cli_discuss.py tests/test_routing.py tests/test_workflow_integration.py; python -m ruff check ."
+    },
+    {
+      "timestamp": "2026-04-17T11:23:23.664Z",
+      "type": "task_status_change",
+      "task_id": "TASK-027",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-027 auto_verified → done: Acceptance mode is auto, so TASK-027 is complete after discuss-default routing verification passed."
+    },
+    {
+      "timestamp": "2026-04-17T11:23:27.557Z",
+      "type": "decision",
+      "task_id": "TASK-027",
+      "from_status": null,
+      "to_status": null,
+      "message": "Completed TASK-027: council discuss now uses project-local discussion.default_models and discussion.max_rounds when explicit flags are omitted, while preserving explicit model precedence, normalization, dedupe, and structured warnings when no external model remains."
     }
   ]
 }

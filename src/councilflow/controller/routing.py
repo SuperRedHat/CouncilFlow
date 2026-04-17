@@ -9,6 +9,17 @@ from councilflow.models.config import DiscussTargetResolution, RouteDecision
 from councilflow.models.roles import ControllerName, RoleName, normalize_model_name
 
 
+def select_discuss_models(
+    explicit_models: Sequence[str] | None,
+    config: CouncilConfig,
+) -> tuple[list[str], str]:
+    """Choose discuss participants from explicit args or project defaults."""
+
+    if explicit_models is not None:
+        return list(explicit_models), "explicit"
+    return list(config.discussion.default_models), "project_default"
+
+
 def resolve_discuss_models(
     requested_models: Sequence[str],
     controller: ControllerName,
@@ -40,7 +51,13 @@ def resolve_discuss_models(
         external_models.append(model)
 
     warning: str | None = None
-    if controller_ignored and not external_models:
+    if not normalized_models:
+        warning = (
+            "No additional discuss models were provided or configured. "
+            "Pass --models or set discussion.default_models in .council/config.yaml "
+            "to start cross-model discussion."
+        )
+    elif controller_ignored and not external_models:
         warning = (
             "Requested discuss models matched the current controller. "
             "Specify a different model to start cross-model discussion."
@@ -78,4 +95,3 @@ def route_role(
         via_sidecar=True,
         reason="Role is mapped to a non-controller model and must be delegated.",
     )
-

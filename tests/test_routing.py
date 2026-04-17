@@ -5,7 +5,11 @@ from pathlib import Path
 import yaml
 
 from councilflow.config.loader import build_default_config, load_config
-from councilflow.controller.routing import resolve_discuss_models, route_role
+from councilflow.controller.routing import (
+    resolve_discuss_models,
+    route_role,
+    select_discuss_models,
+)
 from councilflow.models.roles import ControllerName, RoleName
 
 
@@ -70,6 +74,18 @@ def test_resolve_discuss_models_warns_when_only_controller_is_requested() -> Non
     assert resolution.requires_sidecar is False
 
 
+def test_resolve_discuss_models_warns_when_no_models_are_available() -> None:
+    resolution = resolve_discuss_models(
+        requested_models=[],
+        controller=ControllerName.CODEX,
+    )
+
+    assert resolution.external_models == []
+    assert resolution.warning is not None
+    assert "No additional discuss models" in resolution.warning
+    assert resolution.requires_sidecar is False
+
+
 def test_resolve_discuss_models_normalizes_controller_aliases() -> None:
     resolution = resolve_discuss_models(
         requested_models=["claude-code", "gpt"],
@@ -110,3 +126,23 @@ def test_route_role_delegates_when_target_differs_from_controller() -> None:
 
     assert decision.target_model == "claude"
     assert decision.via_sidecar is True
+
+
+def test_select_discuss_models_uses_project_defaults_when_explicit_is_missing() -> None:
+    config = build_default_config()
+    config.discussion.default_models = ["gemini", "claude"]
+
+    selected, source = select_discuss_models(None, config)
+
+    assert selected == ["gemini", "claude"]
+    assert source == "project_default"
+
+
+def test_select_discuss_models_prefers_explicit_over_project_defaults() -> None:
+    config = build_default_config()
+    config.discussion.default_models = ["gemini"]
+
+    selected, source = select_discuss_models(["claude"], config)
+
+    assert selected == ["claude"]
+    assert source == "explicit"

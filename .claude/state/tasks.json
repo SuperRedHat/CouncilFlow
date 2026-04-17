@@ -1128,11 +1128,11 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-17T11:00:03.204Z",
-      "updated_at": "2026-04-17T11:00:03.204Z",
+      "updated_at": "2026-04-17T11:23:23.650Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Acceptance mode is auto, so TASK-027 is complete after discuss-default routing verification passed."
     },
     {
       "id": "TASK-028",

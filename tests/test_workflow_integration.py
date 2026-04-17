@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
+from typer.testing import CliRunner
 
+from councilflow.cli import discuss as discuss_module
+from councilflow.cli.app import app
 from councilflow.config.loader import build_default_config
 from councilflow.controller.delegation_orchestrator import DelegationOrchestrator
 from councilflow.controller.discussion_orchestrator import DiscussionOrchestrator
@@ -13,6 +17,8 @@ from councilflow.models.discussion import DiscussionRequest, ParticipantResponse
 from councilflow.models.roles import RoleName
 from councilflow.providers.base import ProviderRequest, ProviderResponse
 from councilflow.state.store import CouncilStateStore
+
+runner = CliRunner()
 
 
 class IntegrationDiscussionParticipant:
@@ -96,3 +102,46 @@ def test_workflow_integration_contracts_are_machine_readable(
     assert delegation_contract["result_path"] == delegation.result_path
     assert delegation_contract["handoff_schema"]["task_summary"].startswith("Demonstrate")
     assert summary.controller == controller
+
+
+def test_discuss_cli_reads_project_default_models_for_workflow_integration(
+    monkeypatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(
+        discuss_module, "get_participant", lambda _: IntegrationDiscussionParticipant()
+    )
+    config_path = tmp_path / ".council" / "config.yaml"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(
+        "\n".join(
+            [
+                "config_version: 1",
+                "discussion:",
+                "  default_models:",
+                "    - gemini",
+                "  max_rounds: 2",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "discuss",
+            "How should project-next consume discuss output without explicit models?",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={"CODEX_SHELL": "1"},
+    )
+
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["error"] is None
+    assert payload["data"]["models_source"] == "project_default"
+    assert payload["data"]["participants"] == ["codex", "gemini"]
+    assert payload["data"]["effective_max_rounds"] == 2
+    assert (tmp_path / payload["data"]["summary_path"]).is_file()

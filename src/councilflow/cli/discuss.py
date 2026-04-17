@@ -13,7 +13,7 @@ from councilflow.controller.discussion_orchestrator import (
     UnavailableParticipantError,
 )
 from councilflow.controller.host_context import detect_controller
-from councilflow.controller.routing import resolve_discuss_models
+from councilflow.controller.routing import resolve_discuss_models, select_discuss_models
 from councilflow.handoff.prompts import render_discussion_prompt
 from councilflow.models.discussion import DiscussionRequest, ParticipantResponse
 from councilflow.models.roles import normalize_model_name
@@ -27,15 +27,23 @@ from councilflow.utils.lang import emit_console_text, emit_response, resolve_out
 DEFAULT_PROJECT_ROOT = Path(".")
 QUESTION_ARGUMENT = typer.Argument(..., help="Question to discuss across models.")
 MODELS_OPTION = typer.Option(
-    ...,
+    None,
     "--models",
-    help="Comma-separated non-controller models to invite into the discussion.",
+    help=(
+        "Comma-separated non-controller models to invite into the discussion. "
+        "When omitted, CouncilFlow uses discussion.default_models from the "
+        "project-local .council/config.yaml."
+    ),
 )
 MAX_ROUNDS_OPTION = typer.Option(
-    5,
+    None,
     "--max-rounds",
     min=1,
-    help="Maximum discussion rounds before the controller forces convergence.",
+    help=(
+        "Maximum discussion rounds before the controller forces convergence. "
+        "When omitted, CouncilFlow uses discussion.max_rounds from the "
+        "project-local .council/config.yaml."
+    ),
 )
 PROJECT_ROOT_OPTION = typer.Option(
     DEFAULT_PROJECT_ROOT,
@@ -95,8 +103,8 @@ def get_participant(model: str) -> DiscussionParticipant:
 
 def discuss(
     question: str = QUESTION_ARGUMENT,
-    models: str = MODELS_OPTION,
-    max_rounds: int = MAX_ROUNDS_OPTION,
+    models: str | None = MODELS_OPTION,
+    max_rounds: int | None = MAX_ROUNDS_OPTION,
     project_root: Path = PROJECT_ROOT_OPTION,
 ) -> None:
     """Run a structured multi-model discussion and persist its artifacts locally."""
@@ -106,8 +114,12 @@ def discuss(
     config = store.load_config()
     output_language = resolve_output_language(config.output_language)
     controller = detect_controller(config=config).controller
-    requested_models = [item for item in models.split(",") if item.strip()]
+    explicit_models = None
+    if models is not None:
+        explicit_models = [item for item in models.split(",") if item.strip()]
+    requested_models, models_source = select_discuss_models(explicit_models, config)
     resolution = resolve_discuss_models(requested_models, controller)
+    effective_max_rounds = max_rounds or config.discussion.max_rounds
 
     if not resolution.requires_sidecar:
         payload = {
@@ -117,6 +129,9 @@ def discuss(
             "external_models": resolution.external_models,
             "ignored_models": resolution.ignored_models,
             "warning": resolution.warning,
+            "models_source": models_source,
+            "configured_default_models": config.discussion.default_models,
+            "effective_max_rounds": effective_max_rounds,
             "rounds_completed": 0,
         }
         emit_console_text(
@@ -140,7 +155,7 @@ def discuss(
             question=question,
             controller=controller.value,
             external_models=resolution.external_models,
-            max_rounds=max_rounds,
+            max_rounds=effective_max_rounds,
         )
     except UnavailableParticipantError as exc:
         emit_console_text(
@@ -159,7 +174,12 @@ def discuss(
 
     emit_console_text(
         emit_response(
-            data=summary.model_dump(mode="json"),
+            data={
+                **summary.model_dump(mode="json"),
+                "models_source": models_source,
+                "configured_default_models": config.discussion.default_models,
+                "effective_max_rounds": effective_max_rounds,
+            },
             meta={
                 "command": "discuss",
                 "output_language": output_language,
