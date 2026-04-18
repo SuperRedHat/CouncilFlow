@@ -1989,11 +1989,11 @@
         "python -m ruff check .",
         "python -m pytest tests/test_workflow_integration.py tests/test_cli_delegate.py tests/test_delegation_orchestrator.py"
       ],
-      "status": "auto_verified",
+      "status": "done",
       "created_at": "2026-04-18T11:14:26.000Z",
-      "updated_at": "2026-04-18T12:39:52.763Z",
+      "updated_at": "2026-04-18T12:40:08.343Z",
       "commit_hash": "",
-      "notes": "Automated gate passed: ruff green (added extend-exclude for 8 top-level scratch .py), pytest 124 passed including 2 new isolation-contract tests. Contract fields IsolatedWorkspace/ImportManifest/WorkspaceFileChange landed, ExecutionGuardrails and DelegationResult extended, handoff prompts/packages surface new fields, integration.md §Sidecar Isolation Contract documents the contract.",
+      "notes": "Acceptance mode auto → done. Commit 6634bfa. Contract surface complete for sidecar isolation; TASK-043/044 unblocked.",
       "review_checklist": [],
       "stage_gate": false
     },
@@ -2026,11 +2026,11 @@
         "python -m ruff check .",
         "python -m pytest tests/test_delegation_orchestrator.py tests/test_cli_delegate.py tests/test_workflow_integration.py"
       ],
-      "status": "todo",
+      "status": "auto_verified",
       "created_at": "2026-04-18T11:14:26.000Z",
-      "updated_at": "2026-04-18T11:14:26.000Z",
+      "updated_at": "2026-04-18T12:49:01.606Z",
       "commit_hash": "",
-      "notes": "",
+      "notes": "Automated gate passed. utils/io.py implements materialize_workspace/detect/classify/apply/cleanup; DelegationOrchestrator wires materialize before provider.ask with cwd set, classifies + imports after, and cleanup on both success and failure. ProviderRequest.cwd plumbed through codex/claude/gemini adapters. 3 new tests cover import success / protected-path reject / writable_globs reject; full pytest 127 passes and ruff is clean.",
       "review_checklist": [],
       "stage_gate": false
     },

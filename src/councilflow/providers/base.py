@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 from councilflow.models.config import ProviderRuntimeSettings
 
-CommandRunner = Callable[[list[str], str], "ProviderRunResult | str"]
+CommandRunner = Callable[..., "ProviderRunResult | str"]
 DEFAULT_PROVIDER_TOTAL_TIMEOUT_SECONDS = 900.0
 DEFAULT_PROVIDER_IDLE_TIMEOUT_SECONDS = 180.0
 
@@ -23,6 +23,7 @@ class ProviderRequest(BaseModel):
 
     prompt: str
     context: dict[str, Any] = Field(default_factory=dict)
+    cwd: str | None = None
 
 
 class ProviderResponse(BaseModel):
@@ -95,6 +96,7 @@ def run_command(
     command: list[str],
     prompt: str,
     runtime: ProviderRuntimeSettings | None = None,
+    cwd: str | None = None,
 ) -> ProviderRunResult:
     """Execute a CLI command with the prompt appended as the final argument."""
 
@@ -106,6 +108,7 @@ def run_command(
             check=False,
             text=False,
             timeout=runtime_settings.total_timeout_seconds,
+            cwd=cwd,
         )
     except subprocess.TimeoutExpired as exc:
         raise ProviderError(
@@ -151,6 +154,7 @@ def run_monitored_process(
     runtime: ProviderRuntimeSettings | None = None,
     prompt_argument: str | None = None,
     stdin_payload: bytes | None = None,
+    cwd: str | None = None,
 ) -> MonitoredProcessResult:
     """Execute a subprocess while tracking both total duration and output activity."""
 
@@ -175,6 +179,7 @@ def run_monitored_process(
             encoding="utf-8",
             errors="replace",
             bufsize=1,
+            cwd=cwd,
         )
     except OSError as exc:
         raise ProviderError(

@@ -70,6 +70,8 @@ DEFAULT_ISOLATION_EXCLUDE_PATTERNS: tuple[str, ...] = (
     ".codex/**",
     ".gemini/**",
     ".workflow-core/**",
+    ".git",
+    ".git/**",
 )
 
 

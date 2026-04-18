@@ -22,10 +22,19 @@ from councilflow.models.delegation import (
     ReviewFinding,
     TesterPreflight,
     VerificationCommand,
+    WorkspaceFileChange,
 )
 from councilflow.models.roles import RoleName
 from councilflow.providers.base import ProviderAdapter, ProviderError, ProviderRequest
 from councilflow.state.store import CouncilStateStore
+from councilflow.utils.io import (
+    apply_import_changes,
+    classify_import_changes,
+    cleanup_workspace,
+    detect_workspace_changes,
+    materialize_workspace,
+    summarize_import_outcome,
+)
 
 PROTECTED_WORKFLOW_PATHS = (".claude/state", ".council/state.json")
 
@@ -468,6 +477,34 @@ class DelegationOrchestrator:
             else None
         )
 
+        materialization = materialize_workspace(
+            project_root=self.store.paths.project_root,
+            council_root=self.store.paths.council_root,
+            delegation_id=delegation_id,
+            isolated=package.execution_guardrails.isolated_workspace,
+        )
+        package.execution_guardrails.isolated_workspace = (
+            package.execution_guardrails.isolated_workspace.model_copy(
+                update={
+                    "strategy": materialization.effective_strategy,
+                    "workspace_path": str(
+                        materialization.workspace_path.relative_to(
+                            self.store.paths.project_root
+                        )
+                    )
+                    if materialization.workspace_path != self.store.paths.project_root
+                    else None,
+                }
+            )
+        )
+        # Persist the resolved isolation choice back to handoff.yaml so downstream
+        # consumers see the effective strategy instead of the requested default.
+        save_handoff_package(package, delegation_dir / "handoff.yaml")
+
+        workspace_manifest: list[WorkspaceFileChange] = []
+        import_outcome = "none"
+        import_rejected_reason: str | None = None
+
         try:
             provider = self.participant_factory(target_model)
             response = provider.ask(
@@ -476,9 +513,38 @@ class DelegationOrchestrator:
                     context={
                         "delegation_id": delegation_id,
                         "handoff_path": relative_handoff_path,
+                        "workspace_path": str(materialization.workspace_path),
                     },
+                    cwd=(
+                        str(materialization.workspace_path)
+                        if materialization.workspace_path
+                        != self.store.paths.project_root
+                        else None
+                    ),
                 )
             )
+
+            if materialization.workspace_path != self.store.paths.project_root:
+                detected = detect_workspace_changes(
+                    source_root=self.store.paths.project_root,
+                    workspace_path=materialization.workspace_path,
+                    exclude_patterns=(
+                        package.execution_guardrails.isolated_workspace.exclude_patterns
+                    ),
+                )
+                workspace_manifest = classify_import_changes(
+                    detected,
+                    package.execution_guardrails,
+                )
+                apply_import_changes(
+                    workspace_manifest,
+                    source_root=self.store.paths.project_root,
+                    workspace_path=materialization.workspace_path,
+                )
+                import_outcome, import_rejected_reason = summarize_import_outcome(
+                    workspace_manifest
+                )
+
             if not package.execution_guardrails.allow_workflow_state_write:
                 changed_paths = _detect_protected_path_changes(
                     self.store.paths.project_root,
@@ -509,6 +575,11 @@ class DelegationOrchestrator:
                         },
                     )
         except ProviderError as exc:
+            cleanup_workspace(
+                self.store.paths.project_root,
+                materialization.workspace_path,
+                materialization.effective_strategy,
+            )
             raise self._persist_failure(
                 delegation_id=delegation_id,
                 role=role,
@@ -521,6 +592,12 @@ class DelegationOrchestrator:
                     package.tester_preflight if role is RoleName.TESTER else None
                 ),
             ) from exc
+
+        cleanup_workspace(
+            self.store.paths.project_root,
+            materialization.workspace_path,
+            materialization.effective_strategy,
+        )
 
         result_path = delegation_dir / "result.md"
         self.store.write_text(result_path, response.content)
@@ -572,4 +649,7 @@ class DelegationOrchestrator:
             execution_guardrails=package.execution_guardrails,
             next_actions_on_success=package.next_actions_on_success,
             next_actions_on_failure=package.next_actions_on_failure,
+            workspace_manifest=workspace_manifest,
+            import_outcome=import_outcome,
+            import_rejected_reason=import_rejected_reason,
         )

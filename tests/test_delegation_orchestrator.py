@@ -294,3 +294,147 @@ def test_delegation_orchestrator_blocks_guardrail_commits(tmp_path: Path) -> Non
         )
 
     assert exc_info.value.error_kind == "guardrail_violation"
+
+
+class WorkspaceWritingProvider:
+    """Fake provider that writes files into request.cwd (the sidecar workspace)."""
+
+    model_name = "claude"
+
+    def __init__(self, files_to_write: dict[str, str]) -> None:
+        self.files_to_write = files_to_write
+        self.observed_cwd: Path | None = None
+
+    def ask(self, request: ProviderRequest) -> ProviderResponse:
+        assert request.cwd is not None, "isolated workspace must set cwd"
+        workspace = Path(request.cwd)
+        self.observed_cwd = workspace
+        for relative, content in self.files_to_write.items():
+            target = workspace / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(content, encoding="utf-8")
+        return ProviderResponse(model="claude", content="Workspace edits applied.")
+
+
+def _seed_project(tmp_path: Path, files: dict[str, str]) -> None:
+    for relative, content in files.items():
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+
+
+def test_delegation_orchestrator_materializes_workspace_and_imports_allowed(
+    tmp_path: Path,
+) -> None:
+    _write_claude_permission_settings(tmp_path, "python -m pytest")
+    _seed_project(tmp_path, {"src/app.py": "print('hello')\n"})
+    store = CouncilStateStore(tmp_path)
+    provider = WorkspaceWritingProvider({"src/app.py": "print('hello world')\n"})
+    orchestrator = DelegationOrchestrator(
+        store=store,
+        participant_factory=lambda _: provider,
+    )
+
+    from councilflow.models.delegation import ExecutionGuardrails, ImportManifest
+
+    result = orchestrator.run(
+        role=RoleName.IMPLEMENTER,
+        controller="codex",
+        target_model="claude",
+        objective="Materialize and import",
+        task_summary="Modify src/app.py inside sidecar workspace.",
+        constraints=[],
+        relevant_files=["src/app.py"],
+        inputs={},
+        execution_guardrails=ExecutionGuardrails(
+            import_manifest=ImportManifest(writable_globs=["src/**"]),
+        ),
+        expected_output="Import-back result.",
+    )
+
+    assert provider.observed_cwd is not None
+    assert provider.observed_cwd != tmp_path
+    assert result.import_outcome == "applied"
+    assert len(result.workspace_manifest) == 1
+    manifest_entry = result.workspace_manifest[0]
+    assert manifest_entry.path == "src/app.py"
+    assert manifest_entry.change_type == "modified"
+    assert manifest_entry.imported is True
+    # Sidecar change actually landed in the host project root.
+    assert (tmp_path / "src/app.py").read_text(encoding="utf-8") == "print('hello world')\n"
+
+
+def test_delegation_orchestrator_rejects_protected_path_imports(tmp_path: Path) -> None:
+    _write_claude_permission_settings(tmp_path, "python -m pytest")
+    _seed_project(tmp_path, {"src/app.py": "print('ok')\n"})
+    store = CouncilStateStore(tmp_path)
+    # The sidecar writes a .workflow-core file; the default protected paths must
+    # reject that even if the provider happens to materialize the change.
+    provider = WorkspaceWritingProvider(
+        {".workflow-core/skills/project-next/SKILL.md": "tampered\n"}
+    )
+    orchestrator = DelegationOrchestrator(
+        store=store,
+        participant_factory=lambda _: provider,
+    )
+
+    from councilflow.models.delegation import ExecutionGuardrails, ImportManifest
+
+    result = orchestrator.run(
+        role=RoleName.IMPLEMENTER,
+        controller="codex",
+        target_model="claude",
+        objective="Try to poison workflow state",
+        task_summary="Attempt to import into .workflow-core",
+        constraints=[],
+        relevant_files=[],
+        inputs={},
+        execution_guardrails=ExecutionGuardrails(
+            import_manifest=ImportManifest(
+                writable_globs=[".workflow-core/**"],  # permissive import globs
+            ),
+        ),
+        expected_output="Should not land in host.",
+    )
+
+    assert result.import_outcome == "rejected"
+    rejected_paths = [change.path for change in result.workspace_manifest]
+    assert any(path.startswith(".workflow-core/") for path in rejected_paths)
+    # Host project must not contain the rejected file.
+    assert not (tmp_path / ".workflow-core/skills/project-next/SKILL.md").exists()
+
+
+def test_delegation_orchestrator_rejects_path_outside_writable_globs(tmp_path: Path) -> None:
+    _write_claude_permission_settings(tmp_path, "python -m pytest")
+    _seed_project(tmp_path, {"src/app.py": "ok\n", "docs/README.md": "old\n"})
+    store = CouncilStateStore(tmp_path)
+    # Writable globs only cover src/**, but sidecar edits docs/README.md.
+    provider = WorkspaceWritingProvider({"docs/README.md": "new\n"})
+    orchestrator = DelegationOrchestrator(
+        store=store,
+        participant_factory=lambda _: provider,
+    )
+
+    from councilflow.models.delegation import ExecutionGuardrails, ImportManifest
+
+    result = orchestrator.run(
+        role=RoleName.IMPLEMENTER,
+        controller="codex",
+        target_model="claude",
+        objective="Attempt to edit docs",
+        task_summary="docs/ edit should be rejected without writable_globs.",
+        constraints=[],
+        relevant_files=[],
+        inputs={},
+        execution_guardrails=ExecutionGuardrails(
+            import_manifest=ImportManifest(writable_globs=["src/**"]),
+        ),
+        expected_output="Rejected import.",
+    )
+
+    assert result.import_outcome == "rejected"
+    assert result.workspace_manifest[0].path == "docs/README.md"
+    assert result.workspace_manifest[0].imported is False
+    assert result.workspace_manifest[0].rejection_reason is not None
+    # Original docs/README.md in host untouched.
+    assert (tmp_path / "docs/README.md").read_text(encoding="utf-8") == "old\n"

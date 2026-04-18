@@ -43,15 +43,16 @@ class ClaudeCodeCliAdapter:
         self.command = command or _default_claude_command()
         self.runtime = runtime or default_runtime_settings()
         self.runner = runner or (
-            lambda command, prompt: _run_claude_streaming_command(
+            lambda command, prompt, cwd=None: _run_claude_streaming_command(
                 command,
                 prompt,
                 runtime=self.runtime,
+                cwd=cwd,
             )
         )
 
     def ask(self, request: ProviderRequest) -> ProviderResponse:
-        result = coerce_run_result(self.runner(self.command, request.prompt))
+        result = coerce_run_result(self.runner(self.command, request.prompt, cwd=request.cwd))
         return ProviderResponse(
             model=self.model_name,
             content=result.content,
@@ -78,6 +79,7 @@ def _run_claude_streaming_command(
     command: list[str],
     prompt: str,
     runtime: ProviderRuntimeSettings | None = None,
+    cwd: str | None = None,
 ) -> ProviderRunResult:
     """Execute Claude in stream-json mode and keep the subprocess alive while events arrive."""
 
@@ -85,6 +87,7 @@ def _run_claude_streaming_command(
         command,
         runtime=runtime,
         prompt_argument=prompt,
+        cwd=cwd,
     )
     content, metadata = _parse_stream_json_output(monitored)
     return ProviderRunResult(content=content, metadata=metadata)

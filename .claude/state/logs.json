@@ -1823,6 +1823,30 @@
       "from_status": "in_progress",
       "to_status": "auto_verified",
       "message": "TASK-042 in_progress → auto_verified: Automated gate passed: ruff green (added extend-exclude for 8 top-level scratch .py), pytest 124 passed including 2 new isolation-contract tests. Contract fields IsolatedWorkspace/ImportManifest/WorkspaceFileChange landed, ExecutionGuardrails and DelegationResult extended, handoff prompts/packages surface new fields, integration.md §Sidecar Isolation Contract documents the contract."
+    },
+    {
+      "timestamp": "2026-04-18T12:40:08.362Z",
+      "type": "task_status_change",
+      "task_id": "TASK-042",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-042 auto_verified → done: Acceptance mode auto → done. Commit 6634bfa. Contract surface complete for sidecar isolation; TASK-043/044 unblocked."
+    },
+    {
+      "timestamp": "2026-04-18T12:41:38.361Z",
+      "type": "task_status_change",
+      "task_id": "TASK-043",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-043 todo → in_progress: Starting sidecar-workspace-import. Will add utils/io.py (materialize + scan + filter + import + cleanup), extend ProviderRequest with cwd, wire cwd through 3 adapters + run_command/run_monitored_process, make DelegationOrchestrator.run materialize workspace before provider.ask and import allowed changes after, populate DelegationResult.workspace_manifest/import_outcome/import_rejected_reason."
+    },
+    {
+      "timestamp": "2026-04-18T12:49:01.632Z",
+      "type": "task_status_change",
+      "task_id": "TASK-043",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-043 in_progress → auto_verified: Automated gate passed. utils/io.py implements materialize_workspace/detect/classify/apply/cleanup; DelegationOrchestrator wires materialize before provider.ask with cwd set, classifies + imports after, and cleanup on both success and failure. ProviderRequest.cwd plumbed through codex/claude/gemini adapters. 3 new tests cover import success / protected-path reject / writable_globs reject; full pytest 127 passes and ruff is clean."
     }
   ]
 }

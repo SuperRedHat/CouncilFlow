@@ -48,11 +48,13 @@ class GeminiCliAdapter:
 
         self.runtime = runtime or default_runtime_settings()
         self.runner = runner or (
-            lambda command, prompt: _run_gemini_command(command, prompt, runtime=self.runtime)
+            lambda command, prompt, cwd=None: _run_gemini_command(
+                command, prompt, runtime=self.runtime, cwd=cwd,
+            )
         )
 
     def ask(self, request: ProviderRequest) -> ProviderResponse:
-        result = coerce_run_result(self.runner(self.command, request.prompt))
+        result = coerce_run_result(self.runner(self.command, request.prompt, cwd=request.cwd))
         return ProviderResponse(
             model=self.model_name,
             content=_strip_runtime_notices(result.content),
@@ -99,6 +101,7 @@ def _run_gemini_command(
     command: list[str],
     prompt: str,
     runtime: ProviderRuntimeSettings | None = None,
+    cwd: str | None = None,
 ) -> ProviderRunResult:
     """Execute Gemini with the real multi-line prompt provided on stdin."""
 
@@ -111,6 +114,7 @@ def _run_gemini_command(
             check=False,
             text=False,
             timeout=runtime_settings.total_timeout_seconds,
+            cwd=cwd,
         )
     except subprocess.TimeoutExpired as exc:
         raise ProviderError(
