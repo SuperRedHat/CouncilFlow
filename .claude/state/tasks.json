@@ -2584,11 +2584,50 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "auto_verified",
+      "status": "done",
       "created_at": "2026-04-18T14:32:09.559Z",
-      "updated_at": "2026-04-18T14:35:18.057Z",
+      "updated_at": "2026-04-18T14:35:42.405Z",
       "commit_hash": "",
-      "notes": "Automated gate passed. models/delegation.py adds DEFAULT_DEPENDENCY_SYMLINKS + IsolatedWorkspace.dependency_symlinks. utils/io.py::_link_dependency_dirs creates junctions (Windows mklink /J) or symlinks (Unix) after copy/git_worktree, silently skips missing deps, logs materialize.dependency_linked INFO. cleanup_workspace now unlinks top-level junctions via _unlink_top_level_links before rmtree/worktree-remove so source dep dirs are never touched. 6 new tests pass: defaults cover, symlink works + cleanup safe, missing deps no-op, opt-out skips symlink, Windows cleanup removes junction without source damage, git_worktree path also links. docs/integration.md documents read-only semantics. Ruff clean, full pytest 184/184."
+      "notes": "Auto → done. Commit a4fc6a4. Editable install means this is immediately effective in user's council command — retry project-next in chess."
+    },
+    {
+      "id": "TASK-058",
+      "title": "修复 workspace detect 与 import_manifest 空 writable_globs 导致的实际数据丢失",
+      "description": "Chess smoke 2026-04-18 16:58 的 tester 运行删除了用户 TASK-006 implementer 产出的9 个新文件并还原了1 个修改。根因两个 bug 同时发生：(1) detect_workspace_changes 拿 source 工作树 vs workspace HEAD 快照对比，把 source 里存在但 workspace 里没有的文件标成 deleted；(2) classify_import_changes 中 `elif writable and not ...` 的短路逻辑使得空 writable_globs=[] 时放行所有导入。修复方向：引入 WorkspaceBaseline + snapshot_workspace_baseline，detect 改为 baseline vs post-provider workspace；classify 空 writable_globs 语义改为 'reject all'。",
+      "dependencies": [
+        "TASK-043",
+        "TASK-057"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "detect_workspace_changes 不再读取 source_root，仅依赖 materialize 后立即捕获的 WorkspaceBaseline",
+        "空 writable_globs=[] 时所有变更默认被拒绝导入；想导回必须显式声明 globs",
+        "回归测试复现：source 有未提交文件 + sidecar 未触碰 → workspace_manifest 为空，不会把 source 文件当deleted导入",
+        "回归测试复现：writable_globs=[] + sidecar 写了任意文件 → import_outcome=rejected，文件不落到 source",
+        "全量 pytest 绿，ruff 绿"
+      ],
+      "files": [
+        "src/councilflow/utils/io.py",
+        "src/councilflow/controller/delegation_orchestrator.py",
+        "tests/test_delegation_orchestrator.py",
+        "tests/test_workflow_integration.py",
+        "docs/integration.md"
+      ],
+      "module": "workspace-detect-safety",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "auto_verified",
+      "created_at": "2026-04-18T17:11:15.448Z",
+      "updated_at": "2026-04-18T17:13:32.126Z",
+      "commit_hash": "",
+      "notes": "Automated gate passed. utils/io.py: new WorkspaceBaseline + snapshot_workspace_baseline + refactored detect_workspace_changes (baseline vs post-provider workspace, never touches source). _iter_workspace_files skips symlinks so dependency junctions are ignored by the scanner. classify_import_changes empty-writable_globs semantic flipped to reject-all (safe default). delegation_orchestrator.py wires baseline capture immediately after materialize and passes it to detect. 2 new regression tests: untracked source files NOT flagged as deleted; default ExecutionGuardrails rejects all sidecar writes. docs/integration.md documents the baseline-driven detection + deny-by-default semantics. Ruff clean, full pytest 186/186."
     }
   ]
 }

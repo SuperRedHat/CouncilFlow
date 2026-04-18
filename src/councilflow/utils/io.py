@@ -41,6 +41,22 @@ class WorkspaceMaterialization:
     effective_strategy: str
 
 
+@dataclass(frozen=True)
+class WorkspaceBaseline:
+    """File-level snapshot of a workspace taken right after materialization.
+
+    ``detect_workspace_changes`` compares this baseline against the workspace
+    state AFTER the provider has run, so the manifest reflects only what the
+    sidecar itself did. Comparing against the host source tree instead (the
+    previous implementation) incorrectly flagged the user's uncommitted source
+    files as ``deleted`` and caused real data loss — see TASK-058.
+
+    ``hashes`` maps posix-style relative paths to SHA-256 hex digests.
+    """
+
+    hashes: dict[str, str]
+
+
 def _path_matches_any(path: str, patterns: list[str]) -> bool:
     return any(fnmatch.fnmatch(path, pattern) for pattern in patterns)
 
@@ -221,88 +237,98 @@ def _copy_project_tree(
         shutil.copy2(src_path, target)
 
 
-def detect_workspace_changes(
-    source_root: Path,
-    workspace_path: Path,
-    exclude_patterns: list[str] | None = None,
-) -> list[WorkspaceFileChange]:
-    """Return every file that differs between the source root and the workspace.
+def _iter_workspace_files(workspace_path: Path) -> list[tuple[Path, str]]:
+    """Yield (absolute_path, posix_relative_str) for regular files in the
+    workspace, skipping symlinks and _SCAN_SKIP_PATTERNS.
 
-    The workspace scan uses only _SCAN_SKIP_PATTERNS (performance-only skips)
-    so sidecar attempts to write into workflow state paths remain visible for
-    the classifier to reject.
-
-    The source scan uses the full `exclude_patterns` (plus _SCAN_SKIP_PATTERNS)
-    because any path the materialization explicitly excluded was never present
-    in the workspace to begin with, and must not be treated as a sidecar-driven
-    deletion.
-
-    Returns an empty list when workspace_path equals source_root (strategy=none).
+    Symlinks / Windows junctions are skipped by design so that the
+    dependency-symlink feature (TASK-057) does not cause the scanner to walk
+    into the real source ``node_modules`` / ``.venv`` tree across the link.
     """
 
-    if workspace_path == source_root:
-        return []
-
-    scan_skip = list(_SCAN_SKIP_PATTERNS)
-    source_excludes = list(_SCAN_SKIP_PATTERNS)
-    if exclude_patterns:
-        source_excludes.extend(exclude_patterns)
-
-    changes: list[WorkspaceFileChange] = []
-
-    # Modified / added
-    for workspace_file in workspace_path.rglob("*"):
-        if not workspace_file.is_file():
-            continue
-        relative = workspace_file.relative_to(workspace_path)
-        relative_str = str(relative).replace("\\", "/")
-        if _should_exclude(relative_str, scan_skip):
-            continue
-        source_file = source_root / relative
+    skip_patterns = list(_SCAN_SKIP_PATTERNS)
+    entries: list[tuple[Path, str]] = []
+    for candidate in workspace_path.rglob("*"):
         try:
-            byte_size = workspace_file.stat().st_size
+            if candidate.is_symlink() or _is_windows_junction(candidate):
+                continue
+            if not candidate.is_file():
+                continue
         except OSError:
             continue
-        if not source_file.exists() or not source_file.is_file():
+        relative = candidate.relative_to(workspace_path)
+        relative_str = str(relative).replace("\\", "/")
+        if _should_exclude(relative_str, skip_patterns):
+            continue
+        entries.append((candidate, relative_str))
+    return entries
+
+
+def snapshot_workspace_baseline(workspace_path: Path) -> WorkspaceBaseline:
+    """Capture the set of files (and their hashes) in the workspace right
+    after materialization so detect_workspace_changes can later tell which
+    paths the sidecar added / modified / deleted."""
+
+    hashes: dict[str, str] = {}
+    for path, relative in _iter_workspace_files(workspace_path):
+        try:
+            hashes[relative] = _file_hash(path)
+        except (OSError, PermissionError):
+            continue
+    return WorkspaceBaseline(hashes=hashes)
+
+
+def detect_workspace_changes(
+    baseline: WorkspaceBaseline,
+    workspace_path: Path,
+) -> list[WorkspaceFileChange]:
+    """Diff the workspace AFTER the provider ran against the BASELINE taken
+    right after materialization.
+
+    Only sidecar-driven changes end up in the manifest — host source files
+    that were never in the workspace to begin with are invisible here, which
+    closes the TASK-058 data-loss window where uncommitted source files got
+    imported back as ``deleted``.
+    """
+
+    changes: list[WorkspaceFileChange] = []
+    current_hashes: dict[str, str] = {}
+    current_sizes: dict[str, int] = {}
+
+    for path, relative in _iter_workspace_files(workspace_path):
+        try:
+            current_hashes[relative] = _file_hash(path)
+            current_sizes[relative] = path.stat().st_size
+        except (OSError, PermissionError):
+            continue
+
+    for relative, current_hash in current_hashes.items():
+        baseline_hash = baseline.hashes.get(relative)
+        byte_size = current_sizes.get(relative, 0)
+        if baseline_hash is None:
             changes.append(
                 WorkspaceFileChange(
-                    path=relative_str,
+                    path=relative,
                     change_type="added",
                     byte_size=byte_size,
                 )
             )
-            continue
-        try:
-            if _file_hash(workspace_file) != _file_hash(source_file):
-                changes.append(
-                    WorkspaceFileChange(
-                        path=relative_str,
-                        change_type="modified",
-                        byte_size=byte_size,
-                    )
-                )
-        except (OSError, PermissionError):
-            continue
-
-    # Deleted
-    for source_file in source_root.rglob("*"):
-        if not source_file.is_file():
-            continue
-        relative = source_file.relative_to(source_root)
-        relative_str = str(relative).replace("\\", "/")
-        if _should_exclude(relative_str, source_excludes):
-            continue
-        workspace_file = workspace_path / relative
-        if not workspace_file.exists():
-            try:
-                size = source_file.stat().st_size
-            except OSError:
-                continue
+        elif baseline_hash != current_hash:
             changes.append(
                 WorkspaceFileChange(
-                    path=relative_str,
+                    path=relative,
+                    change_type="modified",
+                    byte_size=byte_size,
+                )
+            )
+
+    for relative in baseline.hashes:
+        if relative not in current_hashes:
+            changes.append(
+                WorkspaceFileChange(
+                    path=relative,
                     change_type="deleted",
-                    byte_size=size,
+                    byte_size=0,
                 )
             )
 
@@ -314,7 +340,14 @@ def classify_import_changes(
     changes: list[WorkspaceFileChange],
     guardrails: ExecutionGuardrails,
 ) -> list[WorkspaceFileChange]:
-    """Mark each change as imported or rejected based on the guardrails manifest."""
+    """Mark each change as imported or rejected based on the guardrails manifest.
+
+    Empty ``import_manifest.writable_globs`` means "import nothing": the caller
+    must explicitly opt into which paths are allowed back. This is the safe
+    default for tester / reviewer stages and was incorrectly lenient before
+    TASK-058 (an empty list silently approved every change, which destroyed
+    uncommitted user work during one real chess-project tester run).
+    """
 
     classified: list[WorkspaceFileChange] = []
     manifest = guardrails.import_manifest
@@ -326,7 +359,10 @@ def classify_import_changes(
         reason: str | None = None
         if _protected_path_covers(change.path, guardrails.protected_paths):
             reason = "path is covered by execution_guardrails.protected_paths"
-        elif writable and not _path_matches_any(change.path, writable):
+        elif not _path_matches_any(change.path, writable):
+            # Empty writable_globs rejects everything; explicit globs must
+            # match, otherwise the change is rejected. Both arms go through
+            # the same reason string so the manifest stays inspectable.
             reason = "path is not matched by import_manifest.writable_globs"
         elif imported_count >= manifest.max_file_count:
             reason = "import_manifest.max_file_count budget exhausted"

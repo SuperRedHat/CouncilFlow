@@ -404,6 +404,99 @@ def test_delegation_orchestrator_rejects_protected_path_imports(tmp_path: Path) 
     assert not (tmp_path / ".workflow-core/skills/project-next/SKILL.md").exists()
 
 
+def test_delegation_orchestrator_does_not_import_source_untracked_files_as_deleted(
+    tmp_path: Path,
+) -> None:
+    """TASK-058 regression: previous implementer added src/feature/new.ts to
+    source but never committed. Tester is a later delegation that ran in its
+    own git_worktree (no knowledge of the untracked file). The detector must
+    NOT flag the source file as ``deleted`` — if it did, apply_import_changes
+    would unlink user work. Here we simulate the scenario without a real git
+    repo; the copy fallback reproduces the same detect path that bit the
+    real chess project."""
+
+    _write_claude_permission_settings(tmp_path, "python -m pytest")
+    _seed_project(tmp_path, {"src/app.py": "print('ok')\n"})
+    # Simulate a previous implementer's untracked file already landed in source.
+    untracked = tmp_path / "src" / "features" / "game_session" / "reducer.ts"
+    untracked.parent.mkdir(parents=True, exist_ok=True)
+    untracked.write_text("export const reducer = () => {};\n", encoding="utf-8")
+
+    store = CouncilStateStore(tmp_path)
+    # Sidecar does NOT touch any file.
+    quiet_provider = WorkspaceWritingProvider({})
+    orchestrator = DelegationOrchestrator(
+        store=store,
+        participant_factory=lambda _: quiet_provider,
+    )
+
+    from councilflow.models.delegation import ExecutionGuardrails, ImportManifest
+
+    result = orchestrator.run(
+        role=RoleName.TESTER,
+        controller="codex",
+        target_model="claude",
+        objective="TASK-058 regression",
+        task_summary="Sidecar touches nothing; source has untracked file.",
+        constraints=[],
+        relevant_files=[],
+        inputs={},
+        execution_guardrails=ExecutionGuardrails(
+            # Even with an overly permissive manifest, manifest must stay
+            # empty because the sidecar did not actually modify anything.
+            import_manifest=ImportManifest(writable_globs=["**"]),
+        ),
+        expected_output="",
+    )
+
+    assert result.workspace_manifest == []
+    assert result.import_outcome == "none"
+    # The key assertion: the untracked file must STILL exist after the
+    # delegation completes. Pre-TASK-058 this was unlinked.
+    assert untracked.exists(), "sidecar-untouched source file must not be removed"
+    assert untracked.read_text(encoding="utf-8") == "export const reducer = () => {};\n"
+
+
+def test_delegation_orchestrator_empty_writable_globs_rejects_all_imports(
+    tmp_path: Path,
+) -> None:
+    """TASK-058 regression: the default ImportManifest has writable_globs=[].
+    Previously this meant ``allow everything`` (bug). After the fix, empty
+    globs mean ``reject everything`` so a tester-style delegation cannot
+    accidentally write back to source."""
+
+    _write_claude_permission_settings(tmp_path, "python -m pytest")
+    _seed_project(tmp_path, {})
+
+    provider = WorkspaceWritingProvider(
+        {"src/cheeky.ts": "// should never reach source\n"}
+    )
+    store = CouncilStateStore(tmp_path)
+    orchestrator = DelegationOrchestrator(
+        store=store,
+        participant_factory=lambda _: provider,
+    )
+
+    # Default ExecutionGuardrails() with default ImportManifest() has writable_globs=[]
+    result = orchestrator.run(
+        role=RoleName.TESTER,
+        controller="codex",
+        target_model="claude",
+        objective="TASK-058 default-safe regression",
+        task_summary="Default guardrails must reject workspace writes.",
+        constraints=[],
+        relevant_files=[],
+        inputs={},
+        expected_output="",
+    )
+
+    assert result.import_outcome == "rejected"
+    assert any(
+        c.path == "src/cheeky.ts" and c.imported is False for c in result.workspace_manifest
+    )
+    assert not (tmp_path / "src" / "cheeky.ts").exists()
+
+
 def test_delegation_orchestrator_rejects_path_outside_writable_globs(tmp_path: Path) -> None:
     _write_claude_permission_settings(tmp_path, "python -m pytest")
     _seed_project(tmp_path, {"src/app.py": "ok\n", "docs/README.md": "old\n"})

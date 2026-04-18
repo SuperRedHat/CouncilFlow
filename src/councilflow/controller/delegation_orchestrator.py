@@ -39,6 +39,7 @@ from councilflow.utils.io import (
     cleanup_workspace,
     detect_workspace_changes,
     materialize_workspace,
+    snapshot_workspace_baseline,
     summarize_import_outcome,
 )
 from councilflow.utils.logging import get_logger
@@ -515,6 +516,18 @@ class DelegationOrchestrator:
         # consumers see the effective strategy instead of the requested default.
         save_handoff_package(package, delegation_dir / "handoff.yaml")
 
+        # Capture a file-level baseline of the freshly materialized workspace
+        # BEFORE the provider runs so detect_workspace_changes can later report
+        # only the sidecar's own edits. Comparing the post-run workspace to the
+        # host source tree (the pre-TASK-058 behavior) incorrectly flagged
+        # untracked source files as ``deleted`` and imported those deletions
+        # back, destroying user work — see TASK-058 incident log.
+        workspace_baseline = (
+            snapshot_workspace_baseline(materialization.workspace_path)
+            if materialization.workspace_path != self.store.paths.project_root
+            else None
+        )
+
         workspace_manifest: list[WorkspaceFileChange] = []
         import_outcome = "none"
         import_rejected_reason: str | None = None
@@ -539,13 +552,13 @@ class DelegationOrchestrator:
                 )
             )
 
-            if materialization.workspace_path != self.store.paths.project_root:
+            if (
+                materialization.workspace_path != self.store.paths.project_root
+                and workspace_baseline is not None
+            ):
                 detected = detect_workspace_changes(
-                    source_root=self.store.paths.project_root,
+                    baseline=workspace_baseline,
                     workspace_path=materialization.workspace_path,
-                    exclude_patterns=(
-                        package.execution_guardrails.isolated_workspace.exclude_patterns
-                    ),
                 )
                 workspace_manifest = classify_import_changes(
                     detected,

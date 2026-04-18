@@ -2103,6 +2103,30 @@
       "from_status": "in_progress",
       "to_status": "auto_verified",
       "message": "TASK-057 in_progress → auto_verified: Automated gate passed. models/delegation.py adds DEFAULT_DEPENDENCY_SYMLINKS + IsolatedWorkspace.dependency_symlinks. utils/io.py::_link_dependency_dirs creates junctions (Windows mklink /J) or symlinks (Unix) after copy/git_worktree, silently skips missing deps, logs materialize.dependency_linked INFO. cleanup_workspace now unlinks top-level junctions via _unlink_top_level_links before rmtree/worktree-remove so source dep dirs are never touched. 6 new tests pass: defaults cover, symlink works + cleanup safe, missing deps no-op, opt-out skips symlink, Windows cleanup removes junction without source damage, git_worktree path also links. docs/integration.md documents read-only semantics. Ruff clean, full pytest 184/184."
+    },
+    {
+      "timestamp": "2026-04-18T14:35:42.427Z",
+      "type": "task_status_change",
+      "task_id": "TASK-057",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-057 auto_verified → done: Auto → done. Commit a4fc6a4. Editable install means this is immediately effective in user's council command — retry project-next in chess."
+    },
+    {
+      "timestamp": "2026-04-18T17:13:27.378Z",
+      "type": "task_status_change",
+      "task_id": "TASK-058",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-058 todo → in_progress: Refactor landed in utils/io.py + delegation_orchestrator.py."
+    },
+    {
+      "timestamp": "2026-04-18T17:13:32.154Z",
+      "type": "task_status_change",
+      "task_id": "TASK-058",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-058 in_progress → auto_verified: Automated gate passed. utils/io.py: new WorkspaceBaseline + snapshot_workspace_baseline + refactored detect_workspace_changes (baseline vs post-provider workspace, never touches source). _iter_workspace_files skips symlinks so dependency junctions are ignored by the scanner. classify_import_changes empty-writable_globs semantic flipped to reject-all (safe default). delegation_orchestrator.py wires baseline capture immediately after materialize and passes it to detect. 2 new regression tests: untracked source files NOT flagged as deleted; default ExecutionGuardrails rejects all sidecar writes. docs/integration.md documents the baseline-driven detection + deny-by-default semantics. Ruff clean, full pytest 186/186."
     }
   ]
 }

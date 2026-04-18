@@ -343,6 +343,18 @@ decide whether to accept the sidecar output:
 These fields are informational in TASK-042 (the contract-only phase); subsequent
 isolation work (TASK-043 / TASK-044) makes the orchestrator produce and enforce them.
 
+### Change detection is baseline-driven
+
+After TASK-058 the orchestrator snapshots the workspace's file-level state
+right after materialization and diffs the post-provider workspace against
+that baseline. It does NOT compare the workspace to the host source tree.
+This matters because an earlier delegation may have left uncommitted files
+in source: those files were never in the sidecar workspace to begin with
+and must never appear in `workspace_manifest` as `deleted`. Empty
+`import_manifest.writable_globs` is now a strict deny-all guard — every
+legitimate import must list an explicit glob, and the default
+`ExecutionGuardrails()` safely rejects every sidecar write.
+
 ## Optional: OpenAI (`gpt`) Adapter
 
 CouncilFlow ships an opt-in `OpenAIChatAdapter` that lets the `advisor` role
