@@ -148,12 +148,29 @@ def test_run_codex_command_sends_prompt_via_stdin(
 
 def test_gemini_adapter_supports_specific_model() -> None:
     adapter = GeminiCliAdapter(model="gemini-1.5-flash")
-    assert adapter.model_name == "gemini-1.5-flash"
+    # Family name stays stable; specific variant lives in gemini_variant.
+    assert adapter.model_name == "gemini"
+    assert adapter.gemini_variant == "gemini-1.5-flash"
     assert "--model" in adapter.command
     assert "gemini-1.5-flash" in adapter.command
     p_idx = adapter.command.index("-p")
     m_idx = adapter.command.index("--model")
     assert m_idx < p_idx
+
+
+def test_gemini_adapter_surfaces_variant_through_response_metadata() -> None:
+    class FakeRunner:
+        def __call__(self, command, prompt, cwd=None, env=None):
+            from councilflow.providers.base import ProviderRunResult
+
+            return ProviderRunResult(content="hello", metadata={"execution_mode": "blocking"})
+
+    adapter = GeminiCliAdapter(model="gemini-1.5-flash", runner=FakeRunner())
+    from councilflow.providers.base import ProviderRequest
+
+    response = adapter.ask(ProviderRequest(prompt="ping"))
+    assert response.model == "gemini"
+    assert response.metadata["gemini_variant"] == "gemini-1.5-flash"
 
 
 def test_run_gemini_command_sends_prompt_via_stdin(

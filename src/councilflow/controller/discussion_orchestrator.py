@@ -29,9 +29,30 @@ class DiscussionParticipant(Protocol):
 class UnavailableParticipantError(RuntimeError):
     """Raised when a requested discussion participant is not available."""
 
-    def __init__(self, message: str, *, error_kind: str | None = None) -> None:
+    def __init__(
+        self,
+        message: str,
+        *,
+        kind: str | None = None,
+        error_kind: str | None = None,
+    ) -> None:
         super().__init__(message)
-        self.error_kind = error_kind
+        # Canonical field is `kind`, aligned with ProviderError.kind. The
+        # legacy `error_kind` parameter is accepted to avoid breaking existing
+        # callers (it is forwarded to `kind`) and a deprecation property keeps
+        # read access working for at least one release cycle.
+        self.kind: str | None = kind if kind is not None else error_kind
+
+    @property
+    def error_kind(self) -> str | None:
+        import warnings
+
+        warnings.warn(
+            "UnavailableParticipantError.error_kind is deprecated; use .kind",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.kind
 
 
 class DiscussionOrchestrator:
@@ -264,7 +285,7 @@ class DiscussionOrchestrator:
                 ended_reason="failed",
                 turns=turns,
                 error_message=str(exc),
-                error_kind=getattr(exc, "error_kind", None),
+                error_kind=getattr(exc, "kind", None),
             )
             self.store.append_run_record(
                 "discussion",
@@ -272,7 +293,7 @@ class DiscussionOrchestrator:
                     "discussion_id": discussion_id,
                     "status": "failed",
                     "error": str(exc),
-                    "error_kind": getattr(exc, "error_kind", None),
+                    "error_kind": getattr(exc, "kind", None),
                 },
             )
             self.store.write_state(
@@ -350,7 +371,7 @@ class DiscussionOrchestrator:
             raise UnavailableParticipantError(
                 "Discussion participant "
                 f"'{request.participant}' failed during {phase_label}: {exc}",
-                error_kind=exc.error_kind,
+                kind=exc.kind,
             ) from exc
 
     def _persist_summary(

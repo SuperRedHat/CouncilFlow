@@ -14,9 +14,7 @@ from councilflow.controller.host_context import detect_controller
 from councilflow.controller.routing import build_route_decision
 from councilflow.models.config import ProviderRuntimeSettings
 from councilflow.models.roles import RoleName, normalize_model_name
-from councilflow.providers.base import ProviderAdapter, ProviderError
-from councilflow.providers.claude_code_cli import ClaudeCodeCliAdapter
-from councilflow.providers.codex_cli import CodexCliAdapter
+from councilflow.providers.base import ProviderAdapter
 from councilflow.providers.gemini_cli import GeminiCliAdapter
 from councilflow.state.store import CouncilStateStore
 from councilflow.utils.lang import emit_console_text, emit_response, resolve_output_language
@@ -105,21 +103,16 @@ def get_provider_adapter(
     model: str,
     runtime: ProviderRuntimeSettings | None = None,
 ) -> ProviderAdapter:
-    """Resolve a provider adapter for the requested model."""
+    """Resolve a provider adapter for the requested model via the registry."""
 
-    normalized = normalize_model_name(model)
-    if normalized == "codex":
-        return CodexCliAdapter(runtime=runtime)
-    if normalized == "claude":
-        return ClaudeCodeCliAdapter(runtime=runtime)
-    if normalized == "gemini":
-        # Use original model name if it's a specific version (e.g., gemini-1.5-flash)
-        specific_model = model if model.startswith("gemini-") and model != "gemini-cli" else None
-        return GeminiCliAdapter(model=specific_model, runtime=runtime)
-    raise ProviderError(
-        f"No provider adapter is registered for model '{model}'.",
-        kind="adapter_missing",
-    )
+    from councilflow.providers.registry import resolve_adapter
+
+    # Preserve the legacy gemini-<variant> routing: the registry's gemini
+    # factory reads the raw model name, but for historical reasons the CLI
+    # path always resolved specific variants through the default factory.
+    if normalize_model_name(model).startswith("gemini-") and model != "gemini-cli":
+        return GeminiCliAdapter(model=model, runtime=runtime)
+    return resolve_adapter(model, runtime=runtime)
 
 
 def delegate(

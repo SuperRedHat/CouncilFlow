@@ -1943,6 +1943,30 @@
       "from_status": "in_progress",
       "to_status": "auto_verified",
       "message": "TASK-047 in_progress → auto_verified: Automated gate passed. Template advisor=claude; models/roles.py exports resolve_adapter_model + validate_model_name (rejects non-{codex,claude,gemini,gemini-variant}); RoleMapping validator now calls validate_model_name and raises ValueError on unknown; cli/delegate.py + cli/discuss.py raise adapter_missing kind when factory misses. 8 new alias tests + routing test fixture updated. Full pytest 146 passes, ruff clean."
+    },
+    {
+      "timestamp": "2026-04-18T12:59:05.251Z",
+      "type": "task_status_change",
+      "task_id": "TASK-047",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-047 auto_verified → done: Auto → done. Commit 08095da."
+    },
+    {
+      "timestamp": "2026-04-18T12:59:11.573Z",
+      "type": "task_status_change",
+      "task_id": "TASK-048",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-048 todo → in_progress: Starting naming-and-routing-harmonization: min_rounds collapse fix + kind rename + gemini variant isolation + registry."
+    },
+    {
+      "timestamp": "2026-04-18T13:01:41.472Z",
+      "type": "task_status_change",
+      "task_id": "TASK-048",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-048 in_progress → auto_verified: Automated gate passed. 1) cli/discuss removed the implicit effective_max_rounds=1 collapse; now both provider_round_trip and local_initial_position paths honor config.discussion.min_rounds/max_rounds. 2) UnavailableParticipantError uses canonical kind field, with error_kind kept as deprecated property. 3) GeminiCliAdapter.model_name stays \"gemini\"; variant surfaces in metadata.gemini_variant. 4) New providers/registry.py centralizes adapter factories; cli/delegate and cli/discuss both go through resolve_adapter. Ruff clean, full pytest 147 passes."
     }
   ]
 }

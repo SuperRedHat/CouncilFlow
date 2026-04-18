@@ -304,6 +304,9 @@ def test_discuss_command_can_use_locally_generated_controller_position(
         == "Keep the current MVP structure and only tighten the state boundary."
     )
     assert payload["data"]["controller_mode"] == "local_initial_position"
-    assert payload["data"]["effective_max_rounds"] == 1
-    assert payload["data"]["effective_min_rounds"] == 1
-    assert payload["data"]["rounds_completed"] == 1
+    # TASK-048 removed the implicit max_rounds=1 collapse: --controller-position
+    # without --max-rounds now respects discussion.max_rounds / min_rounds from
+    # the project config exactly like the provider_round_trip path.
+    assert payload["data"]["effective_max_rounds"] == 5
+    assert payload["data"]["effective_min_rounds"] == 2
+    assert payload["data"]["rounds_completed"] >= 2

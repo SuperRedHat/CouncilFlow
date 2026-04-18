@@ -33,16 +33,25 @@ class GeminiCliAdapter:
         runner: CommandRunner | None = None,
         runtime: ProviderRuntimeSettings | None = None,
     ) -> None:
-        self.model_name = model or "gemini"
+        # Adapter exposes the stable family name regardless of the specific
+        # variant. The variant (e.g. gemini-1.5-flash) is surfaced via
+        # ProviderResponse.metadata.gemini_variant instead of leaking into
+        # downstream speaker_model / participants comparisons.
+        self.model_name = "gemini"
+        self.gemini_variant: str | None = model if model and model != "gemini" else None
         base_command = command or _default_gemini_command()
 
-        if model and model != "gemini":
+        if self.gemini_variant:
             # Insert --model flag before -p if present, otherwise append
             if "-p" in base_command:
                 idx = base_command.index("-p")
-                self.command = base_command[:idx] + ["--model", model] + base_command[idx:]
+                self.command = (
+                    base_command[:idx]
+                    + ["--model", self.gemini_variant]
+                    + base_command[idx:]
+                )
             else:
-                self.command = base_command + ["--model", model]
+                self.command = base_command + ["--model", self.gemini_variant]
         else:
             self.command = base_command
 
@@ -62,10 +71,13 @@ class GeminiCliAdapter:
                 env=request.env_override,
             )
         )
+        metadata = dict(result.metadata)
+        if self.gemini_variant:
+            metadata["gemini_variant"] = self.gemini_variant
         return ProviderResponse(
             model=self.model_name,
             content=_strip_runtime_notices(result.content),
-            metadata=result.metadata,
+            metadata=metadata,
         )
 
 

@@ -19,8 +19,6 @@ from councilflow.models.config import ProviderRuntimeSettings
 from councilflow.models.discussion import DiscussionRequest, ParticipantResponse
 from councilflow.models.roles import normalize_model_name
 from councilflow.providers.base import ProviderAdapter, ProviderError, ProviderRequest
-from councilflow.providers.claude_code_cli import ClaudeCodeCliAdapter
-from councilflow.providers.codex_cli import CodexCliAdapter
 from councilflow.providers.gemini_cli import GeminiCliAdapter
 from councilflow.state.store import CouncilStateStore
 from councilflow.utils.lang import emit_console_text, emit_response, resolve_output_language
@@ -77,7 +75,7 @@ class ProviderDiscussionParticipant:
         try:
             response = self.adapter.ask(ProviderRequest(prompt=prompt))
         except ProviderError as exc:
-            raise UnavailableParticipantError(str(exc), error_kind=exc.kind) from exc
+            raise UnavailableParticipantError(str(exc), kind=exc.kind) from exc
 
         parsed = _parse_participant_payload(response.content)
         return ParticipantResponse(
@@ -98,24 +96,24 @@ def get_participant(
     model: str,
     runtime: ProviderRuntimeSettings | None = None,
 ) -> DiscussionParticipant:
-    """Resolve a participant implementation for a model name."""
+    """Resolve a participant implementation for a model name via the registry."""
 
-    normalized = normalize_model_name(model)
-    if normalized == "codex":
-        return ProviderDiscussionParticipant(normalized, CodexCliAdapter(runtime=runtime))
-    if normalized == "claude":
-        return ProviderDiscussionParticipant("claude", ClaudeCodeCliAdapter(runtime=runtime))
-    if normalized == "gemini":
-        # Use original model name if it's a specific version (e.g., gemini-1.5-flash)
-        specific_model = model if model.startswith("gemini-") and model != "gemini-cli" else None
-        return ProviderDiscussionParticipant(
-            "gemini",
-            GeminiCliAdapter(model=specific_model, runtime=runtime),
-        )
-    raise UnavailableParticipantError(
-        f"No discussion participant is registered for model '{model}'.",
-        error_kind="adapter_missing",
-    )
+    from councilflow.providers.base import ProviderError
+    from councilflow.providers.registry import resolve_adapter
+
+    try:
+        # Keep legacy gemini-<variant> support: let the specific variant go
+        # directly to the Gemini adapter so users keep their invocation style.
+        if normalize_model_name(model).startswith("gemini-") and model != "gemini-cli":
+            adapter = GeminiCliAdapter(model=model, runtime=runtime)
+        else:
+            adapter = resolve_adapter(model, runtime=runtime)
+    except ProviderError as exc:
+        raise UnavailableParticipantError(
+            str(exc),
+            kind=exc.kind,
+        ) from exc
+    return ProviderDiscussionParticipant(adapter.model_name, adapter)
 
 
 def discuss(
@@ -153,8 +151,6 @@ def discuss(
             )
             raise typer.Exit(code=2)
     effective_max_rounds = max_rounds or config.discussion.max_rounds
-    if normalized_controller_position is not None and max_rounds is None:
-        effective_max_rounds = 1
     effective_min_rounds = min(config.discussion.min_rounds, effective_max_rounds)
     controller_mode = (
         "local_initial_position"
@@ -215,7 +211,7 @@ def discuss(
                 },
                 error={
                     "message": str(exc),
-                    "error_kind": exc.error_kind,
+                    "error_kind": exc.kind,
                 },
             )
         )

@@ -2188,11 +2188,11 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "auto_verified",
+      "status": "done",
       "created_at": "2026-04-18T12:07:59.561Z",
-      "updated_at": "2026-04-18T12:58:50.821Z",
+      "updated_at": "2026-04-18T12:59:05.232Z",
       "commit_hash": "",
-      "notes": "Automated gate passed. Template advisor=claude; models/roles.py exports resolve_adapter_model + validate_model_name (rejects non-{codex,claude,gemini,gemini-variant}); RoleMapping validator now calls validate_model_name and raises ValueError on unknown; cli/delegate.py + cli/discuss.py raise adapter_missing kind when factory misses. 8 new alias tests + routing test fixture updated. Full pytest 146 passes, ruff clean."
+      "notes": "Auto → done. Commit 08095da."
     },
     {
       "id": "TASK-048",
@@ -2226,11 +2226,11 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "todo",
+      "status": "auto_verified",
       "created_at": "2026-04-18T12:07:59.561Z",
-      "updated_at": "2026-04-18T12:07:59.561Z",
+      "updated_at": "2026-04-18T13:01:41.455Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Automated gate passed. 1) cli/discuss removed the implicit effective_max_rounds=1 collapse; now both provider_round_trip and local_initial_position paths honor config.discussion.min_rounds/max_rounds. 2) UnavailableParticipantError uses canonical kind field, with error_kind kept as deprecated property. 3) GeminiCliAdapter.model_name stays \"gemini\"; variant surfaces in metadata.gemini_variant. 4) New providers/registry.py centralizes adapter factories; cli/delegate and cli/discuss both go through resolve_adapter. Ruff clean, full pytest 147 passes."
     },
     {
       "id": "TASK-049",
