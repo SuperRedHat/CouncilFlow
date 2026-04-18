@@ -1425,11 +1425,11 @@
         "验证升级后的 summary artifact 仍能被后续 project-* workflow 明确读取"
       ],
       "stage_gate": true,
-      "status": "awaiting_manual_acceptance",
+      "status": "done",
       "created_at": "2026-04-17T11:47:40.180Z",
-      "updated_at": "2026-04-17T12:29:46.760Z",
+      "updated_at": "2026-04-18T01:20:13.900Z",
       "commit_hash": "",
-      "notes": "Automated verification is complete. Remaining gate is manual confirmation that the upgraded discuss protocol behaves as expected in an interactive controller session and that downstream workflows can read the upgraded artifact fields in practice."
+      "notes": "Real-controller smoke passed: Codex discuss produced initial_position -> external critique -> controller response, honored min_rounds=2, used project-local default discussion models when --models was omitted, and wrote a summary artifact that downstream workflows could read explicitly."
     },
     {
       "id": "TASK-035",
@@ -1551,11 +1551,11 @@
         "临时隐藏或断开 council 命令，验证共享 workflow 会明确说明正在降级到主控本地执行"
       ],
       "stage_gate": true,
-      "status": "awaiting_manual_acceptance",
+      "status": "done",
       "created_at": "2026-04-17T14:32:54.056Z",
-      "updated_at": "2026-04-17T23:00:47.919Z",
+      "updated_at": "2026-04-18T01:20:13.948Z",
       "commit_hash": "",
-      "notes": "Automated workflow-hardening regressions are complete. Awaiting the real-controller manual smoke checklist for Codex/Claude/Gemini route-first behavior, failure-stop handling, and explicit council-missing fallback."
+      "notes": "Real-controller smoke passed across Codex/Claude/Gemini: route-first did not silently bypass CouncilFlow, project-next exercised implementer -> tester -> fixer -> tester, project-feedback reopened gates without testing/fixing, route failure stopped before local edits, and council-missing produced an explicit local fallback."
     },
     {
       "id": "TASK-037-FIX-001",

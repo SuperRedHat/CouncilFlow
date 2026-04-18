@@ -1631,6 +1631,38 @@
       "from_status": null,
       "to_status": null,
       "message": "Advanced TASK-037 to awaiting_manual_acceptance after completing all workflow-hardening implementation subtasks and full automated verification. Remaining work is the manual tri-controller smoke checklist."
+    },
+    {
+      "timestamp": "2026-04-18T01:20:13.919Z",
+      "type": "task_status_change",
+      "task_id": "TASK-034",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-034 awaiting_manual_acceptance → done: Real-controller smoke passed: Codex discuss produced initial_position -> external critique -> controller response, honored min_rounds=2, used project-local default discussion models when --models was omitted, and wrote a summary artifact that downstream workflows could read explicitly."
+    },
+    {
+      "timestamp": "2026-04-18T01:20:13.927Z",
+      "type": "review_completed",
+      "task_id": "TASK-034",
+      "from_status": null,
+      "to_status": null,
+      "message": "Manual smoke accepted the upgraded discuss protocol in a real Codex-controlled session, including min_rounds, project-default models, duplicate normalization, and downstream-readable summary artifacts."
+    },
+    {
+      "timestamp": "2026-04-18T01:20:13.964Z",
+      "type": "task_status_change",
+      "task_id": "TASK-037",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-037 awaiting_manual_acceptance → done: Real-controller smoke passed across Codex/Claude/Gemini: route-first did not silently bypass CouncilFlow, project-next exercised implementer -> tester -> fixer -> tester, project-feedback reopened gates without testing/fixing, route failure stopped before local edits, and council-missing produced an explicit local fallback."
+    },
+    {
+      "timestamp": "2026-04-18T01:20:13.968Z",
+      "type": "review_completed",
+      "task_id": "TASK-037",
+      "from_status": null,
+      "to_status": null,
+      "message": "Manual smoke accepted the hard route-first gate: Codex/Claude/Gemini all honored controller detection, same-controller local short-circuits stayed local, project-next used the staged role loop, project-feedback only reopened gates, route errors stopped, and council-missing fallback stayed explicit."
     }
   ]
 }
