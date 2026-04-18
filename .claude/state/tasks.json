@@ -2349,11 +2349,11 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "auto_verified",
+      "status": "done",
       "created_at": "2026-04-18T12:07:59.561Z",
-      "updated_at": "2026-04-18T13:04:38.271Z",
+      "updated_at": "2026-04-18T13:04:52.954Z",
       "commit_hash": "",
-      "notes": "Automated gate passed. utils/logging.py with configure_logging + get_logger, honors COUNCILFLOW_DEBUG=1, writes to stderr. cli/app.py::main triggers configure_logging. DelegationOrchestrator + DiscussionOrchestrator log start/completed + guardrail_violation; providers/base.py logs provider.total_timeout / idle_timeout. tests/test_logging.py (5 cases) covers level gating, namespace, idempotency, and a linter that rejects prompt-leaking log calls. Full pytest 152 passes, ruff clean."
+      "notes": "Auto → done. Commit a78e87e. TASK-052 (provider runtime probe) unblocked."
     },
     {
       "id": "TASK-052",
@@ -2389,11 +2389,11 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "todo",
+      "status": "auto_verified",
       "created_at": "2026-04-18T12:07:59.561Z",
-      "updated_at": "2026-04-18T12:07:59.561Z",
+      "updated_at": "2026-04-18T13:07:22.186Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Automated gate passed. providers/runtime_probe.py with probe_codex_streaming + probe_gemini_streaming + ProviderCapabilities + .council/runtime/providers.json cache. CodexCliAdapter and GeminiCliAdapter accept stream_mode parameter that switches command (--json / stream-json) and runner to run_monitored_process, sharing idle_timeout semantics with Claude. Fallback path preserved when stream_mode=False. 15 new tests (7 runtime_probe + 2 adapter stream mode + 6 pre-existing additions) all pass. Full pytest 169 passes, ruff clean."
     },
     {
       "id": "TASK-053",

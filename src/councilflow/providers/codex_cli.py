@@ -15,6 +15,7 @@ from councilflow.providers.base import (
     ProviderRunResult,
     coerce_run_result,
     default_runtime_settings,
+    run_monitored_process,
 )
 
 
@@ -28,14 +29,25 @@ class CodexCliAdapter:
         command: list[str] | None = None,
         runner: CommandRunner | None = None,
         runtime: ProviderRuntimeSettings | None = None,
+        stream_mode: bool = False,
     ) -> None:
-        self.command = command or _default_codex_command()
+        self.stream_mode = stream_mode
+        self.command = command or _default_codex_command(stream=stream_mode)
         self.runtime = runtime or default_runtime_settings()
-        self.runner = runner or (
-            lambda command, prompt, cwd=None, env=None: _run_codex_command(
-                command, prompt, runtime=self.runtime, cwd=cwd, env=env,
+        if runner is not None:
+            self.runner = runner
+        elif stream_mode:
+            self.runner = (
+                lambda command, prompt, cwd=None, env=None: _run_codex_streaming_command(
+                    command, prompt, runtime=self.runtime, cwd=cwd, env=env,
+                )
             )
-        )
+        else:
+            self.runner = (
+                lambda command, prompt, cwd=None, env=None: _run_codex_command(
+                    command, prompt, runtime=self.runtime, cwd=cwd, env=env,
+                )
+            )
 
     def ask(self, request: ProviderRequest) -> ProviderResponse:
         result = coerce_run_result(
@@ -53,19 +65,23 @@ class CodexCliAdapter:
         )
 
 
-def _default_codex_command() -> list[str]:
+def _default_codex_command(stream: bool = False) -> list[str]:
     """Build a Windows-safe command for invoking the Codex CLI."""
+
+    args = ["exec"]
+    if stream:
+        args.append("--json")
 
     resolved = shutil.which("codex")
     if resolved is None:
-        return ["codex", "exec"]
+        return ["codex", *args]
 
     suffix = Path(resolved).suffix.lower()
     if suffix == ".ps1":
-        return ["powershell", "-ExecutionPolicy", "Bypass", "-File", resolved, "exec"]
+        return ["powershell", "-ExecutionPolicy", "Bypass", "-File", resolved, *args]
     if suffix in {".cmd", ".bat"}:
-        return ["cmd", "/c", resolved, "exec"]
-    return [resolved, "exec"]
+        return ["cmd", "/c", resolved, *args]
+    return [resolved, *args]
 
 
 def _run_codex_command(
@@ -125,3 +141,31 @@ def _run_codex_command(
             "stderr": stderr,
         },
     )
+
+
+def _run_codex_streaming_command(
+    command: list[str],
+    prompt: str,
+    runtime: ProviderRuntimeSettings | None = None,
+    cwd: str | None = None,
+    env: dict[str, str] | None = None,
+) -> ProviderRunResult:
+    """Run Codex with stdin prompt under run_monitored_process for idle timeouts."""
+
+    monitored = run_monitored_process(
+        command,
+        runtime=runtime,
+        stdin_payload=prompt.encode("utf-8"),
+        cwd=cwd,
+        env=env,
+    )
+    # Codex emits one JSON event per line under --json; we keep the last event
+    # body as the authoritative answer and expose event_count in metadata.
+    lines = [line for line in monitored.stdout.splitlines() if line.strip()]
+    final = lines[-1] if lines else monitored.stdout
+    metadata = {
+        **monitored.metadata,
+        "output_format": "codex-json",
+        "event_count": len(lines),
+    }
+    return ProviderRunResult(content=final, metadata=metadata)

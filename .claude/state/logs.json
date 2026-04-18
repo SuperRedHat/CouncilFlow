@@ -1991,6 +1991,30 @@
       "from_status": "in_progress",
       "to_status": "auto_verified",
       "message": "TASK-051 in_progress → auto_verified: Automated gate passed. utils/logging.py with configure_logging + get_logger, honors COUNCILFLOW_DEBUG=1, writes to stderr. cli/app.py::main triggers configure_logging. DelegationOrchestrator + DiscussionOrchestrator log start/completed + guardrail_violation; providers/base.py logs provider.total_timeout / idle_timeout. tests/test_logging.py (5 cases) covers level gating, namespace, idempotency, and a linter that rejects prompt-leaking log calls. Full pytest 152 passes, ruff clean."
+    },
+    {
+      "timestamp": "2026-04-18T13:04:52.978Z",
+      "type": "task_status_change",
+      "task_id": "TASK-051",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-051 auto_verified → done: Auto → done. Commit a78e87e. TASK-052 (provider runtime probe) unblocked."
+    },
+    {
+      "timestamp": "2026-04-18T13:05:11.833Z",
+      "type": "task_status_change",
+      "task_id": "TASK-052",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-052 todo → in_progress: Starting provider-runtime-unification. Will add providers/runtime_probe.py (probe codex --help / gemini --help for streaming flags + cache to .council/runtime/providers.json), extend CodexCliAdapter / GeminiCliAdapter with stream_mode path using run_monitored_process, keep blocking path as fallback; add tests."
+    },
+    {
+      "timestamp": "2026-04-18T13:07:22.207Z",
+      "type": "task_status_change",
+      "task_id": "TASK-052",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-052 in_progress → auto_verified: Automated gate passed. providers/runtime_probe.py with probe_codex_streaming + probe_gemini_streaming + ProviderCapabilities + .council/runtime/providers.json cache. CodexCliAdapter and GeminiCliAdapter accept stream_mode parameter that switches command (--json / stream-json) and runner to run_monitored_process, sharing idle_timeout semantics with Claude. Fallback path preserved when stream_mode=False. 15 new tests (7 runtime_probe + 2 adapter stream mode + 6 pre-existing additions) all pass. Full pytest 169 passes, ruff clean."
     }
   ]
 }

@@ -15,6 +15,7 @@ from councilflow.providers.base import (
     ProviderRunResult,
     coerce_run_result,
     default_runtime_settings,
+    run_monitored_process,
 )
 
 STDIN_PROMPT_INSTRUCTION = (
@@ -32,6 +33,7 @@ class GeminiCliAdapter:
         command: list[str] | None = None,
         runner: CommandRunner | None = None,
         runtime: ProviderRuntimeSettings | None = None,
+        stream_mode: bool = False,
     ) -> None:
         # Adapter exposes the stable family name regardless of the specific
         # variant. The variant (e.g. gemini-1.5-flash) is surfaced via
@@ -39,7 +41,8 @@ class GeminiCliAdapter:
         # downstream speaker_model / participants comparisons.
         self.model_name = "gemini"
         self.gemini_variant: str | None = model if model and model != "gemini" else None
-        base_command = command or _default_gemini_command()
+        self.stream_mode = stream_mode
+        base_command = command or _default_gemini_command(stream=stream_mode)
 
         if self.gemini_variant:
             # Insert --model flag before -p if present, otherwise append
@@ -56,11 +59,20 @@ class GeminiCliAdapter:
             self.command = base_command
 
         self.runtime = runtime or default_runtime_settings()
-        self.runner = runner or (
-            lambda command, prompt, cwd=None, env=None: _run_gemini_command(
-                command, prompt, runtime=self.runtime, cwd=cwd, env=env,
+        if runner is not None:
+            self.runner = runner
+        elif stream_mode:
+            self.runner = (
+                lambda command, prompt, cwd=None, env=None: _run_gemini_streaming_command(
+                    command, prompt, runtime=self.runtime, cwd=cwd, env=env,
+                )
             )
-        )
+        else:
+            self.runner = (
+                lambda command, prompt, cwd=None, env=None: _run_gemini_command(
+                    command, prompt, runtime=self.runtime, cwd=cwd, env=env,
+                )
+            )
 
     def ask(self, request: ProviderRequest) -> ProviderResponse:
         result = coerce_run_result(
@@ -81,39 +93,22 @@ class GeminiCliAdapter:
         )
 
 
-def _default_gemini_command() -> list[str]:
+def _default_gemini_command(stream: bool = False) -> list[str]:
     """Build a Windows-safe command for invoking the Gemini CLI."""
+
+    output_format = "stream-json" if stream else "text"
+    args = ["--approval-mode", "yolo", "--output-format", output_format, "-p"]
 
     resolved = shutil.which("gemini")
     if resolved is None:
-        return ["gemini", "--approval-mode", "yolo", "--output-format", "text", "-p"]
+        return ["gemini", *args]
 
     suffix = Path(resolved).suffix.lower()
     if suffix == ".ps1":
-        return [
-            "powershell",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-File",
-            resolved,
-            "--approval-mode",
-            "yolo",
-            "--output-format",
-            "text",
-            "-p",
-        ]
+        return ["powershell", "-ExecutionPolicy", "Bypass", "-File", resolved, *args]
     if suffix in {".cmd", ".bat"}:
-        return [
-            "cmd",
-            "/c",
-            resolved,
-            "--approval-mode",
-            "yolo",
-            "--output-format",
-            "text",
-            "-p",
-        ]
-    return [resolved, "--approval-mode", "yolo", "--output-format", "text", "-p"]
+        return ["cmd", "/c", resolved, *args]
+    return [resolved, *args]
 
 
 def _run_gemini_command(
@@ -173,6 +168,33 @@ def _run_gemini_command(
             "stderr": stderr,
         },
     )
+
+
+def _run_gemini_streaming_command(
+    command: list[str],
+    prompt: str,
+    runtime: ProviderRuntimeSettings | None = None,
+    cwd: str | None = None,
+    env: dict[str, str] | None = None,
+) -> ProviderRunResult:
+    """Execute Gemini under run_monitored_process with idle-timeout semantics."""
+
+    monitored = run_monitored_process(
+        command,
+        runtime=runtime,
+        prompt_argument=STDIN_PROMPT_INSTRUCTION,
+        stdin_payload=prompt.encode("utf-8"),
+        cwd=cwd,
+        env=env,
+    )
+    lines = [line for line in monitored.stdout.splitlines() if line.strip()]
+    final = lines[-1] if lines else monitored.stdout
+    metadata = {
+        **monitored.metadata,
+        "output_format": "gemini-stream-json",
+        "event_count": len(lines),
+    }
+    return ProviderRunResult(content=final, metadata=metadata)
 
 
 def _strip_runtime_notices(content: str) -> str:

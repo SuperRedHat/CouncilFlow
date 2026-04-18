@@ -158,6 +158,75 @@ def test_gemini_adapter_supports_specific_model() -> None:
     assert m_idx < p_idx
 
 
+def test_codex_adapter_stream_mode_adds_json_flag_and_uses_monitored_runner(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from councilflow.providers.base import MonitoredProcessResult
+    from councilflow.providers.codex_cli import CodexCliAdapter
+
+    captured: dict[str, object] = {}
+
+    def fake_monitored(command, **kwargs):  # noqa: ANN001
+        captured["command"] = command
+        captured["stdin"] = kwargs.get("stdin_payload")
+        return MonitoredProcessResult(
+            stdout='{"event":"final","text":"ok"}',
+            stderr="",
+            metadata={"execution_mode": "stream_monitored"},
+        )
+
+    monkeypatch.setattr(
+        "councilflow.providers.codex_cli.run_monitored_process",
+        fake_monitored,
+    )
+
+    adapter = CodexCliAdapter(stream_mode=True)
+    assert "--json" in adapter.command
+
+    from councilflow.providers.base import ProviderRequest
+
+    response = adapter.ask(ProviderRequest(prompt="hello codex"))
+    assert response.model == "codex"
+    assert response.content == '{"event":"final","text":"ok"}'
+    assert response.metadata["execution_mode"] == "stream_monitored"
+    assert response.metadata["output_format"] == "codex-json"
+    assert captured["stdin"] == b"hello codex"
+
+
+def test_gemini_adapter_stream_mode_uses_stream_json_output_format(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from councilflow.providers.base import MonitoredProcessResult
+
+    captured: dict[str, object] = {}
+
+    def fake_monitored(command, **kwargs):  # noqa: ANN001
+        captured["command"] = command
+        captured["prompt_arg"] = kwargs.get("prompt_argument")
+        captured["stdin"] = kwargs.get("stdin_payload")
+        return MonitoredProcessResult(
+            stdout='{"type":"result","text":"ok"}',
+            stderr="",
+            metadata={"execution_mode": "stream_monitored"},
+        )
+
+    monkeypatch.setattr(
+        "councilflow.providers.gemini_cli.run_monitored_process",
+        fake_monitored,
+    )
+
+    adapter = GeminiCliAdapter(stream_mode=True)
+    assert "stream-json" in adapter.command
+
+    from councilflow.providers.base import ProviderRequest
+
+    response = adapter.ask(ProviderRequest(prompt="question"))
+    assert response.model == "gemini"
+    assert response.metadata["output_format"] == "gemini-stream-json"
+    assert captured["prompt_arg"] == STDIN_PROMPT_INSTRUCTION
+    assert captured["stdin"] == b"question"
+
+
 def test_gemini_adapter_surfaces_variant_through_response_metadata() -> None:
     class FakeRunner:
         def __call__(self, command, prompt, cwd=None, env=None):
