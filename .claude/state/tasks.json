@@ -2548,11 +2548,11 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-18T14:01:19.476Z",
-      "updated_at": "2026-04-18T14:01:19.476Z",
+      "updated_at": "2026-04-18T17:14:15.725Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Superseded / closed by TASK-058."
     },
     {
       "id": "TASK-057",
@@ -2623,11 +2623,45 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "auto_verified",
+      "status": "done",
       "created_at": "2026-04-18T17:11:15.448Z",
-      "updated_at": "2026-04-18T17:13:32.126Z",
+      "updated_at": "2026-04-18T17:13:52.467Z",
       "commit_hash": "",
-      "notes": "Automated gate passed. utils/io.py: new WorkspaceBaseline + snapshot_workspace_baseline + refactored detect_workspace_changes (baseline vs post-provider workspace, never touches source). _iter_workspace_files skips symlinks so dependency junctions are ignored by the scanner. classify_import_changes empty-writable_globs semantic flipped to reject-all (safe default). delegation_orchestrator.py wires baseline capture immediately after materialize and passes it to detect. 2 new regression tests: untracked source files NOT flagged as deleted; default ExecutionGuardrails rejects all sidecar writes. docs/integration.md documents the baseline-driven detection + deny-by-default semantics. Ruff clean, full pytest 186/186."
+      "notes": "Auto → done. Commit 67c2f46. Editable install means the chess project's `council` command is fixed right now. TASK-056 superseded by this work."
+    },
+    {
+      "id": "TASK-059",
+      "title": "关闭 council CLI 的 Click windows_expand_args，避免 Windows 下 --writable-glob 被预展开",
+      "description": "Chess TASK-006 恢复下十时现场发现：Click 在 Windows 下默认会把 argv 里的 glob 模式（包含 **）在进入应用之前展开成已存在的文件列表。导致 `council delegate --writable-glob 'src/features/game-session/**'` 到达我们的 CLI 时已经被替换成一堆具体路径（且不包含即将要被 sidecar 创建的新文件）。修复：cli/app.py::main 调用 app(windows_expand_args=False)，给用户的 shell 输入一个更符合直觉的行为。",
+      "dependencies": [
+        "TASK-058"
+      ],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "cli/app.py::main 传 windows_expand_args=False，Typer/Click 不再对 argv 做 glob 预展开",
+        "新增或调整测试：模拟带 ** glob 的 --writable-glob 传入时，ExecutionGuardrails.import_manifest.writable_globs 里原样保留这个 glob，不被展开",
+        "全量 pytest 与 ruff 保持绿色"
+      ],
+      "files": [
+        "src/councilflow/cli/app.py",
+        "tests/test_cli_delegate.py",
+        "readme.md"
+      ],
+      "module": "cli-windows-glob",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "auto_verified",
+      "created_at": "2026-04-18T21:46:16.159Z",
+      "updated_at": "2026-04-18T21:47:06.435Z",
+      "commit_hash": "",
+      "notes": "Automated gate passed. cli/app.py::main now passes windows_expand_args=False so globs like src/features/**/* reach the handler verbatim on Windows. 2 new CLI entry-point tests: one asserts the flag is on, one asserts configure_logging runs before app() to preserve logging ordering. Ruff clean, full pytest 189/189."
     }
   ]
 }

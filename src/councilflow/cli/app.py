@@ -79,7 +79,13 @@ def main() -> None:
     from councilflow.utils.logging import configure_logging
 
     configure_logging()
-    app()
+    # Click's default on Windows is to pre-expand argv globs against the
+    # filesystem ("msvcrt-style"). That behavior collapses patterns like
+    # ``--writable-glob "src/features/game-session/**"`` into the set of
+    # already-existing files, so new files the sidecar intends to create
+    # never match the allow-list. Disable the expansion so the raw glob
+    # string reaches our handlers verbatim on every platform.
+    app(windows_expand_args=False)
 
 
 if __name__ == "__main__":

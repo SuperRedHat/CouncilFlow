@@ -2127,6 +2127,54 @@
       "from_status": "in_progress",
       "to_status": "auto_verified",
       "message": "TASK-058 in_progress → auto_verified: Automated gate passed. utils/io.py: new WorkspaceBaseline + snapshot_workspace_baseline + refactored detect_workspace_changes (baseline vs post-provider workspace, never touches source). _iter_workspace_files skips symlinks so dependency junctions are ignored by the scanner. classify_import_changes empty-writable_globs semantic flipped to reject-all (safe default). delegation_orchestrator.py wires baseline capture immediately after materialize and passes it to detect. 2 new regression tests: untracked source files NOT flagged as deleted; default ExecutionGuardrails rejects all sidecar writes. docs/integration.md documents the baseline-driven detection + deny-by-default semantics. Ruff clean, full pytest 186/186."
+    },
+    {
+      "timestamp": "2026-04-18T17:13:52.487Z",
+      "type": "task_status_change",
+      "task_id": "TASK-058",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-058 auto_verified → done: Auto → done. Commit 67c2f46. Editable install means the chess project's `council` command is fixed right now. TASK-056 superseded by this work."
+    },
+    {
+      "timestamp": "2026-04-18T17:13:58.713Z",
+      "type": "task_status_change",
+      "task_id": "TASK-056",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-056 todo → in_progress: Transitioning through in_progress to mark superseded — implemented by TASK-058 commit 67c2f46."
+    },
+    {
+      "timestamp": "2026-04-18T17:14:10.442Z",
+      "type": "task_status_change",
+      "task_id": "TASK-056",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-056 in_progress → auto_verified: Superseded by TASK-058 commit 67c2f46 — same acceptance criteria satisfied through the baseline refactor."
+    },
+    {
+      "timestamp": "2026-04-18T17:14:15.741Z",
+      "type": "task_status_change",
+      "task_id": "TASK-056",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-056 auto_verified → done: Superseded / closed by TASK-058."
+    },
+    {
+      "timestamp": "2026-04-18T21:47:04.142Z",
+      "type": "task_status_change",
+      "task_id": "TASK-059",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-059 todo → in_progress: Implementing main() windows_expand_args=False + regression."
+    },
+    {
+      "timestamp": "2026-04-18T21:47:06.452Z",
+      "type": "task_status_change",
+      "task_id": "TASK-059",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-059 in_progress → auto_verified: Automated gate passed. cli/app.py::main now passes windows_expand_args=False so globs like src/features/**/* reach the handler verbatim on Windows. 2 new CLI entry-point tests: one asserts the flag is on, one asserts configure_logging runs before app() to preserve logging ordering. Ruff clean, full pytest 189/189."
     }
   ]
 }
