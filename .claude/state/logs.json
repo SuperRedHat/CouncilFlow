@@ -2015,6 +2015,30 @@
       "from_status": "in_progress",
       "to_status": "auto_verified",
       "message": "TASK-052 in_progress → auto_verified: Automated gate passed. providers/runtime_probe.py with probe_codex_streaming + probe_gemini_streaming + ProviderCapabilities + .council/runtime/providers.json cache. CodexCliAdapter and GeminiCliAdapter accept stream_mode parameter that switches command (--json / stream-json) and runner to run_monitored_process, sharing idle_timeout semantics with Claude. Fallback path preserved when stream_mode=False. 15 new tests (7 runtime_probe + 2 adapter stream mode + 6 pre-existing additions) all pass. Full pytest 169 passes, ruff clean."
+    },
+    {
+      "timestamp": "2026-04-18T13:07:36.812Z",
+      "type": "task_status_change",
+      "task_id": "TASK-052",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-052 auto_verified → done: Auto → done. Commit 97601d7."
+    },
+    {
+      "timestamp": "2026-04-18T13:07:44.659Z",
+      "type": "task_status_change",
+      "task_id": "TASK-053",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-053 todo → in_progress: Starting skill-failure-report. Adding \"工作流失败上报协议\" section to docs/integration.md, appending reference bullet to notes of 9 shared role_driven/discussion skills, then running verification + sync."
+    },
+    {
+      "timestamp": "2026-04-18T13:09:35.518Z",
+      "type": "task_status_change",
+      "task_id": "TASK-053",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-053 in_progress → auto_verified: Automated gate passed. docs/integration.md has new \"Workflow Failure Report Protocol\" section with 6-field JSON spec + MCP add_log dual sink + council_available classification. 9 shared skills (project-init/design/plan/change/next/review/ask/discuss/feedback) reference the protocol in their notes. ruff clean, full pytest 169, sync-skills synced 11 skills to 3 targets."
     }
   ]
 }

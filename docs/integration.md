@@ -332,6 +332,56 @@ decide whether to accept the sidecar output:
 These fields are informational in TASK-042 (the contract-only phase); subsequent
 isolation work (TASK-043 / TASK-044) makes the orchestrator produce and enforce them.
 
+## Workflow Failure Report Protocol
+
+Every `role_driven` and `discussion` shared skill must emit the same failure
+artifact when `council delegate` or `council discuss` returns an error or when
+any declared artifact is missing. Three-controller consistency is the whole
+point: a Claude Code failure, a Codex failure, and a Gemini CLI failure must
+all look the same to whoever reads the logs.
+
+1. **Emit one single-line JSON object to stdout** before stopping the skill.
+   The six required fields:
+
+   | Field | Type | Description |
+   |-------|------|-------------|
+   | `workflow` | string | Skill name, e.g. `project-next`. |
+   | `workflow_failed` | bool | Always `true` in a failure report. |
+   | `failed_stage` | string | Role / stage that failed: `implementer`, `tester`, `reviewer`, `fixer`, `synthesizer`, `planner`, `architect`, `advisor`, or `discussion`. |
+   | `error_kind` | string | Forwarded from `council` output when available: `idle_timeout`, `total_timeout`, `process_exit`, `os_error`, `permission_blocked`, `environment_not_ready`, `guardrail_violation`, `adapter_missing`, `recursive_workflow_violation`, or `missing_artifact`. |
+   | `council_available` | bool | `true` if `council` can be invoked but returned an error; `false` only when `shutil.which("council") is None` or `council version` fails. |
+   | `artifact_paths` | object | Best-effort pointers like `{"handoff": ".council/delegations/del_x/handoff.yaml"}`; `null` when nothing is persisted. |
+   | `fallback_attempted` | bool | `true` only when `council_available=false` and the skill then ran a controller-only fallback. Otherwise `false`. |
+   | `message` | string | Human-readable line summarizing what happened. |
+
+   Example:
+
+   ```json
+   {"workflow":"project-next","workflow_failed":true,"failed_stage":"tester","error_kind":"idle_timeout","council_available":true,"artifact_paths":{"handoff":".council/delegations/del_abc/handoff.yaml"},"fallback_attempted":false,"message":"council delegate --role tester returned idle_timeout after 180s"}
+   ```
+
+2. **Also call `project-manager` MCP `add_log`** with:
+   - `type = "workflow_failure"`
+   - `task_id = <current task id if any, otherwise null>`
+   - `message = <same text as the JSON "message">`
+
+3. **Do not mutate task status toward `done` / `auto_verified`**. The task
+   remains `in_progress` (or whatever it was). Let `project-feedback` or a new
+   follow-up task pick the repair route.
+
+Classification rule for `council_available`:
+
+- `true` + `error_kind != null` → `council` can be invoked but the call failed
+  for a structured reason. Workflow **must stop** and emit the report.
+- `false` → `council` was genuinely missing. The skill may run a
+  controller-only fallback and set `fallback_attempted=true`; the JSON report
+  is still required so the downgrade is auditable.
+
+Shared skills reference this protocol by name in their "注意事项" section; see
+any of `project-init`, `project-plan`, `project-next`, `project-review`,
+`project-change`, `project-ask`, `project-discuss`, `project-design`, or
+`project-feedback`.
+
 ## Minimum Integration Flow
 
 1. `project-*` classifies the current step as `read_only`, `gate_close`, `discussion`, or

@@ -2389,11 +2389,11 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "auto_verified",
+      "status": "done",
       "created_at": "2026-04-18T12:07:59.561Z",
-      "updated_at": "2026-04-18T13:07:22.186Z",
+      "updated_at": "2026-04-18T13:07:36.794Z",
       "commit_hash": "",
-      "notes": "Automated gate passed. providers/runtime_probe.py with probe_codex_streaming + probe_gemini_streaming + ProviderCapabilities + .council/runtime/providers.json cache. CodexCliAdapter and GeminiCliAdapter accept stream_mode parameter that switches command (--json / stream-json) and runner to run_monitored_process, sharing idle_timeout semantics with Claude. Fallback path preserved when stream_mode=False. 15 new tests (7 runtime_probe + 2 adapter stream mode + 6 pre-existing additions) all pass. Full pytest 169 passes, ruff clean."
+      "notes": "Auto → done. Commit 97601d7."
     },
     {
       "id": "TASK-053",
@@ -2434,11 +2434,11 @@
         "在 Gemini 里同样触发失败，确认 JSON 字段和 add_log 与 Claude 一致"
       ],
       "stage_gate": true,
-      "status": "todo",
+      "status": "auto_verified",
       "created_at": "2026-04-18T12:07:59.561Z",
-      "updated_at": "2026-04-18T12:07:59.561Z",
+      "updated_at": "2026-04-18T13:09:35.497Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Automated gate passed. docs/integration.md has new \"Workflow Failure Report Protocol\" section with 6-field JSON spec + MCP add_log dual sink + council_available classification. 9 shared skills (project-init/design/plan/change/next/review/ask/discuss/feedback) reference the protocol in their notes. ruff clean, full pytest 169, sync-skills synced 11 skills to 3 targets."
     },
     {
       "id": "TASK-054",
