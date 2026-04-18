@@ -31,6 +31,29 @@
 - Verify temporarily hiding or breaking the `council` command produces an explicit local fallback,
   and that this downgrade is clearly distinguished from normal route failures.
 
+### Sidecar Isolation Smoke (TASK-045)
+
+- Verify a `council delegate --role implementer` run with a non-controller target model
+  materializes an isolated workspace (inspect `.council/workspaces/<delegation_id>/`) and that the
+  `DelegationResult.workspace_manifest` lists only files the sidecar actually changed.
+- Verify that the sidecar does NOT touch host `.council/state.json`, `.claude/state/**`,
+  `.workflow-core/**`, `.claude/skills/**`, `.codex/skills/**`, or `.gemini/skills/**`; each such
+  attempt must appear in the workspace manifest as `imported=false` with a rejection reason.
+- Verify that for a normal code task, sidecar edits under `writable_globs` (for example `src/**`,
+  `tests/**`) ARE imported back into the host project root and that `project-next` can continue
+  into `tester -> reviewer` using those imported changes.
+- Verify `DelegationResult.import_outcome` values behave as expected:
+  - `applied` when every change lands,
+  - `partial` when some changes land and others are rejected,
+  - `rejected` when none land (e.g. every attempted path falls under `protected_paths`).
+- Verify recursion guard by asking the delegated sidecar to invoke `council delegate` /
+  `council discuss` / `council synthesize` from inside its prompt or wrapper; the attempt must fail
+  with exit 2 and `error_kind="recursive_workflow_violation"`, while `council status` and
+  `council version` remain usable for inspection.
+- Verify that controller environment signals (`CODEX_SHELL`, `CLAUDE_CODE`, `GEMINI_CLI`, and
+  related keys) are absent inside the sidecar subprocess, and that
+  `COUNCILFLOW_DELEGATED_STAGE=1` plus `COUNCILFLOW_DELEGATION_ID=<id>` are present.
+
 ## Gate Rule
 
 - `Codex-first` hardening can ship ahead of the final tri-controller gate, but it does not replace the full release gate.

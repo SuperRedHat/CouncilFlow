@@ -598,3 +598,68 @@ def test_integration_doc_documents_sidecar_isolation_contract() -> None:
     assert "workspace_manifest" in text
     assert ".workflow-core" in text
     assert "git_worktree" in text
+
+
+def test_release_checklist_covers_sidecar_isolation_smoke() -> None:
+    """TASK-045 — release checklist must expose the isolation smoke contract."""
+
+    checklist = (Path(__file__).resolve().parents[1] / "docs" / "release-checklist.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "### Sidecar Isolation Smoke (TASK-045)" in checklist
+    assert "workspace_manifest" in checklist
+    assert "import_outcome" in checklist
+    assert "writable_globs" in checklist
+    assert "recursive_workflow_violation" in checklist
+    assert "COUNCILFLOW_DELEGATED_STAGE=1" in checklist
+    assert ".council/workspaces/<delegation_id>" in checklist
+
+
+def test_orchestrator_passes_sandboxed_env_into_provider_request(tmp_path: Path) -> None:
+    """TASK-045 — the orchestrator hands the sidecar a scrubbed env on every call."""
+
+    from councilflow.controller.delegation_orchestrator import DelegationOrchestrator
+    from councilflow.providers.base import (
+        CONTROLLER_ENV_KEYS,
+        DELEGATED_STAGE_ENV_FLAG,
+        DELEGATION_ID_ENV_KEY,
+    )
+    from councilflow.state.store import CouncilStateStore
+
+    captured: dict[str, object] = {}
+
+    class CapturingProvider:
+        model_name = "claude"
+
+        def ask(self, request: ProviderRequest) -> ProviderResponse:
+            captured["cwd"] = request.cwd
+            captured["env_override"] = dict(request.env_override or {})
+            return ProviderResponse(model="claude", content="captured")
+
+    _write_claude_permission_settings(tmp_path, "python -m pytest")
+    store = CouncilStateStore(tmp_path)
+    orchestrator = DelegationOrchestrator(
+        store=store,
+        participant_factory=lambda _: CapturingProvider(),
+    )
+
+    orchestrator.run(
+        role=RoleName.IMPLEMENTER,
+        controller="codex",
+        target_model="claude",
+        objective="capture sandboxed env",
+        task_summary="sandboxed env regression",
+        constraints=[],
+        relevant_files=[],
+        inputs={},
+        expected_output="",
+    )
+
+    env = captured["env_override"]
+    assert isinstance(env, dict)
+    assert env[DELEGATED_STAGE_ENV_FLAG] == "1"
+    assert DELEGATION_ID_ENV_KEY in env
+    assert env[DELEGATION_ID_ENV_KEY].startswith("del_")
+    for key in CONTROLLER_ENV_KEYS:
+        assert key not in env, f"{key} leaked into sandboxed env"

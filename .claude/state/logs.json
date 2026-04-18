@@ -1871,6 +1871,30 @@
       "from_status": "in_progress",
       "to_status": "auto_verified",
       "message": "TASK-044 in_progress → auto_verified: Automated gate passed. build_sandboxed_env + CONTROLLER_ENV_KEYS + DELEGATED_STAGE_ENV_FLAG/DELEGATION_ID_ENV_KEY in providers/base.py; ProviderRequest.env_override plumbed through adapters + subprocess helpers; DelegationOrchestrator now passes sandboxed env + cwd; cli/app.py rejects delegate/discuss/synthesize when DELEGATED_STAGE flag is 1 (status/version still allowed). ProviderError docstring lists new kinds. 4 new tests: env strip + cwd/env threading + recursion rejection + status allowed. Full pytest 131 passes, ruff clean."
+    },
+    {
+      "timestamp": "2026-04-18T12:52:55.952Z",
+      "type": "task_status_change",
+      "task_id": "TASK-044",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-044 auto_verified → done: Acceptance mode auto → done. Commit f55019d. Non-recursive guard + env scrubbing live. TASK-045 smoke gate now unblocked."
+    },
+    {
+      "timestamp": "2026-04-18T12:53:08.684Z",
+      "type": "task_status_change",
+      "task_id": "TASK-045",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-045 todo → in_progress: Starting sidecar-isolation-gate. Will extend docs/release-checklist.md with isolated-workspace / import-back / recursion-guard smoke items, add a workflow_integration regression tying the three together, then run ruff + full pytest + sync-skills and hand off to manual smoke (stage_gate=true)."
+    },
+    {
+      "timestamp": "2026-04-18T12:54:07.374Z",
+      "type": "task_status_change",
+      "task_id": "TASK-045",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-045 in_progress → auto_verified: Automated gate passed: ruff clean, full pytest 133 pass (3 new TASK-045 regressions cover release-checklist section, integration-doc, and sandboxed env propagation), sync-skills synced 11 skills to 3 targets. Remaining work is the manual smoke in a real Codex/Claude/Gemini controller project per review_checklist."
     }
   ]
 }

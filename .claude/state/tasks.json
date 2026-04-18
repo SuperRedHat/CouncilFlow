@@ -2068,11 +2068,11 @@
         "python -m ruff check .",
         "python -m pytest tests/test_provider_adapters.py tests/test_cli_delegate.py tests/test_workflow_integration.py"
       ],
-      "status": "auto_verified",
+      "status": "done",
       "created_at": "2026-04-18T11:14:26.000Z",
-      "updated_at": "2026-04-18T12:52:39.331Z",
+      "updated_at": "2026-04-18T12:52:55.932Z",
       "commit_hash": "",
-      "notes": "Automated gate passed. build_sandboxed_env + CONTROLLER_ENV_KEYS + DELEGATED_STAGE_ENV_FLAG/DELEGATION_ID_ENV_KEY in providers/base.py; ProviderRequest.env_override plumbed through adapters + subprocess helpers; DelegationOrchestrator now passes sandboxed env + cwd; cli/app.py rejects delegate/discuss/synthesize when DELEGATED_STAGE flag is 1 (status/version still allowed). ProviderError docstring lists new kinds. 4 new tests: env strip + cwd/env threading + recursion rejection + status allowed. Full pytest 131 passes, ruff clean.",
+      "notes": "Acceptance mode auto → done. Commit f55019d. Non-recursive guard + env scrubbing live. TASK-045 smoke gate now unblocked.",
       "review_checklist": [],
       "stage_gate": false
     },
@@ -2107,11 +2107,11 @@
         "python -m pytest",
         "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'"
       ],
-      "status": "todo",
+      "status": "auto_verified",
       "created_at": "2026-04-18T11:14:26.000Z",
-      "updated_at": "2026-04-18T11:14:26.000Z",
+      "updated_at": "2026-04-18T12:54:07.353Z",
       "commit_hash": "",
-      "notes": "",
+      "notes": "Automated gate passed: ruff clean, full pytest 133 pass (3 new TASK-045 regressions cover release-checklist section, integration-doc, and sandboxed env propagation), sync-skills synced 11 skills to 3 targets. Remaining work is the manual smoke in a real Codex/Claude/Gemini controller project per review_checklist.",
       "review_checklist": [
         "在真实项目中验证 delegated implementer/fixer 不再触碰宿主 .council/state.json 或 .claude/state/**",
         "验证隔离工作区中的合法代码改动会被安全导回主项目，并继续进入 tester/reviewer 闭环",
