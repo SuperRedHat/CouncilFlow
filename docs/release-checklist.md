@@ -4,8 +4,9 @@
 
 - Run `python -m ruff check .`
 - Run `python -m pytest`
-- Verify workflow integration tests cover the staged `implementer -> tester -> fixer -> tester`
-  route loop and stop on route/artifact failures.
+- Verify workflow integration tests cover the staged
+  `implementer -> tester -> reviewer -> [fixer -> tester -> reviewer]*` route loop and stop on
+  route/artifact failures.
 
 ## Manual Smoke
 
@@ -21,8 +22,9 @@
 - Verify `.council/` state can be reused after interruption and restart.
 - Verify no sidecar activation happens when a role resolves to the current controller.
 - Verify the upgraded `.council/discuss/<discussion_id>/summary.md` artifact still exposes fields that downstream `project-*` workflows can read explicitly.
-- Verify `project-next` now follows `implementer -> tester -> fixer -> tester` when verification
-  fails, instead of letting the controller silently run tests and patch locally.
+- Verify `project-next` now follows
+  `implementer -> tester -> reviewer -> [fixer -> tester -> reviewer]*`, instead of letting the
+  controller silently run tests, skip review, or patch locally.
 - Verify `project-feedback` closes or reopens gates only, and creates follow-up repair work instead
   of directly acting as `tester` or `fixer`.
 - Verify route/discuss failures stop the workflow instead of silently switching to local execution.

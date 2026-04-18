@@ -191,13 +191,25 @@ def test_discuss_cli_reads_project_default_models_for_workflow_integration(
         (
             RoleName.TESTER,
             {"implementer_result": ".council/delegations/del_impl/result.md"},
-            ["If verification passes, continue to synthesis/status flow."],
+            ["If verification passes, enter reviewer before any synthesis/status flow."],
             ["Enter fixer, then rerun tester."],
         ),
         (
+            RoleName.REVIEWER,
+            {
+                "implementer_result": ".council/delegations/del_impl/result.md",
+                "tester_result": ".council/delegations/del_test/result.md",
+            },
+            ["If reviewer passes, continue to synthesis/status flow."],
+            ["Enter fixer, then rerun tester and reviewer."],
+        ),
+        (
             RoleName.FIXER,
-            {"tester_result": ".council/delegations/del_test/result.md"},
-            ["Re-enter tester using the new fixer result artifact."],
+            {
+                "tester_result": ".council/delegations/del_test/result.md",
+                "reviewer_findings": ".council/delegations/del_review/findings.json",
+            },
+            ["Re-enter tester, then reviewer, using the new fixer result artifact."],
             ["Stop and report the failed fixer stage."],
         ),
     ],
@@ -385,6 +397,8 @@ def test_route_decision_covers_key_role_outcomes(
                 "council` 明确缺失或不可调用",
                 "缺少 handoff/result artifact",
                 "缺少 summary artifact",
+                "tester 通过后不要直接收口",
+                "只有当 tester 与 reviewer 都明确通过后",
             ],
         ),
         (
@@ -437,6 +451,9 @@ def test_release_checklist_covers_failure_stop_and_council_missing_fallback() ->
         encoding="utf-8"
     )
 
+    assert (
+        "implementer -> tester -> reviewer -> [fixer -> tester -> reviewer]*" in checklist
+    )
     assert (
         "Verify route/discuss failures stop the workflow instead of silently switching to local "
         "execution."

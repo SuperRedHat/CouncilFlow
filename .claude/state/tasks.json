@@ -1868,11 +1868,11 @@
         "python -m pytest tests/test_workflow_integration.py tests/test_cli_delegate.py",
         "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'"
       ],
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-18T08:10:20.000Z",
-      "updated_at": "2026-04-18T08:10:20.000Z",
+      "updated_at": "2026-04-18T10:37:35.630Z",
       "commit_hash": "",
-      "notes": "",
+      "notes": "Acceptance mode is auto, so TASK-039 is complete after the reviewer loop was enforced in the shared project-next skill, the docs/checklist were aligned, the workflow integration regression was updated, and all verification commands plus sync/hash checks passed.",
       "review_checklist": [],
       "stage_gate": false
     },

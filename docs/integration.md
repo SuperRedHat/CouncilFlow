@@ -124,6 +124,8 @@ Phase-machine rules:
 - `reviewer` is a first-class stage. A passing tester result does not authorize task completion on
   its own; the workflow still needs an explicit reviewer artifact to confirm the implementation is
   semantically acceptable.
+- `project-next` must not move into synthesis, status updates, or commit creation after tester
+  passes alone. It may do so only after both `tester` and `reviewer` explicitly pass.
 - If a `tester` stage reports failure, the workflow must enter `fixer` and then return to `tester`
   for re-verification.
 - If a `reviewer` stage reports findings, the workflow must enter `fixer` and then return to both
@@ -202,7 +204,8 @@ Delegation-oriented workflow steps should call:
 council delegate --role implementer --model claude --objective "<objective>" --task-summary "<summary>"
 council delegate --role reviewer --model gemini --objective "<objective>" --task-summary "<summary>"
 council delegate --role implementer --objective "<objective>" --task-summary "<summary>"
-council delegate --role tester --objective "<objective>" --task-summary "<summary>" --input verification_commands="pnpm exec vitest run" --required-artifact implementer_result=.council/delegations/del_x/result.md --next-on-success "Continue to synthesis or status update." --next-on-failure "Enter fixer, then rerun tester."
+council delegate --role tester --objective "<objective>" --task-summary "<summary>" --input verification_commands="pnpm exec vitest run" --required-artifact implementer_result=.council/delegations/del_x/result.md --next-on-success "Enter reviewer after tester passes." --next-on-failure "Enter fixer, then rerun tester."
+council delegate --role reviewer --objective "<objective>" --task-summary "<summary>" --required-artifact implementer_result=.council/delegations/del_impl/result.md --required-artifact tester_result=.council/delegations/del_test/result.md --next-on-success "Enter synthesis/status update only after reviewer passes." --next-on-failure "Enter fixer, then rerun tester and reviewer."
 ```
 
 If `--model` is omitted, `CouncilFlow` reads the target model from the project's local role mapping.
@@ -291,7 +294,7 @@ Expected machine-readable contract:
 5. The host workflow reads those artifacts explicitly before deciding the next stage.
 6. The controller may only continue locally when the current stage returned `local_execution`.
 7. `project-next` loops through `implementer -> tester -> reviewer -> [fixer -> tester -> reviewer]*`
-   until both verification and review succeed, then hands final synthesis/status updates back to the
-   controller.
+   until both verification and review succeed; only then may the controller perform final
+   synthesis, task-state updates, and commit decisions.
 
 This keeps the integration deterministic, inspectable, and portable across Codex, Claude Code, and Gemini CLI.

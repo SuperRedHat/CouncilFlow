@@ -1687,6 +1687,30 @@
       "from_status": "auto_verified",
       "to_status": "done",
       "message": "TASK-038 auto_verified → done: Acceptance mode is auto, so TASK-038 is complete after reviewer/tester contract modeling, sidecar execution guardrails, full ruff verification, and targeted workflow/delegation test coverage all passed."
+    },
+    {
+      "timestamp": "2026-04-18T10:33:37.976Z",
+      "type": "task_status_change",
+      "task_id": "TASK-039",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-039 todo → in_progress: Starting project-next-review-loop implementation after TASK-038 contract work landed in commit 911a258. This phase will update the shared project-next stage machine, integration docs, release checklist, and workflow tests so tester success no longer bypasses reviewer."
+    },
+    {
+      "timestamp": "2026-04-18T10:37:30.235Z",
+      "type": "task_status_change",
+      "task_id": "TASK-039",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-039 in_progress → auto_verified: Upgraded the shared project-next stage machine to implementer -> tester -> reviewer -> [fixer -> tester -> reviewer]*, updated local integration/release docs, synchronized skills to Codex/Claude/Gemini, and passed ruff/pytest/sync verification plus cross-install hash checks."
+    },
+    {
+      "timestamp": "2026-04-18T10:37:35.648Z",
+      "type": "task_status_change",
+      "task_id": "TASK-039",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-039 auto_verified → done: Acceptance mode is auto, so TASK-039 is complete after the reviewer loop was enforced in the shared project-next skill, the docs/checklist were aligned, the workflow integration regression was updated, and all verification commands plus sync/hash checks passed."
     }
   ]
 }
