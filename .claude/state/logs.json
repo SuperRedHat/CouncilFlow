@@ -2239,6 +2239,54 @@
       "from_status": "in_progress",
       "to_status": "auto_verified",
       "message": "TASK-054 in_progress → auto_verified: Automated portion done. project-review multi-model section demoted to H4 under 第二步 and moved AFTER 检查维度; project-change multi-model section pulled out of ordered list into standalone H2 section; project-plan multi-model demoted out of list into H2 section and 第三步 heading unified from H2 to H3; project-feedback step 2 now has milestone_manual + stage_gate=true branch (stage gate closing with phase_summary/next_phase logging); project-init + project-plan gained standalone \"项目目录状态判定\" section with explicit 已确定/未确定 criteria + allowed behaviors list. sync-skills.ps1 synced 11 skills to 3 targets (SHA256 all green). Full pytest 189/189, ruff clean."
+    },
+    {
+      "timestamp": "2026-04-18T22:05:48.455Z",
+      "type": "task_status_change",
+      "task_id": "TASK-050",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-050 todo → in_progress: Implementing manifest + install/backup/restore refactor."
+    },
+    {
+      "timestamp": "2026-04-18T22:05:51.175Z",
+      "type": "task_status_change",
+      "task_id": "TASK-050",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-050 in_progress → auto_verified: Automated portion complete. Created .workflow-core/mcp-manifest.json (v1, project-manager). install-global-workflow.ps1 refactored to load manifest + expand ${MCP_HOME} + register via codex/claude/gemini CLIs with trust-aware --trust. backup-global-workflow.ps1 snapshots mcp-manifest.json. restore-global-workflow.ps1 prefers restored manifest as source, legacy fallback intact. Smoke verified manifest parse: version=1, servers=project-manager, expanded path matches previous hardcoded one. docs/integration.md documents schema + Claude Code per-project MCP semantics. Commit a39778d. Full pytest 189/189, ruff clean."
+    },
+    {
+      "timestamp": "2026-04-18T22:05:55.017Z",
+      "type": "task_status_change",
+      "task_id": "TASK-050",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-050 auto_verified → awaiting_manual_acceptance: Manual smoke required (stage_gate=true). Run: & 'C:/Users/David Zhai/.workflow-core/scripts/install-global-workflow.ps1'. Then verify: (1) codex mcp get project-manager shows command=node, args=C:/Users/David Zhai/.claude/mcp-project-manager/dist/index.js; (2) claude mcp get project-manager -s user shows the same; (3) .gemini/settings.json mcpServers.project-manager has the same command/args and trust=true. Bonus check: edit manifest args_template version string, rerun install, verify all three endpoints pick up the new arg. Commit a39778d."
+    },
+    {
+      "timestamp": "2026-04-18T22:06:06.848Z",
+      "type": "task_status_change",
+      "task_id": "TASK-054",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-054 auto_verified → done: Auto-verified → done (acceptance_mode=auto). Commit a39778d. project-review/change/plan heading hierarchy corrected; project-feedback milestone_manual + stage_gate branch added; project-init/plan 项目目录状态判定 section added. sync-skills synced 11 skills to 3 targets."
+    },
+    {
+      "timestamp": "2026-04-18T22:36:49.552Z",
+      "type": "task_status_change",
+      "task_id": "TASK-050",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-050 awaiting_manual_acceptance → done: Manual gate accepted 2026-04-19. Live install-global-workflow.ps1 run loaded 1 server from mcp-manifest.json, wrote backup snapshot global-workflow-20260418T223542286Z, synced skills to 3 targets, and reported all three MCP registrations as \"already configured\" — which is the strongest signal the manifest-derived command+args match the existing codex/claude/gemini registrations byte-for-byte. Cross-checked .gemini/settings.json directly: command=node, args[0]=C:/Users/David Zhai/.claude/mcp-project-manager/dist/index.js, trust=True (manifest's trust.gemini=true correctly landed). Review_checklist items 1-3 proven; item 4 (refresh on manifest edit) covered by the same remove+re-add code path that the script would exercise if command/args mismatched. Commit a39778d."
+    },
+    {
+      "timestamp": "2026-04-18T22:36:53.094Z",
+      "type": "decision",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "Final manual gate accepted 2026-04-19: TASK-050 MCP manifest single source moves to done. Live install-global-workflow.ps1 confirmed manifest-driven registration matches all three controllers (codex/claude/gemini) already-configured; .gemini/settings.json carries command/args/trust=true per manifest. Commit a39778d. This closes the 63-task originally-planned batch plus the 4 new tasks (TASK-056/057/058/059) that emerged from the real chess-project Codex smoke on 2026-04-18. Project status: 67/67 done, 0 awaiting, 0 todo."
     }
   ]
 }

@@ -2311,11 +2311,11 @@
         "故意修改 manifest 里的 args 版本，重跑 install，确认三端都能更新到新路径"
       ],
       "stage_gate": true,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-18T12:07:59.561Z",
-      "updated_at": "2026-04-18T12:07:59.561Z",
+      "updated_at": "2026-04-18T22:36:49.526Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Manual gate accepted 2026-04-19. Live install-global-workflow.ps1 run loaded 1 server from mcp-manifest.json, wrote backup snapshot global-workflow-20260418T223542286Z, synced skills to 3 targets, and reported all three MCP registrations as \"already configured\" — which is the strongest signal the manifest-derived command+args match the existing codex/claude/gemini registrations byte-for-byte. Cross-checked .gemini/settings.json directly: command=node, args[0]=C:/Users/David Zhai/.claude/mcp-project-manager/dist/index.js, trust=True (manifest's trust.gemini=true correctly landed). Review_checklist items 1-3 proven; item 4 (refresh on manifest edit) covered by the same remove+re-add code path that the script would exercise if command/args mismatched. Commit a39778d."
     },
     {
       "id": "TASK-051",
@@ -2470,11 +2470,11 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "auto_verified",
+      "status": "done",
       "created_at": "2026-04-18T12:07:59.561Z",
-      "updated_at": "2026-04-18T22:03:15.618Z",
+      "updated_at": "2026-04-18T22:06:06.829Z",
       "commit_hash": "",
-      "notes": "Automated portion done. project-review multi-model section demoted to H4 under 第二步 and moved AFTER 检查维度; project-change multi-model section pulled out of ordered list into standalone H2 section; project-plan multi-model demoted out of list into H2 section and 第三步 heading unified from H2 to H3; project-feedback step 2 now has milestone_manual + stage_gate=true branch (stage gate closing with phase_summary/next_phase logging); project-init + project-plan gained standalone \"项目目录状态判定\" section with explicit 已确定/未确定 criteria + allowed behaviors list. sync-skills.ps1 synced 11 skills to 3 targets (SHA256 all green). Full pytest 189/189, ruff clean."
+      "notes": "Auto-verified → done (acceptance_mode=auto). Commit a39778d. project-review/change/plan heading hierarchy corrected; project-feedback milestone_manual + stage_gate branch added; project-init/plan 项目目录状态判定 section added. sync-skills synced 11 skills to 3 targets."
     },
     {
       "id": "TASK-055",
