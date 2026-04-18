@@ -1967,6 +1967,30 @@
       "from_status": "in_progress",
       "to_status": "auto_verified",
       "message": "TASK-048 in_progress → auto_verified: Automated gate passed. 1) cli/discuss removed the implicit effective_max_rounds=1 collapse; now both provider_round_trip and local_initial_position paths honor config.discussion.min_rounds/max_rounds. 2) UnavailableParticipantError uses canonical kind field, with error_kind kept as deprecated property. 3) GeminiCliAdapter.model_name stays \"gemini\"; variant surfaces in metadata.gemini_variant. 4) New providers/registry.py centralizes adapter factories; cli/delegate and cli/discuss both go through resolve_adapter. Ruff clean, full pytest 147 passes."
+    },
+    {
+      "timestamp": "2026-04-18T13:01:58.163Z",
+      "type": "task_status_change",
+      "task_id": "TASK-048",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-048 auto_verified → done: Auto → done. Commit 17f154b."
+    },
+    {
+      "timestamp": "2026-04-18T13:02:15.033Z",
+      "type": "task_status_change",
+      "task_id": "TASK-051",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-051 todo → in_progress: Starting structured-logging. Will add utils/logging.py + configure_logging, wire into cli/app.py::main, add INFO/DEBUG calls at orchestrator + subprocess + guardrail boundaries. Never log prompt or handoff text."
+    },
+    {
+      "timestamp": "2026-04-18T13:04:38.290Z",
+      "type": "task_status_change",
+      "task_id": "TASK-051",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-051 in_progress → auto_verified: Automated gate passed. utils/logging.py with configure_logging + get_logger, honors COUNCILFLOW_DEBUG=1, writes to stderr. cli/app.py::main triggers configure_logging. DelegationOrchestrator + DiscussionOrchestrator log start/completed + guardrail_violation; providers/base.py logs provider.total_timeout / idle_timeout. tests/test_logging.py (5 cases) covers level gating, namespace, idempotency, and a linter that rejects prompt-leaking log calls. Full pytest 152 passes, ruff clean."
     }
   ]
 }

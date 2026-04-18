@@ -13,6 +13,9 @@ from typing import Any, Protocol
 from pydantic import BaseModel, Field
 
 from councilflow.models.config import ProviderRuntimeSettings
+from councilflow.utils.logging import get_logger
+
+_logger = get_logger(__name__)
 
 CommandRunner = Callable[..., "ProviderRunResult | str"]
 DEFAULT_PROVIDER_TOTAL_TIMEOUT_SECONDS = 900.0
@@ -254,6 +257,11 @@ def run_monitored_process(
             total_elapsed = now - start
             idle_elapsed = now - last_activity
             if total_elapsed > runtime_settings.total_timeout_seconds:
+                _logger.warning(
+                    "provider.total_timeout command=%s elapsed=%.3fs",
+                    full_command[0] if full_command else "<unknown>",
+                    total_elapsed,
+                )
                 _terminate_process(process)
                 raise ProviderError(
                     "Provider command exceeded the total timeout of "
@@ -270,6 +278,12 @@ def run_monitored_process(
                 runtime_settings.idle_timeout_seconds is not None
                 and idle_elapsed > runtime_settings.idle_timeout_seconds
             ):
+                _logger.warning(
+                    "provider.idle_timeout command=%s idle=%.3fs elapsed=%.3fs",
+                    full_command[0] if full_command else "<unknown>",
+                    idle_elapsed,
+                    total_elapsed,
+                )
                 _terminate_process(process)
                 raise ProviderError(
                     "Provider command exceeded the idle timeout of "

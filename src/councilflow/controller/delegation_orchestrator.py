@@ -6,6 +6,7 @@ import hashlib
 import json
 import shutil
 import subprocess
+import time
 from collections.abc import Callable
 from datetime import UTC, datetime
 from fnmatch import fnmatchcase
@@ -40,6 +41,9 @@ from councilflow.utils.io import (
     materialize_workspace,
     summarize_import_outcome,
 )
+from councilflow.utils.logging import get_logger
+
+_logger = get_logger(__name__)
 
 PROTECTED_WORKFLOW_PATHS = (".claude/state", ".council/state.json")
 
@@ -396,6 +400,11 @@ class DelegationOrchestrator:
         delegation_id = datetime.now(tz=UTC).strftime("del_%Y%m%dT%H%M%S%fZ")
         delegation_dir = self.store.paths.delegations / delegation_id
         delegation_dir.mkdir(parents=True, exist_ok=True)
+        start_monotonic = time.monotonic()
+        _logger.info(
+            "delegation.start id=%s role=%s target_model=%s controller=%s",
+            delegation_id, role.value, target_model, controller,
+        )
         package = create_handoff_package(
             delegation_id=delegation_id,
             role=role,
@@ -558,6 +567,12 @@ class DelegationOrchestrator:
                     protected_snapshot,
                 )
                 if changed_paths:
+                    _logger.warning(
+                        "delegation.guardrail_violation id=%s reason=%s count=%d",
+                        delegation_id,
+                        "protected_paths_modified",
+                        len(changed_paths),
+                    )
                     _restore_protected_paths(
                         self.store.paths.project_root,
                         package.execution_guardrails.protected_paths,
@@ -572,6 +587,10 @@ class DelegationOrchestrator:
             if not package.execution_guardrails.allow_commit:
                 current_git_head = _read_git_head(self.store.paths.project_root)
                 if initial_git_head is not None and current_git_head != initial_git_head:
+                    _logger.warning(
+                        "delegation.guardrail_violation id=%s reason=unexpected_commit",
+                        delegation_id,
+                    )
                     raise ProviderError(
                         "Delegated stage created a git commit despite allow_commit=false.",
                         kind="guardrail_violation",
@@ -603,6 +622,12 @@ class DelegationOrchestrator:
             self.store.paths.project_root,
             materialization.workspace_path,
             materialization.effective_strategy,
+        )
+
+        elapsed = time.monotonic() - start_monotonic
+        _logger.info(
+            "delegation.completed id=%s role=%s import_outcome=%s manifest=%d elapsed=%.3fs",
+            delegation_id, role.value, import_outcome, len(workspace_manifest), elapsed,
         )
 
         result_path = delegation_dir / "result.md"

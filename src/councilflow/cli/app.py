@@ -75,6 +75,10 @@ app.command(name="synthesize")(synthesize)
 
 def main() -> None:
     """Run the CouncilFlow CLI."""
+
+    from councilflow.utils.logging import configure_logging
+
+    configure_logging()
     app()
 
 

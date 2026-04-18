@@ -17,6 +17,9 @@ from councilflow.models.discussion import (
     ParticipantResponse,
 )
 from councilflow.state.store import CouncilStateStore
+from councilflow.utils.logging import get_logger
+
+_logger = get_logger(__name__)
 
 
 class DiscussionParticipant(Protocol):
@@ -85,6 +88,17 @@ class DiscussionOrchestrator:
         discussion_dir = self.store.paths.discuss / discussion_id
         discussion_dir.mkdir(parents=True, exist_ok=True)
         record_path = discussion_dir / "record.json"
+        import time as _time
+
+        start_monotonic = _time.monotonic()
+        _logger.info(
+            "discussion.start id=%s controller=%s external_models=%s min_rounds=%d max_rounds=%d",
+            discussion_id,
+            controller,
+            ",".join(external_models) or "<none>",
+            min_rounds,
+            max_rounds,
+        )
         allowed_rounds = min(max_rounds, 5) if len(external_models) == 1 else max_rounds
         required_rounds = min(min_rounds, allowed_rounds)
         participants = [controller, *external_models]
@@ -347,6 +361,13 @@ class DiscussionOrchestrator:
                 "ended_reason": persisted_summary.ended_reason,
                 "status": "completed",
             },
+        )
+        _logger.info(
+            "discussion.completed id=%s rounds=%d ended_reason=%s elapsed=%.3fs",
+            discussion_id,
+            rounds_completed,
+            ended_reason,
+            _time.monotonic() - start_monotonic,
         )
         self.store.write_state(
             {

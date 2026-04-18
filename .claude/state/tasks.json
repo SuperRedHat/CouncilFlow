@@ -2226,11 +2226,11 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "auto_verified",
+      "status": "done",
       "created_at": "2026-04-18T12:07:59.561Z",
-      "updated_at": "2026-04-18T13:01:41.455Z",
+      "updated_at": "2026-04-18T13:01:58.142Z",
       "commit_hash": "",
-      "notes": "Automated gate passed. 1) cli/discuss removed the implicit effective_max_rounds=1 collapse; now both provider_round_trip and local_initial_position paths honor config.discussion.min_rounds/max_rounds. 2) UnavailableParticipantError uses canonical kind field, with error_kind kept as deprecated property. 3) GeminiCliAdapter.model_name stays \"gemini\"; variant surfaces in metadata.gemini_variant. 4) New providers/registry.py centralizes adapter factories; cli/delegate and cli/discuss both go through resolve_adapter. Ruff clean, full pytest 147 passes."
+      "notes": "Auto → done. Commit 17f154b."
     },
     {
       "id": "TASK-049",
@@ -2349,11 +2349,11 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "todo",
+      "status": "auto_verified",
       "created_at": "2026-04-18T12:07:59.561Z",
-      "updated_at": "2026-04-18T12:07:59.561Z",
+      "updated_at": "2026-04-18T13:04:38.271Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Automated gate passed. utils/logging.py with configure_logging + get_logger, honors COUNCILFLOW_DEBUG=1, writes to stderr. cli/app.py::main triggers configure_logging. DelegationOrchestrator + DiscussionOrchestrator log start/completed + guardrail_violation; providers/base.py logs provider.total_timeout / idle_timeout. tests/test_logging.py (5 cases) covers level gating, namespace, idempotency, and a linter that rejects prompt-leaking log calls. Full pytest 152 passes, ruff clean."
     },
     {
       "id": "TASK-052",
