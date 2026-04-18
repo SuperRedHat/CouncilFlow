@@ -116,7 +116,10 @@ def get_provider_adapter(
         # Use original model name if it's a specific version (e.g., gemini-1.5-flash)
         specific_model = model if model.startswith("gemini-") and model != "gemini-cli" else None
         return GeminiCliAdapter(model=specific_model, runtime=runtime)
-    raise ProviderError(f"No provider adapter is registered for model '{model}'.")
+    raise ProviderError(
+        f"No provider adapter is registered for model '{model}'.",
+        kind="adapter_missing",
+    )
 
 
 def delegate(

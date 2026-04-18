@@ -113,7 +113,8 @@ def get_participant(
             GeminiCliAdapter(model=specific_model, runtime=runtime),
         )
     raise UnavailableParticipantError(
-        f"No discussion participant is registered for model '{model}'."
+        f"No discussion participant is registered for model '{model}'.",
+        error_kind="adapter_missing",
     )
 
 

@@ -30,7 +30,7 @@ def test_load_config_validates_custom_role_mapping(tmp_path: Path) -> None:
                 "roles": {
                     "planner": "codex",
                     "architect": "codex",
-                    "implementer": "gpt",
+                    "implementer": "claude",
                     "tester": "claude",
                     "reviewer": "codex",
                     "fixer": "codex",
@@ -46,7 +46,7 @@ def test_load_config_validates_custom_role_mapping(tmp_path: Path) -> None:
     config = load_config(config_path)
 
     assert config.output_language == "en"
-    assert config.roles.implementer == "gpt"
+    assert config.roles.implementer == "claude"
     assert config.roles.advisor == "gemini"
 
 

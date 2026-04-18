@@ -99,3 +99,42 @@ def normalize_model_name(value: str) -> str:
 
     normalized = value.strip().lower()
     return MODEL_ALIASES.get(normalized, normalized)
+
+
+_REGISTERED_ADAPTER_MODELS: frozenset[str] = frozenset(
+    {
+        ControllerName.CODEX.value,
+        ControllerName.CLAUDE.value,
+        ControllerName.GEMINI.value,
+    }
+)
+
+
+def resolve_adapter_model(value: str) -> str | None:
+    """Return the adapter-ready model name, or None when no adapter is known."""
+
+    normalized = normalize_model_name(value)
+    if normalized in _REGISTERED_ADAPTER_MODELS:
+        return normalized
+    # Accept specific Gemini variants (gemini-1.5-flash etc.) that still route to
+    # the Gemini adapter family even if they are not in MODEL_ALIASES yet.
+    if normalized.startswith("gemini-"):
+        return normalized
+    return None
+
+
+def validate_model_name(value: str) -> str:
+    """Normalize a configured model name and reject any unregistered target.
+
+    Raises ValueError with an actionable message when no adapter can serve the
+    model. This pushes the failure to config-load time instead of later at
+    `council delegate` execution.
+    """
+
+    resolved = resolve_adapter_model(value)
+    if resolved is None:
+        raise ValueError(
+            f"Unknown model '{value}'. No provider adapter is registered for it. "
+            "Supported: codex, claude, gemini (plus gemini-<variant> aliases)."
+        )
+    return resolved

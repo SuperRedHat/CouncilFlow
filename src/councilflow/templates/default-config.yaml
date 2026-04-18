@@ -8,7 +8,7 @@ roles:
   tester: claude
   reviewer: codex
   fixer: codex
-  advisor: gpt
+  advisor: claude
   synthesizer: codex
 discussion:
   default_models: []

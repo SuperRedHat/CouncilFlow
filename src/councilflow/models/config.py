@@ -10,6 +10,7 @@ from councilflow.models.roles import (
     ControllerName,
     RoleName,
     normalize_model_name,
+    validate_model_name,
 )
 
 
@@ -44,14 +45,13 @@ class RoleMapping(BaseModel):
     @field_validator("*", mode="before")
     @classmethod
     def normalize_models(cls, value: str) -> str:
-        """Normalize configured model names before validation."""
+        """Normalize configured model names and reject unregistered adapters."""
 
         if not isinstance(value, str):
             raise TypeError("Role mappings must be strings.")
-        normalized = normalize_model_name(value)
-        if not normalized:
+        if not value.strip():
             raise ValueError("Role mappings cannot be empty.")
-        return normalized
+        return validate_model_name(value)
 
     def for_role(self, role: RoleName) -> str:
         """Return the target model for a given role."""
