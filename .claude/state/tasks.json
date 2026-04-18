@@ -2470,11 +2470,11 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "todo",
+      "status": "auto_verified",
       "created_at": "2026-04-18T12:07:59.561Z",
-      "updated_at": "2026-04-18T12:07:59.561Z",
+      "updated_at": "2026-04-18T22:03:15.618Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Automated portion done. project-review multi-model section demoted to H4 under 第二步 and moved AFTER 检查维度; project-change multi-model section pulled out of ordered list into standalone H2 section; project-plan multi-model demoted out of list into H2 section and 第三步 heading unified from H2 to H3; project-feedback step 2 now has milestone_manual + stage_gate=true branch (stage gate closing with phase_summary/next_phase logging); project-init + project-plan gained standalone \"项目目录状态判定\" section with explicit 已确定/未确定 criteria + allowed behaviors list. sync-skills.ps1 synced 11 skills to 3 targets (SHA256 all green). Full pytest 189/189, ruff clean."
     },
     {
       "id": "TASK-055",

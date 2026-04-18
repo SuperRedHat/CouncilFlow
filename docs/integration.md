@@ -383,6 +383,59 @@ accepted directly as the model name in config or via `--model`. The adapter
 normalizes the family back to `gpt` in `ProviderResponse.model` so downstream
 `speaker_model` / `participants` comparisons stay stable.
 
+## MCP Registration via `mcp-manifest.json`
+
+Three-controller MCP registration now flows from a single source of truth:
+`C:\Users\David Zhai\.workflow-core\mcp-manifest.json`. Previously the path
+to `mcp-project-manager/dist/index.js` was hardcoded in five places
+(`install-global-workflow.ps1`, `backup-global-workflow.ps1`,
+`restore-global-workflow.ps1`, `.codex/config.toml`, `.gemini/settings.json`),
+which meant any move or upgrade of the server required touching every file.
+
+Manifest schema (version 1):
+
+```json
+{
+  "version": 1,
+  "servers": {
+    "project-manager": {
+      "command": "node",
+      "args_template": ["${MCP_HOME}/mcp-project-manager/dist/index.js"],
+      "env": { "MCP_HOME": "C:/Users/David Zhai/.claude" },
+      "trust": { "codex": false, "claude": false, "gemini": true }
+    }
+  }
+}
+```
+
+`${<key>}` placeholders inside `args_template` are expanded against the
+server's own `env` block at registration time, so swapping the install
+location of the Node-based server is a one-line change in the manifest.
+
+Scripts that consume the manifest:
+
+- **`install-global-workflow.ps1`**: loads the manifest, expands args per
+  server, then registers each via `codex mcp add`, `claude mcp add -s user`,
+  and `gemini mcp add -s user` (adding `--trust` when `trust.gemini=true`).
+  The earlier hardcoded path is gone.
+- **`backup-global-workflow.ps1`**: includes `mcp-manifest.json` in the
+  timestamped snapshot under `<snapshot>/config/mcp-manifest.json`, alongside
+  the Codex / Claude / Gemini config files.
+- **`restore-global-workflow.ps1`**: prefers the restored manifest as the
+  registration source. The legacy per-snapshot `mcp_servers` path is kept
+  as a fallback so backups taken before TASK-050 still restore correctly.
+
+### Claude Code MCP configuration is per-project
+
+Unlike Codex (global `config.toml`) and Gemini (single user `settings.json`),
+Claude Code stores its MCP registrations inside `C:\Users\David Zhai\.claude.json`
+in one block per project scope plus a user-scope fallback. `claude mcp add
+-s user` writes to the user scope, which acts as the default when a project
+scope does not override it. If you need different MCP paths per project,
+`claude mcp add -s local` inside the project writes a project-scope entry
+that wins. The manifest applies to the user-scope fallback only — project
+overrides remain under the user's control.
+
 ## Workflow Failure Report Protocol
 
 Every `role_driven` and `discussion` shared skill must emit the same failure

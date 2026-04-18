@@ -2223,6 +2223,22 @@
       "from_status": null,
       "to_status": null,
       "message": "Manual gate batch accepted 2026-04-18: TASK-041 (reviewer-loop + tester preflight + sidecar commit-safety), TASK-045 (sidecar isolation), TASK-049 (shared skills hygiene), TASK-053 (workflow failure report protocol) all moved from awaiting_manual_acceptance to done. Evidence came from the real chess-project TASK-006 Codex smoke session on 2026-04-18 (implementer delegation 140623, tester delegation 141253, fixer delegation 141433, final chess commit 47ba427) plus the automated regression battery (full pytest 189 pass, ruff clean). Bugs discovered during the smoke and already fixed: TASK-056 (detect false positives, superseded by TASK-058), TASK-057 (dependency symlinks so pnpm exec resolves), TASK-058 (baseline-driven diff + deny-by-default imports after real data-loss incident), TASK-059 (Click windows_expand_args disabled). This unblocks TASK-050 (MCP manifest) and TASK-054 (skill content harmonization) which depended on TASK-049."
+    },
+    {
+      "timestamp": "2026-04-18T22:01:15.126Z",
+      "type": "task_status_change",
+      "task_id": "TASK-054",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-054 todo → in_progress: Starting skill content harmonization: project-review/change/plan heading hierarchy, project-feedback milestone gate branch, project-init/plan \"项目目录已确定\" criteria."
+    },
+    {
+      "timestamp": "2026-04-18T22:03:15.644Z",
+      "type": "task_status_change",
+      "task_id": "TASK-054",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-054 in_progress → auto_verified: Automated portion done. project-review multi-model section demoted to H4 under 第二步 and moved AFTER 检查维度; project-change multi-model section pulled out of ordered list into standalone H2 section; project-plan multi-model demoted out of list into H2 section and 第三步 heading unified from H2 to H3; project-feedback step 2 now has milestone_manual + stage_gate=true branch (stage gate closing with phase_summary/next_phase logging); project-init + project-plan gained standalone \"项目目录状态判定\" section with explicit 已确定/未确定 criteria + allowed behaviors list. sync-skills.ps1 synced 11 skills to 3 targets (SHA256 all green). Full pytest 189/189, ruff clean."
     }
   ]
 }
