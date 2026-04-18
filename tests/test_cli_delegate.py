@@ -506,6 +506,60 @@ def test_delegate_command_refuses_recursive_invocation_inside_delegated_stage(
     assert payload["data"] is None
 
 
+def test_delegate_command_threads_writable_globs_and_allow_commit_into_guardrails(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """TASK-058 follow-up: --writable-glob / --readonly-artifact / --allow-commit
+    must reach ExecutionGuardrails so implementer / fixer stages can opt back
+    into sidecar imports under the new deny-by-default semantic."""
+
+    monkeypatch.setattr(
+        delegate_module,
+        "get_provider_adapter",
+        lambda *args, **kwargs: FakeSuccessAdapter(),
+    )
+    _write_claude_permission_settings(tmp_path, "python -m pytest")
+
+    result = runner.invoke(
+        app,
+        [
+            "delegate",
+            "--role",
+            "implementer",
+            "--model",
+            "claude",
+            "--objective",
+            "Wire writable_globs through CLI",
+            "--task-summary",
+            "Expect guardrails to carry writable_globs + allow_commit",
+            "--writable-glob",
+            "src/features/game-session/**",
+            "--writable-glob",
+            "tests/unit/features/game-session/**",
+            "--readonly-artifact",
+            "docs/prd.md",
+            "--allow-commit",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={"CODEX_SHELL": "1"},
+    )
+
+    payload = json.loads(result.output)
+    guardrails = payload["data"]["execution_guardrails"]
+
+    assert result.exit_code == 0
+    assert guardrails["allow_commit"] is True
+    assert guardrails["import_manifest"]["writable_globs"] == [
+        "src/features/game-session/**",
+        "tests/unit/features/game-session/**",
+    ]
+    assert guardrails["import_manifest"]["readonly_artifact_paths"] == ["docs/prd.md"]
+    # allow_workflow_state_write stays false unless --allow-workflow-state-write is set.
+    assert guardrails["allow_workflow_state_write"] is False
+
+
 def test_status_command_is_allowed_inside_delegated_stage(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

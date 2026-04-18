@@ -13,6 +13,7 @@ from councilflow.controller.delegation_orchestrator import (
 from councilflow.controller.host_context import detect_controller
 from councilflow.controller.routing import build_route_decision
 from councilflow.models.config import ProviderRuntimeSettings
+from councilflow.models.delegation import ExecutionGuardrails, ImportManifest
 from councilflow.models.roles import RoleName, normalize_model_name
 from councilflow.providers.base import ProviderAdapter
 from councilflow.providers.gemini_cli import GeminiCliAdapter
@@ -75,6 +76,41 @@ NEXT_ON_FAILURE_OPTION = typer.Option(
     "--next-on-failure",
     help="Repeat to describe the workflow action that should happen when this stage fails.",
 )
+WRITABLE_GLOB_OPTION = typer.Option(
+    None,
+    "--writable-glob",
+    help=(
+        "Repeat to allow-list a path glob that the sidecar may write back to "
+        "the host project (maps to ExecutionGuardrails.import_manifest.writable_globs). "
+        "Without this flag, empty writable_globs deny-by-default rejects every "
+        "sidecar-driven import; implementer / fixer stages must set at least one "
+        "glob or their output will be discarded."
+    ),
+)
+READONLY_ARTIFACT_OPTION = typer.Option(
+    None,
+    "--readonly-artifact",
+    help=(
+        "Repeat a relative path that the sidecar may read but never modify "
+        "(ExecutionGuardrails.import_manifest.readonly_artifact_paths)."
+    ),
+)
+ALLOW_COMMIT_OPTION = typer.Option(
+    False,
+    "--allow-commit",
+    help=(
+        "Opt the delegated stage into creating git commits. Default is "
+        "deny; most tasks keep commit decisions at the controller."
+    ),
+)
+ALLOW_WORKFLOW_STATE_WRITE_OPTION = typer.Option(
+    False,
+    "--allow-workflow-state-write",
+    help=(
+        "Opt the delegated stage into modifying workflow state files (.claude/state, "
+        ".council/state.json). Only enable for workflow-maintenance tasks."
+    ),
+)
 PROJECT_ROOT_OPTION = typer.Option(
     DEFAULT_PROJECT_ROOT,
     "--project-root",
@@ -128,6 +164,10 @@ def delegate(
     required_artifact: list[str] | None = REQUIRED_ARTIFACT_OPTION,
     next_on_success: list[str] | None = NEXT_ON_SUCCESS_OPTION,
     next_on_failure: list[str] | None = NEXT_ON_FAILURE_OPTION,
+    writable_glob: list[str] | None = WRITABLE_GLOB_OPTION,
+    readonly_artifact: list[str] | None = READONLY_ARTIFACT_OPTION,
+    allow_commit: bool = ALLOW_COMMIT_OPTION,
+    allow_workflow_state_write: bool = ALLOW_WORKFLOW_STATE_WRITE_OPTION,
     project_root: Path = PROJECT_ROOT_OPTION,
 ) -> None:
     """Generate a handoff package and delegate the work to a provider adapter."""
@@ -176,6 +216,17 @@ def delegate(
         required_artifact,
         option_name="--required-artifact",
     )
+    guardrails_kwargs: dict[str, object] = {}
+    if allow_commit:
+        guardrails_kwargs["allow_commit"] = True
+    if allow_workflow_state_write:
+        guardrails_kwargs["allow_workflow_state_write"] = True
+    if writable_glob or readonly_artifact:
+        guardrails_kwargs["import_manifest"] = ImportManifest(
+            writable_globs=list(writable_glob or []),
+            readonly_artifact_paths=list(readonly_artifact or []),
+        )
+    execution_guardrails = ExecutionGuardrails(**guardrails_kwargs) if guardrails_kwargs else None
     try:
         result = orchestrator.run(
             role=role,
@@ -192,6 +243,7 @@ def delegate(
             },
             required_artifacts=required_artifacts,
             verification_commands=list(verification_command or []),
+            execution_guardrails=execution_guardrails,
             next_actions_on_success=list(next_on_success or []),
             next_actions_on_failure=list(next_on_failure or []),
             expected_output=expected_output,
