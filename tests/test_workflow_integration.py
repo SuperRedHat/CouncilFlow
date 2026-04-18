@@ -14,6 +14,7 @@ from councilflow.controller.discussion_orchestrator import DiscussionOrchestrato
 from councilflow.controller.routing import build_route_decision
 from councilflow.handoff.packages import build_delegation_contract, load_handoff_package
 from councilflow.handoff.summaries import build_discussion_contract
+from councilflow.models.delegation import ReviewFinding, VerificationCommand
 from councilflow.models.discussion import DiscussionRequest, ParticipantResponse
 from councilflow.models.roles import ControllerName, RoleName
 from councilflow.providers.base import ProviderRequest, ProviderResponse
@@ -126,6 +127,7 @@ def test_workflow_integration_contracts_are_machine_readable(
             for rule in delegation_contract["consumption_rules"]
         )
     )
+    assert delegation_contract["handoff_schema"]["execution_guardrails"]["allow_commit"] is False
     assert discussion_contract["consumption_rules"][-1] == (
         "If summary_path is missing, the workflow must treat the discussion as incomplete."
     )
@@ -240,6 +242,101 @@ def test_project_next_stage_contracts_are_explicit(
     assert contract["stage_guidance"]["next_actions_on_success"] == next_success
     assert contract["stage_guidance"]["next_actions_on_failure"] == next_failure
     assert "Required upstream artifacts must be read" in contract["consumption_rules"][3]
+
+
+def test_tester_and_fixer_contracts_expose_preflight_findings_and_guardrails(
+    tmp_path: Path,
+) -> None:
+    store = CouncilStateStore(tmp_path)
+    orchestrator = DelegationOrchestrator(
+        store=store,
+        participant_factory=lambda _: IntegrationDelegationProvider(),
+    )
+
+    tester_result = orchestrator.run(
+        role=RoleName.TESTER,
+        controller="codex",
+        target_model="claude",
+        objective="Run structured tester verification.",
+        task_summary="Execute verification commands through the tester stage.",
+        constraints=["Do not rely on hidden shared chat context."],
+        relevant_files=["docs/integration.md"],
+        inputs={"workflow": "project-next"},
+        verification_commands=[
+            VerificationCommand(command="pnpm exec eslint .", purpose="lint"),
+            VerificationCommand(command="pnpm exec vitest run", purpose="unit"),
+        ],
+        required_artifacts={"implementer_result": ".council/delegations/del_impl/result.md"},
+        expected_output="Structured tester artifact.",
+    )
+    tester_package = load_handoff_package(tmp_path / tester_result.handoff_path)
+    tester_contract = build_delegation_contract(
+        tester_package,
+        handoff_path=tester_result.handoff_path,
+        result_path=tester_result.result_path,
+    )
+
+    assert tester_contract["handoff_schema"]["tester_preflight"]["status"] == "pending"
+    assert tester_contract["handoff_schema"]["verification_commands"] == [
+        {"command": "pnpm exec eslint .", "purpose": "lint"},
+        {"command": "pnpm exec vitest run", "purpose": "unit"},
+    ]
+    assert tester_contract["handoff_schema"]["execution_guardrails"]["allow_commit"] is False
+    assert any(
+        "Structured verification commands, tester preflight requirements, and review findings"
+        in rule
+        for rule in tester_contract["consumption_rules"]
+    )
+
+    fixer_result = orchestrator.run(
+        role=RoleName.FIXER,
+        controller="codex",
+        target_model="claude",
+        objective="Fix reviewer findings without touching workflow state.",
+        task_summary="Repair semantic issues found after tester passed.",
+        constraints=["Keep workflow state files untouched."],
+        relevant_files=["src/councilflow/handoff/packages.py"],
+        inputs={"workflow": "project-next"},
+        required_artifacts={
+            "tester_result": ".council/delegations/del_test/result.md",
+            "reviewer_findings": ".council/delegations/del_review/findings.json",
+        },
+        review_findings=[
+            ReviewFinding(
+                finding_id="RV-001",
+                severity="high",
+                title="Undo leaves stale finished result",
+                body="undoLastMove() leaves a finished-state result attached after re-entry.",
+                affected_files=["src/domain/game/game.ts"],
+                required_fix="Clear stale result and realign snapshot/state invariants.",
+            )
+        ],
+        expected_output="Structured fixer artifact.",
+    )
+    fixer_package = load_handoff_package(tmp_path / fixer_result.handoff_path)
+    fixer_contract = build_delegation_contract(
+        fixer_package,
+        handoff_path=fixer_result.handoff_path,
+        result_path=fixer_result.result_path,
+    )
+
+    assert fixer_contract["handoff_schema"]["review_findings"][0]["finding_id"] == "RV-001"
+    assert fixer_contract["handoff_schema"]["fixer_input_sources"] == [
+        {
+            "label": "tester_result",
+            "source_stage": "tester",
+            "artifact_path": ".council/delegations/del_test/result.md",
+        },
+        {
+            "label": "reviewer_findings",
+            "source_stage": "reviewer",
+            "artifact_path": ".council/delegations/del_review/findings.json",
+        },
+    ]
+    assert (
+        fixer_contract["stage_guidance"]["execution_guardrails"]["allow_workflow_state_write"]
+        is False
+    )
 
 
 @pytest.mark.parametrize(

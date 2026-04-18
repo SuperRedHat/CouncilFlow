@@ -99,7 +99,7 @@ Recommended minimum stage machines:
 - `project-change`: `architect -> planner -> synthesizer`
 - `project-ask`: `advisor -> synthesizer`
 - `project-review`: `reviewer`
-- `project-next`: `implementer -> tester -> [fixer -> tester]* -> synthesizer`
+- `project-next`: `implementer -> tester -> reviewer -> [fixer -> tester -> reviewer]* -> synthesizer`
 
 Phase-machine rules:
 
@@ -115,8 +115,19 @@ Phase-machine rules:
   absorbing the stage into the controller.
 - `verification_commands` and `verification_profile` belong to the `tester` stage. They are stage
   inputs, not an automatic controller-local action after `implementer` finishes.
+- `tester` should treat verification as a two-part contract: preflight first, then command
+  execution. The preflight result should explicitly state whether the sidecar is ready, whether the
+  workspace and required commands are available, and whether command permissions are blocked before
+  any verification command is attempted.
+- `tester` artifacts should distinguish `verification_failed`, `permission_blocked`, and
+  `environment_not_ready` instead of collapsing all three into a generic test failure.
+- `reviewer` is a first-class stage. A passing tester result does not authorize task completion on
+  its own; the workflow still needs an explicit reviewer artifact to confirm the implementation is
+  semantically acceptable.
 - If a `tester` stage reports failure, the workflow must enter `fixer` and then return to `tester`
   for re-verification.
+- If a `reviewer` stage reports findings, the workflow must enter `fixer` and then return to both
+  `tester` and `reviewer`.
 - `project-feedback` may close a gate, reopen a task, or create a follow-up fix/review task, but it
   must not silently act as `tester` or `fixer` without a new routed execution stage.
 - Controller-owned save/log/status updates happen only after the routed role stages have completed;
@@ -228,6 +239,11 @@ Expected machine-readable contract:
 - `handoff_schema.relevant_files`
 - `handoff_schema.inputs`
 - `handoff_schema.required_artifacts`
+- `handoff_schema.verification_commands`
+- `handoff_schema.tester_preflight`
+- `handoff_schema.review_findings`
+- `handoff_schema.fixer_input_sources`
+- `handoff_schema.execution_guardrails`
 - `handoff_schema.next_actions_on_success`
 - `handoff_schema.next_actions_on_failure`
 - `handoff_schema.expected_output`
@@ -253,6 +269,11 @@ Expected machine-readable contract:
   the controller run them locally unless the `tester` stage itself returned `local_execution`.
 - Tester/fixer loops should use `required_artifacts` and `next_actions_on_*` from the handoff
   package/result contract instead of inferring stage transitions from hidden controller state.
+- Fixer stages should also consume explicit `review_findings` and `fixer_input_sources` artifacts,
+  rather than relying on free-form controller prose to describe what broke.
+- Delegated stages should honor `execution_guardrails`: by default they must not create git commits
+  or modify workflow state files such as `.claude/state/**` and `.council/state.json` unless the
+  contract explicitly allows it.
 - If a manual gate fails, `project-feedback` should reopen the task or create a follow-up routed
   repair task instead of directly performing fixer/tester work inside the gate-closing workflow.
 - If `council delegate` or `council discuss` returns an error, workflows must stop and surface that
@@ -269,7 +290,8 @@ Expected machine-readable contract:
 4. `CouncilFlow` writes artifacts into `.council/`.
 5. The host workflow reads those artifacts explicitly before deciding the next stage.
 6. The controller may only continue locally when the current stage returned `local_execution`.
-7. `project-next` loops through `implementer -> tester -> [fixer -> tester]*` until verification
-   succeeds, then hands final synthesis/status updates back to the controller.
+7. `project-next` loops through `implementer -> tester -> reviewer -> [fixer -> tester -> reviewer]*`
+   until both verification and review succeed, then hands final synthesis/status updates back to the
+   controller.
 
 This keeps the integration deterministic, inspectable, and portable across Codex, Claude Code, and Gemini CLI.

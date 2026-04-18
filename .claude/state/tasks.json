@@ -1800,6 +1800,164 @@
       "notes": "Workflow hard-regression automation is complete. Regression tests now cover hard-stop semantics, explicit fallback distinction, and key role route outcomes; docs/checklist are aligned with the smoke surface.",
       "review_checklist": [],
       "stage_gate": false
+    },
+    {
+      "id": "TASK-038",
+      "title": "扩展 reviewer findings 与 sidecar 执行边界契约",
+      "description": "升级 delegation/handoff/result 模型与集成契约，正式支持 reviewer findings artifact、tester preflight、结构化 verification_commands，以及 sidecar 写入范围与 git commit 控制项。",
+      "dependencies": [
+        "TASK-037"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "handoff/result 契约可显式表达 tester preflight、verification_commands 列表、reviewer findings 和 fixer 所需输入来源",
+        "tester 失败可区分 verification_failed、permission_blocked、environment_not_ready 等不同类别",
+        "契约中存在 sidecar 写入范围与 allow_commit 默认关闭的显式控制项",
+        "集成文档明确规定 sidecar 默认不得修改 workflow 状态文件或擅自创建 git commit"
+      ],
+      "files": [
+        "src/councilflow/models/delegation.py",
+        "src/councilflow/handoff/packages.py",
+        "src/councilflow/handoff/prompts.py",
+        "docs/integration.md",
+        "tests/test_workflow_integration.py"
+      ],
+      "module": "workflow-review-contract",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_workflow_integration.py tests/test_cli_delegate.py tests/test_delegation_orchestrator.py"
+      ],
+      "status": "done",
+      "created_at": "2026-04-18T08:10:10.000Z",
+      "updated_at": "2026-04-18T10:32:46.113Z",
+      "commit_hash": "",
+      "notes": "Acceptance mode is auto, so TASK-038 is complete after reviewer/tester contract modeling, sidecar execution guardrails, full ruff verification, and targeted workflow/delegation test coverage all passed.",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-039",
+      "title": "将 project-next 升级为 implementer/tester/reviewer/fixer/tester/reviewer 闭环",
+      "description": "改造共享 project-next workflow 与相关 CouncilFlow 集成点，让 tester 通过后仍必须进入 reviewer，reviewer findings 必须路由给 fixer，再回到 tester/reviewer 复测复审，直到显式通过后才进入 synthesizer。",
+      "dependencies": [
+        "TASK-038"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "project-next 不会在 tester 通过后直接收口，而是强制进入 reviewer 阶段",
+        "reviewer 发现问题时 workflow 必须进入 fixer，再回到 tester/reviewer，主控不得跳过",
+        "只有 tester 和 reviewer 都返回通过结论时，任务才允许进入 synthesizer 与状态流转",
+        "共享 skill 与本地集成文档在 Codex/Claude/Gemini 三端同步一致"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/skills/project-next/SKILL.md",
+        "docs/integration.md",
+        "docs/release-checklist.md",
+        "tests/test_workflow_integration.py",
+        "tests/test_cli_delegate.py"
+      ],
+      "module": "project-next-review-loop",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_workflow_integration.py tests/test_cli_delegate.py",
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-18T08:10:20.000Z",
+      "updated_at": "2026-04-18T08:10:20.000Z",
+      "commit_hash": "",
+      "notes": "",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-040",
+      "title": "实现 tester 预检、权限分类与 sidecar 提交保护",
+      "description": "让 tester 在执行 verification_commands 前先做 provider/权限/环境预检，并把 sidecar 的写入面与 git commit 行为纳入显式控制，避免权限阻塞被误判为代码失败，也避免 delegated fixer/implementer 提前提交或改动状态文件。",
+      "dependencies": [
+        "TASK-038"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "tester 在执行前会产出 preflight 结果，并能把 permission_blocked 与 environment_not_ready 作为独立失败类型返回",
+        "verification_commands 以结构化列表传递和记录，不再依赖单条 && 串联命令",
+        "默认 sidecar 结果不会创建 git commit，也不会修改未授权的 workflow 状态文件",
+        "自动化测试覆盖权限阻塞、环境未就绪、普通测试失败和 sidecar 越权提交/写状态文件被拦截场景"
+      ],
+      "files": [
+        "src/councilflow/cli/delegate.py",
+        "src/councilflow/controller/delegation_orchestrator.py",
+        "src/councilflow/providers/base.py",
+        "src/councilflow/providers/claude_code_cli.py",
+        "src/councilflow/handoff/prompts.py",
+        "tests/test_cli_delegate.py",
+        "tests/test_delegation_orchestrator.py",
+        "tests/test_workflow_integration.py"
+      ],
+      "module": "tester-preflight-and-guards",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_cli_delegate.py tests/test_delegation_orchestrator.py tests/test_workflow_integration.py tests/test_provider_adapters.py"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-18T08:10:30.000Z",
+      "updated_at": "2026-04-18T08:10:30.000Z",
+      "commit_hash": "",
+      "notes": "",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-041",
+      "title": "验收 reviewer 闭环与 tester 预检的真实主控行为",
+      "description": "在真实 Codex/Claude/Gemini 主控项目中验证 reviewer 闭环、tester preflight 和 sidecar 提交保护：确认 tester 权限阻塞会如实停止，reviewer findings 会驱动 fixer 循环，且 delegated sidecar 不会抢先 commit 或改动 workflow 状态文件。",
+      "dependencies": [
+        "TASK-039",
+        "TASK-040"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "真实项目中 tester 通过后仍会进入 reviewer，reviewer findings 会触发 fixer -> tester -> reviewer 小循环",
+        "当 tester 因权限/环境阻塞而无法执行时，workflow 会停止并报告结构化原因，而不是被当成普通测试失败或偷偷改为主控本地测试",
+        "真实 delegated implementer/fixer 不会在 controller 尚未接受产物前自行创建 git commit 或改写 workflow 状态文件",
+        "release checklist 明确覆盖 reviewer 闭环、tester preflight 和 sidecar write/commit 保护的 smoke 步骤"
+      ],
+      "files": [
+        "docs/release-checklist.md",
+        "docs/integration.md",
+        "tests/test_workflow_integration.py",
+        "C:/Users/David Zhai/.workflow-core/skills/project-next/SKILL.md"
+      ],
+      "module": "workflow-review-gate",
+      "needs_manual_review": true,
+      "acceptance_mode": "manual",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest",
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-18T08:10:40.000Z",
+      "updated_at": "2026-04-18T08:10:40.000Z",
+      "commit_hash": "",
+      "notes": "",
+      "review_checklist": [
+        "在真实项目中验证 project-next 的 tester -> reviewer -> fixer -> tester -> reviewer 闭环",
+        "故意制造一次 tester 权限阻塞，确认 workflow 报告 permission_blocked 或 environment_not_ready，而不是静默回退",
+        "确认 delegated sidecar 在普通代码任务里不会擅自 git commit 或改写 .claude/state / .council/state",
+        "确认最终只有在 tester 与 reviewer 都明确通过后，controller 才执行任务状态流转与提交"
+      ],
+      "stage_gate": true
     }
   ]
 }

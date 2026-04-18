@@ -1663,6 +1663,30 @@
       "from_status": null,
       "to_status": null,
       "message": "Manual smoke accepted the hard route-first gate: Codex/Claude/Gemini all honored controller detection, same-controller local short-circuits stayed local, project-next used the staged role loop, project-feedback only reopened gates, route errors stopped, and council-missing fallback stayed explicit."
+    },
+    {
+      "timestamp": "2026-04-18T03:15:11.464Z",
+      "type": "task_status_change",
+      "task_id": "TASK-038",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-038 todo → in_progress: Starting workflow-review-contract implementation: formalize tester preflight, reviewer findings artifacts, structured verification command payloads, and sidecar write/commit guardrails before changing the project-next phase loop."
+    },
+    {
+      "timestamp": "2026-04-18T10:32:41.376Z",
+      "type": "task_status_change",
+      "task_id": "TASK-038",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-038 in_progress → auto_verified: Contract-layer changes verified successfully. `python -m ruff check .` now passes after cleaning the previously failing local alias helper scripts, and `python -m pytest tests/test_workflow_integration.py tests/test_cli_delegate.py tests/test_delegation_orchestrator.py` passed (51 tests)."
+    },
+    {
+      "timestamp": "2026-04-18T10:32:46.132Z",
+      "type": "task_status_change",
+      "task_id": "TASK-038",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-038 auto_verified → done: Acceptance mode is auto, so TASK-038 is complete after reviewer/tester contract modeling, sidecar execution guardrails, full ruff verification, and targeted workflow/delegation test coverage all passed."
     }
   ]
 }

@@ -623,3 +623,35 @@ V1 完成时，至少满足：
 1. 本次变更同时影响 `CouncilFlow` 本体的集成契约、`.workflow-core` 共享 `project-*` skills、用户文档、发布清单和自动化验证策略。
 2. 本次变更的目标不是把每个技能都变成复杂的编排引擎，而是确保**一旦某个阶段属于执行角色，就必须 route-first**。
 3. 本节覆盖并 supersede 当前文档中所有“部分角色已硬约束即可视为 workflow 完整”的旧理解；新的产品语义应为：**只有当每个技能的执行阶段都拥有明确角色归属、显式路由结果和清晰的失败/降级规则时，这套 workflow 才算真正完成。**
+
+## 27. 变更记录（2026-04-18，reviewer 闭环与 tester 预检强化）
+本次变更聚焦 `project-next` 的后半段闭环质量，目标是在现有 `implementer -> tester -> [fixer -> tester]* -> synthesizer` 的基础上，补齐正式 `reviewer` 阶段，并把 `tester` 从“只会跑命令”升级为“先做环境/权限预检，再执行结构化验证”的稳定执行者。
+
+新增产品要求：
+1. **`project-next` 的正式阶段机升级为 `implementer -> tester -> reviewer -> [fixer -> tester -> reviewer]* -> synthesizer`**。也就是说，`tester` 通过后不能直接视为可收口，而是必须进入显式 `reviewer` 阶段，确认语义缺口、状态机漏洞和契约遗漏是否仍然存在。
+2. **`tester_passed` 与 `review_passed` 必须是两个独立信号**。`tester` 的职责是执行 `verification_commands`、读取 `verification_profile` 并给出验证层结论；`reviewer` 的职责是基于实现产物和 tester artifact 做语义复查、风险识别与代码审查。只有两者都通过，任务才允许进入最终综合与状态流转。
+3. **测试失败与环境阻塞必须区分**。当 `tester` 因 sidecar 权限、CLI allowlist、依赖缺失或工作区环境未就绪而无法执行时，宿主 workflow 必须把它记录为独立的 `permission_blocked` / `environment_not_ready` 类失败，而不是混同为普通 `verification_failed`。
+4. **`tester` 进入执行前必须做最小预检**。至少需要验证：
+   - 当前目标模型 sidecar 可启动；
+   - 本轮 `verification_commands` 所需命令在目标环境中可执行；
+   - 若目标模型对命令执行有显式权限模型（如 `Claude Code`），则需要在 handoff 或预检结果中明确说明所需权限集合。
+5. **`verification_commands` 需要保持结构化，而不是在 workflow 中被拼接成单条 `&&` shell 字符串**。这样 `tester` 才能逐条执行、逐条上报，并把“哪一条失败”“哪一条因权限被拦截”明确写进 artifact。
+6. **`reviewer` 阶段需要结构化 findings 产物**。当 `reviewer` 发现问题时，至少要输出：
+   - `finding_id`
+   - `severity`
+   - `title`
+   - `affected_files`
+   - `rationale`
+   - `required_fix`
+   这样 `fixer` 才能基于结构化 review artifact 工作，而不是只消费一段自由文本。
+7. **`fixer` 必须消费明确来源的失败输入**。`fixer` 的输入应至少来自以下两类之一：
+   - `tester` 的失败 artifact（命令失败、断言失败、环境阻塞）
+   - `reviewer` 的 findings artifact（语义缺口、契约偏差、代码风险）
+   不允许宿主 workflow 只凭临时自然语言总结就进入修复。
+8. **任务执行角色不得越权修改 workflow 状态文件**。`implementer`、`tester`、`reviewer`、`fixer` 的默认允许修改面应聚焦任务相关代码、测试和任务产物；除非任务本身就是在修改 `CouncilFlow` 的 workflow 状态系统，否则不应在 sidecar 实现结果里混入 `.claude/state/*` 这类项目状态文件。
+9. **sidecar 默认不得擅自创建 git commit 或推进任务状态流转**。`implementer`、`tester`、`reviewer`、`fixer` 可以产生代码、测试、review artifact 和修复说明，但最终是否 `git commit`、是否标记任务完成、是否接受产物，必须由宿主 controller 在完成 tester/reviewer 闭环后显式决定。
+
+范围说明：
+1. 本次变更同时影响 `CouncilFlow` 本体的 delegation/review artifact 契约、共享 `project-next` skill、集成文档、发布清单与自动化测试。
+2. 本次变更的目标是把“测试通过但主控仍需肉眼补审”的隐式流程，升级为正式可路由、可验证、可回放的 reviewer 闭环，而不是让 `tester` 无限膨胀成兼做语义评审的超级角色。
+3. 本节覆盖并 supersede 当前文档中所有“tester 通过后即可直接综合收口”的旧理解；新的产品语义应为：**只有当 tester 和 reviewer 都以显式 artifact 给出通过结论时，任务才允许完成流转。**

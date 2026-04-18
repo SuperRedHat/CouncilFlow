@@ -10,6 +10,7 @@ from councilflow.controller.delegation_orchestrator import (
     DelegationExecutionError,
     DelegationOrchestrator,
 )
+from councilflow.models.delegation import ReviewFinding, VerificationCommand
 from councilflow.models.roles import RoleName
 from councilflow.providers.base import ProviderError, ProviderRequest, ProviderResponse
 from councilflow.state.store import CouncilStateStore
@@ -37,14 +38,17 @@ def test_delegation_orchestrator_persists_handoff_and_result(tmp_path: Path) -> 
     )
 
     result = orchestrator.run(
-        role=RoleName.IMPLEMENTER,
+        role=RoleName.TESTER,
         controller="codex",
         target_model="claude",
-        objective="Implement provider adapters.",
-        task_summary="Add the delegation provider layer.",
+        objective="Validate provider adapters.",
+        task_summary="Run tester-stage provider verification.",
         constraints=["Do not modify unrelated files."],
         relevant_files=["src/councilflow/providers/base.py"],
         inputs={"ticket": "TASK-005"},
+        verification_commands=[
+            VerificationCommand(command="python -m pytest", purpose="regression")
+        ],
         expected_output="Markdown summary with actionable results.",
     )
 
@@ -54,12 +58,60 @@ def test_delegation_orchestrator_persists_handoff_and_result(tmp_path: Path) -> 
     assert result.status == "delegated"
     assert result.delegation_status == "completed"
     assert result.via_sidecar is True
+    assert result.tester_preflight.status == "pending"
+    assert result.execution_guardrails.allow_commit is False
     assert handoff_path.is_file()
     assert result_path.is_file()
     handoff_payload = yaml.safe_load(handoff_path.read_text(encoding="utf-8"))
-    assert handoff_payload["role"] == "implementer"
-    assert "provider layer" in handoff_payload["task_summary"]
+    assert handoff_payload["role"] == "tester"
+    assert "tester-stage" in handoff_payload["task_summary"]
+    assert handoff_payload["verification_commands"] == [
+        {"command": "python -m pytest", "purpose": "regression"}
+    ]
     assert "Handled:" in result_path.read_text(encoding="utf-8")
+
+
+def test_delegation_orchestrator_persists_review_findings_and_fixer_sources(tmp_path: Path) -> None:
+    store = CouncilStateStore(tmp_path)
+    orchestrator = DelegationOrchestrator(
+        store=store,
+        participant_factory=lambda _: SuccessfulProvider(),
+    )
+
+    result = orchestrator.run(
+        role=RoleName.FIXER,
+        controller="codex",
+        target_model="claude",
+        objective="Repair issues raised after review.",
+        task_summary="Apply targeted fixes without touching workflow state.",
+        constraints=["Do not modify workflow state files."],
+        relevant_files=["src/domain/game/game.ts"],
+        inputs={"ticket": "TASK-005A"},
+        required_artifacts={
+            "tester_result": ".council/delegations/del_test/result.md",
+            "reviewer_findings": ".council/delegations/del_review/findings.json",
+        },
+        review_findings=[
+            ReviewFinding(
+                finding_id="RV-002",
+                severity="medium",
+                title="Undo removes the wrong snapshot",
+                body="undoLastMove() mismatches status and consecutive passes.",
+                affected_files=["src/domain/game/game.ts"],
+                required_fix="Restore state invariants when undo exits finished mode.",
+            )
+        ],
+        expected_output="Markdown summary with actionable results.",
+    )
+
+    handoff_path = tmp_path / result.handoff_path
+    handoff_payload = yaml.safe_load(handoff_path.read_text(encoding="utf-8"))
+
+    assert result.review_findings[0].finding_id == "RV-002"
+    assert result.fixer_input_sources[0].source_stage == "tester"
+    assert result.fixer_input_sources[1].source_stage == "reviewer"
+    assert handoff_payload["execution_guardrails"]["allow_commit"] is False
+    assert handoff_payload["review_findings"][0]["title"] == "Undo removes the wrong snapshot"
 
 
 def test_delegation_orchestrator_records_failures(tmp_path: Path) -> None:

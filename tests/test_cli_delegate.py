@@ -87,13 +87,13 @@ def test_delegate_command_returns_structured_success(monkeypatch, tmp_path: Path
         [
             "delegate",
             "--role",
-            "implementer",
+            "tester",
             "--model",
             "claude",
             "--objective",
-            "Implement delegation support.",
+            "Validate delegation support.",
             "--task-summary",
-            "Add delegation CLI plumbing.",
+            "Run tester stage verification through the delegated contract.",
             "--input",
             "verification_profile=workflow_meta",
             "--input",
@@ -114,13 +114,18 @@ def test_delegate_command_returns_structured_success(monkeypatch, tmp_path: Path
 
     assert result.exit_code == 0
     assert payload["error"] is None
-    assert payload["data"]["role"] == "implementer"
+    assert payload["data"]["role"] == "tester"
     assert payload["data"]["status"] == "delegated"
     assert payload["data"]["delegation_status"] == "completed"
     assert payload["data"]["via_sidecar"] is True
     assert payload["data"]["required_artifacts"] == {
         "implementer_result": ".council/delegations/del_prev/result.md"
     }
+    assert payload["data"]["verification_commands"] == [
+        {"command": "python -m pytest", "purpose": None}
+    ]
+    assert payload["data"]["tester_preflight"]["status"] == "pending"
+    assert payload["data"]["execution_guardrails"]["allow_commit"] is False
     assert payload["data"]["next_actions_on_success"] == ["Continue to tester synthesis."]
     assert payload["data"]["next_actions_on_failure"] == [
         "Stop and report the failed tester stage."

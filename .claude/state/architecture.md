@@ -821,3 +821,52 @@ graph TD
 1. 本次变更优先修改集成契约、共享 skills、相关 handoff 输入约定与自动化测试；只有在现有 `delegate` 表面不足以承载阶段机输入时，才补充 `CouncilFlow` Python 本体的辅助字段。
 2. 本次变更不要求把 `read_only` / `gate_close` 技能强行包装成委派型技能；例外必须是显式白名单，而不是隐式偷跑。
 3. 本节覆盖并 supersede 当前文档中“route-first 已经基本成立”的旧判断；新的架构语义应为：**只有当每个 role-driven 技能都拥有完整阶段机、统一 route result 解释和不可静默绕过的宿主行为时，这套 workflow 才算真正闭环。**
+
+## 23. 变更记录（2026-04-18，reviewer 闭环与 tester 预检强化）
+本次变更聚焦 `project-next` 的执行后半段，目标是把当前“implementer 交付后由 tester 跑命令，主控再补一轮隐式复查”的半人工流程，升级为正式的 `implementer -> tester -> reviewer -> [fixer -> tester -> reviewer]* -> synthesizer` 阶段机，并为 `tester` 增加环境/权限预检能力。
+
+新增架构要求：
+1. **`project-next` 的最小阶段机更新**。正式推荐映射由：
+   - `implementer -> tester -> [fixer -> tester]* -> synthesizer`
+   调整为：
+   - `implementer -> tester -> reviewer -> [fixer -> tester -> reviewer]* -> synthesizer`
+   这样 `tester` 与 `reviewer` 不再被混成同一种“验证”动作。
+2. **`tester` 与 `reviewer` 的职责边界必须明确**：
+   - `tester`：消费 `verification_profile`、`verification_commands`、必要的环境约束，负责跑验证并生成结构化验证 artifact；
+   - `reviewer`：消费 implementer artifact 与 tester artifact，负责语义复查、findings 输出和修复建议，不直接承担实现。
+3. **tester 需要在执行前做 preflight**。新的 tester 阶段至少要显式记录以下预检结果：
+   - `provider_ready`
+   - `workspace_ready`
+   - `command_availability`
+   - `permission_requirements`
+   - `permission_status`
+   如果预检失败，应直接产出结构化 `environment_not_ready` 或 `permission_blocked` artifact，而不是进入“命令失败”分支。
+4. **verification commands 的协议需要改成结构化列表**。Handoff package 不再把验证命令拍平成一条 `cmd1 && cmd2 && cmd3` 字符串，而是传递有序命令列表与每条命令的预期用途。这样 provider 既能逐条执行，也能逐条记录：
+   - start / pass / fail / blocked
+   - exit_code
+   - stderr/stdout 摘要
+5. **reviewer findings 需要成为一等 artifact**。建议新增统一 findings 模型，至少包含：
+   - `finding_id`
+   - `severity`
+   - `title`
+   - `body`
+   - `affected_files`
+   - `source_stage`
+   - `required_fix`
+   `fixer` 之后应明确读取这份 findings artifact，而不是只依赖主控自然语言摘要。
+6. **fixer 的输入语义需要扩展为双来源**：
+   - `tester_failure_artifact`
+   - `reviewer_findings_artifact`
+   orchestrator 与 handoff prompt 需要允许同一次 fixer 委派同时接收二者，并在结果中明确说明已解决哪些 finding / 哪些验证失败。
+7. **sidecar 修改面的白名单需要更清晰**。当执行角色不是 workflow-maintenance 类任务时，默认 handoff 应把 `.claude/state/**`、`.council/state.json` 等 workflow 状态文件视为受限区域，除非宿主明确把它们列为允许修改文件。这样可以减少 implementer 在代码任务里顺手修改状态文件的污染。
+8. **git 状态推进必须留在 controller 决策层**。默认的 sidecar handoff/result 契约需要把“是否允许创建 commit、是否允许变更任务状态文件”列为显式控制项；在普通代码任务中，delegated implementer/tester/reviewer/fixer 不应直接创建 git commit，也不应抢先把任务标成完成。
+9. **release/workflow gate 需要新增 reviewer 回归**。真实主控 smoke 和自动化回归都要证明：
+   - tester 通过后仍会进入 reviewer；
+   - reviewer 发现问题时，workflow 会进入 fixer，而不是由主控直接补丁；
+   - tester 因权限/环境阻塞时，workflow 不会误判为代码失败，也不会偷偷改由主控本地测试；
+   - delegated sidecar 不会在 controller 尚未接受产物前提前提交 git commit 或改写 workflow 状态文件。
+
+实现边界：
+1. 本次变更优先修改集成契约、共享 `project-next` skill、handoff/result 模型与自动化测试；只有在现有 provider runtime 不足以表达 tester preflight 时，才补充 provider 或 CLI 表面。
+2. 本次变更不要求把所有 role-driven skills 都立即升级为带 reviewer 的多阶段技能；优先收口 `project-next` 这一条闭环最长、风险最高的执行路径。
+3. 本节补充并 supersede 当前架构中“tester 已能承担验证闭环”的旧假设；新的架构语义应为：**验证是否可交付，需要 tester 的执行证据和 reviewer 的语义证据共同成立。**

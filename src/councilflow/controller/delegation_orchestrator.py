@@ -7,7 +7,15 @@ from datetime import UTC, datetime
 
 from councilflow.handoff.packages import create_handoff_package, save_handoff_package
 from councilflow.handoff.prompts import render_delegation_prompt
-from councilflow.models.delegation import DelegationRecord, DelegationResult
+from councilflow.models.delegation import (
+    DelegationRecord,
+    DelegationResult,
+    ExecutionGuardrails,
+    FixerInputSource,
+    ReviewFinding,
+    TesterPreflight,
+    VerificationCommand,
+)
 from councilflow.models.roles import RoleName
 from councilflow.providers.base import ProviderAdapter, ProviderError, ProviderRequest
 from councilflow.state.store import CouncilStateStore
@@ -55,6 +63,11 @@ class DelegationOrchestrator:
         relevant_files: list[str],
         inputs: dict[str, str],
         required_artifacts: dict[str, str] | None = None,
+        verification_commands: list[VerificationCommand] | list[str] | None = None,
+        tester_preflight: TesterPreflight | None = None,
+        review_findings: list[ReviewFinding] | None = None,
+        fixer_input_sources: list[FixerInputSource] | None = None,
+        execution_guardrails: ExecutionGuardrails | None = None,
         next_actions_on_success: list[str] | None = None,
         next_actions_on_failure: list[str] | None = None,
         expected_output: str,
@@ -74,6 +87,11 @@ class DelegationOrchestrator:
             relevant_files=relevant_files,
             inputs=inputs,
             required_artifacts=required_artifacts or {},
+            verification_commands=verification_commands,
+            tester_preflight=tester_preflight,
+            review_findings=review_findings,
+            fixer_input_sources=fixer_input_sources,
+            execution_guardrails=execution_guardrails,
             next_actions_on_success=list(next_actions_on_success or []),
             next_actions_on_failure=list(next_actions_on_failure or []),
             expected_output=expected_output,
@@ -185,6 +203,11 @@ class DelegationOrchestrator:
             delegation_status="completed",
             via_sidecar=True,
             required_artifacts=package.required_artifacts,
+            verification_commands=package.verification_commands,
+            tester_preflight=package.tester_preflight,
+            review_findings=package.review_findings,
+            fixer_input_sources=package.fixer_input_sources,
+            execution_guardrails=package.execution_guardrails,
             next_actions_on_success=package.next_actions_on_success,
             next_actions_on_failure=package.next_actions_on_failure,
         )
