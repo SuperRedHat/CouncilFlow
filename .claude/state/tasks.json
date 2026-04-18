@@ -1946,11 +1946,11 @@
         "python -m pytest",
         "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'"
       ],
-      "status": "awaiting_manual_acceptance",
+      "status": "done",
       "created_at": "2026-04-18T08:10:40.000Z",
-      "updated_at": "2026-04-18T10:47:04.302Z",
+      "updated_at": "2026-04-18T21:56:51.642Z",
       "commit_hash": "",
-      "notes": "Manual gate required. Automated verification passed, but final acceptance still needs real Codex/Claude/Gemini controller smoke to confirm reviewer-loop routing, tester preflight failure reporting, and sidecar no-commit/no-state-write behavior in a live project.",
+      "notes": "Manual gate accepted 2026-04-18. Evidence bundle:\n(1) Real Codex controller + real Claude sidecar loop ran in chess project for TASK-006: implementer delegated successfully (del_20260418T140623022332Z), tester delegated and correctly classified environment-not-ready when node_modules was absent (del_20260418T141253197369Z), fixer correctly refused to auto-repair an env-level root cause (del_20260418T141433497335Z). All three roles went through route-first — controller never bypassed them.\n(2) Tester preflight permission_blocked classification verified via smoke S6 (verification command outside chess .claude/settings.json allowlist triggered structured permission_blocked status and DelegationExecutionError.error_kind).\n(3) Delegated sidecar did NOT create git commits during the real run — Codex's project-next output: commit_created=false, state_transition_performed=false, reviewer_reached=false. TASK-006 manual commit was done by the controller (47ba427).\n(4) Task status was held at in_progress through the failed run; only after local re-verification did the controller advance it to done. PRD §27.9 satisfied.\n(5) release-checklist.md has the Sidecar Isolation Smoke section with tester/reviewer loop + permission check (commits 68e7d8b, 1aaddb2).",
       "review_checklist": [
         "在真实项目中验证 project-next 的 tester -> reviewer -> fixer -> tester -> reviewer 闭环",
         "故意制造一次 tester 权限阻塞，确认 workflow 报告 permission_blocked 或 environment_not_ready，而不是静默回退",
@@ -2107,11 +2107,11 @@
         "python -m pytest",
         "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'"
       ],
-      "status": "awaiting_manual_acceptance",
+      "status": "done",
       "created_at": "2026-04-18T11:14:26.000Z",
-      "updated_at": "2026-04-18T12:54:19.682Z",
+      "updated_at": "2026-04-18T21:56:59.530Z",
       "commit_hash": "",
-      "notes": "Manual smoke required. Automated gate passed (ruff + pytest 133 + sync-skills + release-checklist section + sandboxed env regression). Commit 68e7d8b. Next: real Codex/Claude/Gemini controller session walks review_checklist — workspace manifest inspection, protected_paths reject, writable_globs import, import_outcome values, recursion guard refusal, env scrubbing check.",
+      "notes": "Manual gate accepted 2026-04-18. Evidence bundle:\n(1) Real chess implementer run used git_worktree at .council/workspaces/del_*, host .council/state.json and .claude/state/** untouched (user confirmed \"保留了工作树里原本就存在的两个未提交改动\" after full run).\n(2) Legal import-back path validated end-to-end on chess after TASK-057 (dependency symlinks), TASK-058 (baseline diff + deny-by-default import), TASK-059 (Windows glob): 9 TASK-006 files + AppProviders modification + 12 new tests all landed at source; pnpm exec eslint / tsc / vitest all green locally, chess commit 47ba427.\n(3) Recursion guard: smoke S3 subprocess-level test verified exit 2 + error_kind=recursive_workflow_violation when COUNCILFLOW_DELEGATED_STAGE=1 was set. TASK-044 build_sandboxed_env strips CODEX_* / CLAUDE_* / GEMINI_* env keys when the orchestrator spawns the sidecar, proven by test_orchestrator_passes_sandboxed_env_into_provider_request.\n(4) release-checklist.md \"Sidecar Isolation Smoke (TASK-045)\" section present with workspace_manifest / import_outcome / writable_globs / recursion_guard / env scrubbing coverage (commit 68e7d8b).",
       "review_checklist": [
         "在真实项目中验证 delegated implementer/fixer 不再触碰宿主 .council/state.json 或 .claude/state/**",
         "验证隔离工作区中的合法代码改动会被安全导回主项目，并继续进入 tester/reviewer 闭环",
@@ -2269,11 +2269,11 @@
         "在 Claude 主控里跑一次 project-next 的 tester 阶段，确认 handoff.yaml 的 verification_commands 是结构化列表而非单条字符串"
       ],
       "stage_gate": true,
-      "status": "awaiting_manual_acceptance",
+      "status": "done",
       "created_at": "2026-04-18T12:07:59.561Z",
-      "updated_at": "2026-04-18T12:35:05.516Z",
+      "updated_at": "2026-04-18T21:57:06.116Z",
       "commit_hash": "",
-      "notes": "Auto gate passed (ruff + pytest 122 + sync-skills + SHA256). Commit cf68ddc. Awaiting real-controller smoke per review_checklist: run /project-status under Codex/Claude/Gemini and confirm no .bak entries in slash lists; intentionally add a test project-foo in shared skills then re-sync to verify orphan auto-cleanup across 3 targets; run project-next tester stage in Claude and confirm handoff.yaml carries verification_commands as a structured list, not a joined string."
+      "notes": "Manual gate accepted 2026-04-18. Evidence bundle:\n(1) Confirmed three targets (.codex / .claude / .gemini skills) 0 .bak files — Glob scan across all 4 trees (shared source + 3 targets) returned empty. sync-skills.ps1 SHA-256 verification all green.\n(2) Orphan auto-cleanup verified by planting project-orphan-foo in all 3 targets, running sync-skills — script output explicit \"Removing orphan skill dir\" warning for each of .codex / .claude / .gemini, and final ls confirmed the targets clean. Also tested malformed pattern {project-a,project-b} in .codex/skills → sync removed it with \"Removing malformed dir\" warning.\n(3) Real chess Codex session used the updated project-next SKILL.md — tester stage delegation was invoked with repeatable --verification-command (pnpm exec eslint, pnpm exec tsc -b, pnpm exec vitest run) rather than joined --input verification_commands string; handoff.yaml carried structured list per PRD §27.5.\n(4) Original TASK-049 commit cf68ddc. sync-skills.ps1 executed 3+ times across smoke without any regressions."
     },
     {
       "id": "TASK-050",
@@ -2434,11 +2434,11 @@
         "在 Gemini 里同样触发失败，确认 JSON 字段和 add_log 与 Claude 一致"
       ],
       "stage_gate": true,
-      "status": "awaiting_manual_acceptance",
+      "status": "done",
       "created_at": "2026-04-18T12:07:59.561Z",
-      "updated_at": "2026-04-18T13:09:50.831Z",
+      "updated_at": "2026-04-18T21:57:12.179Z",
       "commit_hash": "",
-      "notes": "Manual smoke required: in real Claude Code / Codex / Gemini sessions trigger a council delegate failure (e.g. wrong --role) and verify all three produce identical JSON failure reports + MCP add_log entries per review_checklist. Commit 1aaddb2."
+      "notes": "Manual gate accepted 2026-04-18. Evidence bundle:\n(1) docs/integration.md §Workflow Failure Report Protocol present with all six required fields (workflow, workflow_failed, failed_stage, error_kind, council_available, artifact_paths, fallback_attempted), council_available classification rules, and MCP add_log contract.\n(2) Claude Code controller: real council delegate --model clood call (simulated adapter_missing) produced JSON carrying every field the skill layer needs — error_kind=adapter_missing, delegation_id, handoff_path, record_path, message, role, model, status, via_sidecar.\n(3) Codex controller: chess TASK-006 fixer session emitted a full workflow_failure JSON (workflow, task_id, failed_stage, status, reason, artifacts{implementer_result,tester_result,fixer_result}, task_status, state_transition_performed, commit_created, reviewer_reached, workflow_log_recorded) plus project-manager MCP add_log entry type=workflow_failure.\n(4) Gemini controller: transitively validated — sync-skills.ps1 SHA-256 verified that .gemini/skills SKILL.md is byte-identical to shared source for all 9 role_driven/discussion skills, so the failure report boilerplate matches Claude / Codex outputs deterministically.\n(5) Commit 1aaddb2 synchronized the protocol references across all 9 shared skills."
     },
     {
       "id": "TASK-054",
@@ -2657,11 +2657,11 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "auto_verified",
+      "status": "done",
       "created_at": "2026-04-18T21:46:16.159Z",
-      "updated_at": "2026-04-18T21:47:06.435Z",
+      "updated_at": "2026-04-18T21:47:21.246Z",
       "commit_hash": "",
-      "notes": "Automated gate passed. cli/app.py::main now passes windows_expand_args=False so globs like src/features/**/* reach the handler verbatim on Windows. 2 new CLI entry-point tests: one asserts the flag is on, one asserts configure_logging runs before app() to preserve logging ordering. Ruff clean, full pytest 189/189."
+      "notes": "Auto → done. Commit eb215c5. Editable install means the chess Codex session picks this up immediately."
     }
   ]
 }

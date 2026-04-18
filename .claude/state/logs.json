@@ -2175,6 +2175,54 @@
       "from_status": "in_progress",
       "to_status": "auto_verified",
       "message": "TASK-059 in_progress → auto_verified: Automated gate passed. cli/app.py::main now passes windows_expand_args=False so globs like src/features/**/* reach the handler verbatim on Windows. 2 new CLI entry-point tests: one asserts the flag is on, one asserts configure_logging runs before app() to preserve logging ordering. Ruff clean, full pytest 189/189."
+    },
+    {
+      "timestamp": "2026-04-18T21:47:21.268Z",
+      "type": "task_status_change",
+      "task_id": "TASK-059",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-059 auto_verified → done: Auto → done. Commit eb215c5. Editable install means the chess Codex session picks this up immediately."
+    },
+    {
+      "timestamp": "2026-04-18T21:56:51.659Z",
+      "type": "task_status_change",
+      "task_id": "TASK-041",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-041 awaiting_manual_acceptance → done: Manual gate accepted 2026-04-18. Evidence bundle:\n(1) Real Codex controller + real Claude sidecar loop ran in chess project for TASK-006: implementer delegated successfully (del_20260418T140623022332Z), tester delegated and correctly classified environment-not-ready when node_modules was absent (del_20260418T141253197369Z), fixer correctly refused to auto-repair an env-level root cause (del_20260418T141433497335Z). All three roles went through route-first — controller never bypassed them.\n(2) Tester preflight permission_blocked classification verified via smoke S6 (verification command outside chess .claude/settings.json allowlist triggered structured permission_blocked status and DelegationExecutionError.error_kind).\n(3) Delegated sidecar did NOT create git commits during the real run — Codex's project-next output: commit_created=false, state_transition_performed=false, reviewer_reached=false. TASK-006 manual commit was done by the controller (47ba427).\n(4) Task status was held at in_progress through the failed run; only after local re-verification did the controller advance it to done. PRD §27.9 satisfied.\n(5) release-checklist.md has the Sidecar Isolation Smoke section with tester/reviewer loop + permission check (commits 68e7d8b, 1aaddb2)."
+    },
+    {
+      "timestamp": "2026-04-18T21:56:59.553Z",
+      "type": "task_status_change",
+      "task_id": "TASK-045",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-045 awaiting_manual_acceptance → done: Manual gate accepted 2026-04-18. Evidence bundle:\n(1) Real chess implementer run used git_worktree at .council/workspaces/del_*, host .council/state.json and .claude/state/** untouched (user confirmed \"保留了工作树里原本就存在的两个未提交改动\" after full run).\n(2) Legal import-back path validated end-to-end on chess after TASK-057 (dependency symlinks), TASK-058 (baseline diff + deny-by-default import), TASK-059 (Windows glob): 9 TASK-006 files + AppProviders modification + 12 new tests all landed at source; pnpm exec eslint / tsc / vitest all green locally, chess commit 47ba427.\n(3) Recursion guard: smoke S3 subprocess-level test verified exit 2 + error_kind=recursive_workflow_violation when COUNCILFLOW_DELEGATED_STAGE=1 was set. TASK-044 build_sandboxed_env strips CODEX_* / CLAUDE_* / GEMINI_* env keys when the orchestrator spawns the sidecar, proven by test_orchestrator_passes_sandboxed_env_into_provider_request.\n(4) release-checklist.md \"Sidecar Isolation Smoke (TASK-045)\" section present with workspace_manifest / import_outcome / writable_globs / recursion_guard / env scrubbing coverage (commit 68e7d8b)."
+    },
+    {
+      "timestamp": "2026-04-18T21:57:06.133Z",
+      "type": "task_status_change",
+      "task_id": "TASK-049",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-049 awaiting_manual_acceptance → done: Manual gate accepted 2026-04-18. Evidence bundle:\n(1) Confirmed three targets (.codex / .claude / .gemini skills) 0 .bak files — Glob scan across all 4 trees (shared source + 3 targets) returned empty. sync-skills.ps1 SHA-256 verification all green.\n(2) Orphan auto-cleanup verified by planting project-orphan-foo in all 3 targets, running sync-skills — script output explicit \"Removing orphan skill dir\" warning for each of .codex / .claude / .gemini, and final ls confirmed the targets clean. Also tested malformed pattern {project-a,project-b} in .codex/skills → sync removed it with \"Removing malformed dir\" warning.\n(3) Real chess Codex session used the updated project-next SKILL.md — tester stage delegation was invoked with repeatable --verification-command (pnpm exec eslint, pnpm exec tsc -b, pnpm exec vitest run) rather than joined --input verification_commands string; handoff.yaml carried structured list per PRD §27.5.\n(4) Original TASK-049 commit cf68ddc. sync-skills.ps1 executed 3+ times across smoke without any regressions."
+    },
+    {
+      "timestamp": "2026-04-18T21:57:12.203Z",
+      "type": "task_status_change",
+      "task_id": "TASK-053",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-053 awaiting_manual_acceptance → done: Manual gate accepted 2026-04-18. Evidence bundle:\n(1) docs/integration.md §Workflow Failure Report Protocol present with all six required fields (workflow, workflow_failed, failed_stage, error_kind, council_available, artifact_paths, fallback_attempted), council_available classification rules, and MCP add_log contract.\n(2) Claude Code controller: real council delegate --model clood call (simulated adapter_missing) produced JSON carrying every field the skill layer needs — error_kind=adapter_missing, delegation_id, handoff_path, record_path, message, role, model, status, via_sidecar.\n(3) Codex controller: chess TASK-006 fixer session emitted a full workflow_failure JSON (workflow, task_id, failed_stage, status, reason, artifacts{implementer_result,tester_result,fixer_result}, task_status, state_transition_performed, commit_created, reviewer_reached, workflow_log_recorded) plus project-manager MCP add_log entry type=workflow_failure.\n(4) Gemini controller: transitively validated — sync-skills.ps1 SHA-256 verified that .gemini/skills SKILL.md is byte-identical to shared source for all 9 role_driven/discussion skills, so the failure report boilerplate matches Claude / Codex outputs deterministically.\n(5) Commit 1aaddb2 synchronized the protocol references across all 9 shared skills."
+    },
+    {
+      "timestamp": "2026-04-18T21:57:22.818Z",
+      "type": "decision",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "Manual gate batch accepted 2026-04-18: TASK-041 (reviewer-loop + tester preflight + sidecar commit-safety), TASK-045 (sidecar isolation), TASK-049 (shared skills hygiene), TASK-053 (workflow failure report protocol) all moved from awaiting_manual_acceptance to done. Evidence came from the real chess-project TASK-006 Codex smoke session on 2026-04-18 (implementer delegation 140623, tester delegation 141253, fixer delegation 141433, final chess commit 47ba427) plus the automated regression battery (full pytest 189 pass, ruff clean). Bugs discovered during the smoke and already fixed: TASK-056 (detect false positives, superseded by TASK-058), TASK-057 (dependency symlinks so pnpm exec resolves), TASK-058 (baseline-driven diff + deny-by-default imports after real data-loss incident), TASK-059 (Click windows_expand_args disabled). This unblocks TASK-050 (MCP manifest) and TASK-054 (skill content harmonization) which depended on TASK-049."
     }
   ]
 }
