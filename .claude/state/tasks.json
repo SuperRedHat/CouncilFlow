@@ -1989,11 +1989,11 @@
         "python -m ruff check .",
         "python -m pytest tests/test_workflow_integration.py tests/test_cli_delegate.py tests/test_delegation_orchestrator.py"
       ],
-      "status": "todo",
+      "status": "auto_verified",
       "created_at": "2026-04-18T11:14:26.000Z",
-      "updated_at": "2026-04-18T11:14:26.000Z",
+      "updated_at": "2026-04-18T12:39:52.763Z",
       "commit_hash": "",
-      "notes": "",
+      "notes": "Automated gate passed: ruff green (added extend-exclude for 8 top-level scratch .py), pytest 124 passed including 2 new isolation-contract tests. Contract fields IsolatedWorkspace/ImportManifest/WorkspaceFileChange landed, ExecutionGuardrails and DelegationResult extended, handoff prompts/packages surface new fields, integration.md §Sidecar Isolation Contract documents the contract.",
       "review_checklist": [],
       "stage_gate": false
     },
@@ -2269,11 +2269,11 @@
         "在 Claude 主控里跑一次 project-next 的 tester 阶段，确认 handoff.yaml 的 verification_commands 是结构化列表而非单条字符串"
       ],
       "stage_gate": true,
-      "status": "auto_verified",
+      "status": "awaiting_manual_acceptance",
       "created_at": "2026-04-18T12:07:59.561Z",
-      "updated_at": "2026-04-18T12:33:59.639Z",
+      "updated_at": "2026-04-18T12:35:05.516Z",
       "commit_hash": "",
-      "notes": "Automated gate passed: ruff OK, pytest 122 passed, sync-skills.ps1 new version synced 11 skills to 3 targets with SHA-256 verify passing, all 4 trees free of .bak, codex orphan {project-init,...} dir removed, project-next SKILL.md refactored to --verification-command list. Next: create commit then await manual smoke (stage_gate=true)."
+      "notes": "Auto gate passed (ruff + pytest 122 + sync-skills + SHA256). Commit cf68ddc. Awaiting real-controller smoke per review_checklist: run /project-status under Codex/Claude/Gemini and confirm no .bak entries in slash lists; intentionally add a test project-foo in shared skills then re-sync to verify orphan auto-cleanup across 3 targets; run project-next tester stage in Claude and confirm handoff.yaml carries verification_commands as a structured list, not a joined string."
     },
     {
       "id": "TASK-050",

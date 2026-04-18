@@ -282,6 +282,56 @@ Expected machine-readable contract:
 - If `council delegate` or `council discuss` returns an error, workflows must stop and surface that
   failure instead of silently switching to local execution.
 
+## Sidecar Isolation Contract
+
+Every delegated stage carries an `execution_guardrails` block with two companion
+objects that describe how the sidecar runs and how its results flow back:
+
+- `execution_guardrails.isolated_workspace`:
+  - `strategy`: `copy`, `git_worktree`, or `none`.
+    - `git_worktree` (default) materializes the current HEAD into a separate worktree
+      outside the host project root so sidecar edits cannot collide with the controller.
+    - `copy` mirrors explicit include patterns into a temp directory.
+    - `none` is reserved for workflow-maintenance tasks that are explicitly allowed to
+      modify the host project; it must be an exception, never the default.
+  - `include_patterns` / `exclude_patterns`: what ends up inside the sidecar workspace.
+    The default exclude list covers `node_modules/**`, `__pycache__/**`, `.venv/**`,
+    `.council/**`, `.claude/**`, `.codex/**`, `.gemini/**`, and `.workflow-core/**`
+    so the sidecar never sees workflow state or MCP configuration.
+  - `workspace_path`: filled in at runtime with the materialized directory location.
+
+- `execution_guardrails.import_manifest`:
+  - `writable_globs`: the only paths whose sidecar changes may be imported back into
+    the host project (e.g. `src/**`, `tests/**`).
+  - `readonly_artifact_paths`: the sidecar may read these but must not modify them.
+  - `max_file_count` / `max_total_bytes`: budgets that cap how much content can be
+    imported back in a single delegation.
+
+- `execution_guardrails.protected_paths` defaults to `.claude/state`, `.council/state.json`,
+  `.workflow-core`, `.claude/skills`, `.codex/skills`, and `.gemini/skills`. Any change
+  under these paths is refused even if the sidecar produced one.
+
+Ordinary code tasks must not override these defaults. Only workflow-maintenance tasks
+may relax `allow_workflow_state_write` or extend `writable_paths`; the controller is
+responsible for that decision and must justify it in the handoff package.
+
+### Delegation result manifest
+
+A successful `DelegationResult` carries three additional fields that let the controller
+decide whether to accept the sidecar output:
+
+- `workspace_manifest: list[WorkspaceFileChange]` — one entry per file the sidecar
+  touched (`path`, `change_type ∈ {added, modified, deleted}`, `byte_size`, `imported`,
+  optional `rejection_reason`).
+- `import_outcome ∈ {none, applied, partial, rejected}` — the net effect on the host
+  project. `rejected` requires the controller to stop; `partial` requires it to read
+  `rejection_reason` before continuing.
+- `import_rejected_reason: str | None` — free-form human-readable explanation used when
+  `import_outcome != "applied"`.
+
+These fields are informational in TASK-042 (the contract-only phase); subsequent
+isolation work (TASK-043 / TASK-044) makes the orchestrator produce and enforce them.
+
 ## Minimum Integration Flow
 
 1. `project-*` classifies the current step as `read_only`, `gate_close`, `discussion`, or

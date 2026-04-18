@@ -477,3 +477,124 @@ def test_release_checklist_covers_failure_stop_and_council_missing_fallback() ->
         "fallback"
         in checklist
     )
+
+
+def test_sidecar_isolation_contract_defaults_and_contract_surface(tmp_path: Path) -> None:
+    """TASK-042: default isolation/import contract is modeled and flows into the handoff."""
+
+    from councilflow.handoff.packages import create_handoff_package
+    from councilflow.handoff.prompts import render_delegation_prompt
+    from councilflow.models.delegation import (
+        DEFAULT_ISOLATION_EXCLUDE_PATTERNS,
+        DEFAULT_PROTECTED_PATHS,
+        DelegationResult,
+        ExecutionGuardrails,
+        ImportManifest,
+        IsolatedWorkspace,
+        WorkspaceFileChange,
+    )
+
+    guardrails = ExecutionGuardrails()
+    assert guardrails.protected_paths == list(DEFAULT_PROTECTED_PATHS)
+    assert ".workflow-core" in guardrails.protected_paths
+    assert ".claude/skills" in guardrails.protected_paths
+    assert ".codex/skills" in guardrails.protected_paths
+    assert ".gemini/skills" in guardrails.protected_paths
+    assert guardrails.isolated_workspace.strategy == "git_worktree"
+    assert guardrails.isolated_workspace.exclude_patterns == list(
+        DEFAULT_ISOLATION_EXCLUDE_PATTERNS
+    )
+    assert guardrails.isolated_workspace.workspace_path is None
+    assert guardrails.import_manifest.max_file_count == 200
+    assert guardrails.import_manifest.max_total_bytes == 10 * 1024 * 1024
+
+    # Custom isolation overrides survive round-trip serialization.
+    custom = ExecutionGuardrails(
+        isolated_workspace=IsolatedWorkspace(
+            strategy="copy",
+            include_patterns=["src/**"],
+            exclude_patterns=["node_modules/**"],
+            workspace_path=".council/workspaces/del_test",
+        ),
+        import_manifest=ImportManifest(
+            writable_globs=["src/**", "tests/**"],
+            readonly_artifact_paths=["docs/integration.md"],
+            max_file_count=50,
+            max_total_bytes=1024,
+        ),
+    )
+    round_trip = ExecutionGuardrails.model_validate(custom.model_dump(mode="json"))
+    assert round_trip.isolated_workspace.strategy == "copy"
+    assert round_trip.import_manifest.writable_globs == ["src/**", "tests/**"]
+    assert round_trip.import_manifest.max_total_bytes == 1024
+
+    # WorkspaceFileChange validates known change types and defaults.
+    change = WorkspaceFileChange(path="src/foo.py", change_type="modified", byte_size=512)
+    assert change.imported is False
+    assert change.rejection_reason is None
+    with pytest.raises(ValueError):
+        WorkspaceFileChange(path="src/foo.py", change_type="renamed", byte_size=1)
+
+    # DelegationResult exposes workspace_manifest + import_outcome defaults.
+    result = DelegationResult(
+        delegation_id="del_x",
+        role="implementer",
+        model="claude",
+        handoff_path=".council/delegations/del_x/handoff.yaml",
+        result_path=".council/delegations/del_x/result.md",
+        content="noop",
+        status="delegated",
+        delegation_status="completed",
+        via_sidecar=True,
+    )
+    assert result.workspace_manifest == []
+    assert result.import_outcome == "none"
+    assert result.import_rejected_reason is None
+
+    # Contract and prompt expose the new fields end-to-end.
+    package = create_handoff_package(
+        delegation_id="del_contract",
+        role=RoleName.IMPLEMENTER,
+        objective="Contract test",
+        task_summary="Contract test",
+        constraints=[],
+        relevant_files=[],
+        inputs={},
+        required_artifacts={},
+        expected_output="n/a",
+        next_actions_on_success=[],
+        next_actions_on_failure=[],
+    )
+    contract = build_delegation_contract(
+        package,
+        handoff_path=".council/delegations/del_contract/handoff.yaml",
+    )
+    contract_guardrails = contract["handoff_schema"]["execution_guardrails"]
+    assert contract_guardrails["isolated_workspace"]["strategy"] == "git_worktree"
+    assert contract_guardrails["import_manifest"]["max_file_count"] == 200
+    assert any(
+        "isolated_workspace" in rule and "sidecar workspace" in rule
+        for rule in contract["consumption_rules"]
+    )
+    assert any(
+        "workspace_manifest" in rule and "writable_globs" in rule
+        for rule in contract["consumption_rules"]
+    )
+
+    prompt = render_delegation_prompt(package)
+    assert "isolated_workspace.strategy: git_worktree" in prompt
+    assert "import_manifest.max_file_count: 200" in prompt
+
+
+def test_integration_doc_documents_sidecar_isolation_contract() -> None:
+    integration_path = (
+        Path(__file__).resolve().parents[1] / "docs" / "integration.md"
+    )
+    text = integration_path.read_text(encoding="utf-8")
+
+    assert "## Sidecar Isolation Contract" in text
+    assert "execution_guardrails.isolated_workspace" in text
+    assert "execution_guardrails.import_manifest" in text
+    assert "workspace_manifest" in text
+    assert ".workflow-core" in text
+    assert "git_worktree" in text

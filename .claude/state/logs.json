@@ -1799,6 +1799,30 @@
       "from_status": "in_progress",
       "to_status": "auto_verified",
       "message": "TASK-049 in_progress → auto_verified: Automated gate passed: ruff OK, pytest 122 passed, sync-skills.ps1 new version synced 11 skills to 3 targets with SHA-256 verify passing, all 4 trees free of .bak, codex orphan {project-init,...} dir removed, project-next SKILL.md refactored to --verification-command list. Next: create commit then await manual smoke (stage_gate=true)."
+    },
+    {
+      "timestamp": "2026-04-18T12:35:05.537Z",
+      "type": "task_status_change",
+      "task_id": "TASK-049",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-049 auto_verified → awaiting_manual_acceptance: Auto gate passed (ruff + pytest 122 + sync-skills + SHA256). Commit cf68ddc. Awaiting real-controller smoke per review_checklist: run /project-status under Codex/Claude/Gemini and confirm no .bak entries in slash lists; intentionally add a test project-foo in shared skills then re-sync to verify orphan auto-cleanup across 3 targets; run project-next tester stage in Claude and confirm handoff.yaml carries verification_commands as a structured list, not a joined string."
+    },
+    {
+      "timestamp": "2026-04-18T12:35:40.596Z",
+      "type": "task_status_change",
+      "task_id": "TASK-042",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-042 todo → in_progress: Starting sidecar-isolation-contract. Contract fields per PRD §29 / architecture §25 / solutions §B.9.1: IsolatedWorkspace, ImportManifest, WorkspaceFileChange; ExecutionGuardrails extended with isolated_workspace + import_manifest and default protected_paths now cover .workflow-core, .claude/skills, .codex/skills, .gemini/skills; DelegationResult gains workspace_manifest + import_outcome."
+    },
+    {
+      "timestamp": "2026-04-18T12:39:52.785Z",
+      "type": "task_status_change",
+      "task_id": "TASK-042",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-042 in_progress → auto_verified: Automated gate passed: ruff green (added extend-exclude for 8 top-level scratch .py), pytest 124 passed including 2 new isolation-contract tests. Contract fields IsolatedWorkspace/ImportManifest/WorkspaceFileChange landed, ExecutionGuardrails and DelegationResult extended, handoff prompts/packages surface new fields, integration.md §Sidecar Isolation Contract documents the contract."
     }
   ]
 }

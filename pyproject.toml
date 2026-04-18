@@ -40,6 +40,18 @@ testpaths = ["tests"]
 line-length = 100
 src = ["src", "tests"]
 target-version = "py313"
+# Top-level scratch / debug scripts are not part of the shipped package.
+# Keep them out of lint so untracked local probes do not block CI on ruff.
+extend-exclude = [
+    "repro_alias.py",
+    "task_verification.py",
+    "test_objective.py",
+    "update_skills.py",
+    "update_skills_review.py",
+    "verify_active_gemini.py",
+    "verify_alias.py",
+    "verify_task.py",
+]
 
 [tool.ruff.lint]
 select = ["B", "E", "F", "I", "UP"]

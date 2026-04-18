@@ -51,18 +51,69 @@ class FixerInputSource(BaseModel):
     artifact_path: str
 
 
+DEFAULT_PROTECTED_PATHS: tuple[str, ...] = (
+    ".claude/state",
+    ".council/state.json",
+    ".workflow-core",
+    ".claude/skills",
+    ".codex/skills",
+    ".gemini/skills",
+)
+
+
+DEFAULT_ISOLATION_EXCLUDE_PATTERNS: tuple[str, ...] = (
+    "node_modules/**",
+    "__pycache__/**",
+    ".venv/**",
+    ".council/**",
+    ".claude/**",
+    ".codex/**",
+    ".gemini/**",
+    ".workflow-core/**",
+)
+
+
+class IsolatedWorkspace(BaseModel):
+    """Sidecar workspace isolation contract for a delegated stage."""
+
+    strategy: Literal["copy", "git_worktree", "none"] = "git_worktree"
+    include_patterns: list[str] = Field(default_factory=list)
+    exclude_patterns: list[str] = Field(
+        default_factory=lambda: list(DEFAULT_ISOLATION_EXCLUDE_PATTERNS)
+    )
+    workspace_path: str | None = None
+
+
+class ImportManifest(BaseModel):
+    """Controlled import-back policy for sidecar workspace outputs."""
+
+    writable_globs: list[str] = Field(default_factory=list)
+    readonly_artifact_paths: list[str] = Field(default_factory=list)
+    max_file_count: int = Field(default=200, ge=1)
+    max_total_bytes: int = Field(default=10 * 1024 * 1024, ge=1)
+
+
+class WorkspaceFileChange(BaseModel):
+    """Per-file entry of the sidecar workspace manifest."""
+
+    path: str
+    change_type: Literal["added", "modified", "deleted"]
+    byte_size: int = Field(default=0, ge=0)
+    imported: bool = False
+    rejection_reason: str | None = None
+
+
 class ExecutionGuardrails(BaseModel):
     """Write-scope and git-state controls for delegated stages."""
 
     writable_paths: list[str] = Field(default_factory=list)
     protected_paths: list[str] = Field(
-        default_factory=lambda: [
-            ".claude/state",
-            ".council/state.json",
-        ]
+        default_factory=lambda: list(DEFAULT_PROTECTED_PATHS)
     )
     allow_commit: bool = False
     allow_workflow_state_write: bool = False
+    isolated_workspace: IsolatedWorkspace = Field(default_factory=IsolatedWorkspace)
+    import_manifest: ImportManifest = Field(default_factory=ImportManifest)
 
 
 class HandoffPackage(BaseModel):
@@ -106,6 +157,9 @@ class DelegationResult(BaseModel):
     execution_guardrails: ExecutionGuardrails = Field(default_factory=ExecutionGuardrails)
     next_actions_on_success: list[str] = Field(default_factory=list)
     next_actions_on_failure: list[str] = Field(default_factory=list)
+    workspace_manifest: list[WorkspaceFileChange] = Field(default_factory=list)
+    import_outcome: Literal["none", "applied", "partial", "rejected"] = "none"
+    import_rejected_reason: str | None = None
 
 
 class DelegationRecord(BaseModel):

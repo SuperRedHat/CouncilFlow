@@ -214,5 +214,15 @@ def build_delegation_contract(
                 "If council delegate returns an error or missing artifacts, the host "
                 "workflow must stop instead of silently falling back to local execution."
             ),
+            (
+                "Delegated stages must honor execution_guardrails.isolated_workspace: "
+                "ordinary code tasks should execute inside the sidecar workspace instead "
+                "of the host project root."
+            ),
+            (
+                "Result changes must be declared through DelegationResult.workspace_manifest "
+                "and only files matching execution_guardrails.import_manifest.writable_globs "
+                "may be imported back into the host project."
+            ),
         ],
     }

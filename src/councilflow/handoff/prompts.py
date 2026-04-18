@@ -60,6 +60,8 @@ def render_delegation_prompt(package: HandoffPackage) -> str:
         )
         or "- None"
     )
+    isolation = package.execution_guardrails.isolated_workspace
+    manifest = package.execution_guardrails.import_manifest
     execution_guardrails = "\n".join(
         [
             f"- allow_commit: {str(package.execution_guardrails.allow_commit).lower()}",
@@ -75,6 +77,26 @@ def render_delegation_prompt(package: HandoffPackage) -> str:
                 f"- protected_paths: "
                 f"{json.dumps(package.execution_guardrails.protected_paths, ensure_ascii=False)}"
             ),
+            f"- isolated_workspace.strategy: {isolation.strategy}",
+            (
+                f"- isolated_workspace.include_patterns: "
+                f"{json.dumps(isolation.include_patterns, ensure_ascii=False)}"
+            ),
+            (
+                f"- isolated_workspace.exclude_patterns: "
+                f"{json.dumps(isolation.exclude_patterns, ensure_ascii=False)}"
+            ),
+            f"- isolated_workspace.workspace_path: {isolation.workspace_path or 'auto'}",
+            (
+                f"- import_manifest.writable_globs: "
+                f"{json.dumps(manifest.writable_globs, ensure_ascii=False)}"
+            ),
+            (
+                f"- import_manifest.readonly_artifact_paths: "
+                f"{json.dumps(manifest.readonly_artifact_paths, ensure_ascii=False)}"
+            ),
+            f"- import_manifest.max_file_count: {manifest.max_file_count}",
+            f"- import_manifest.max_total_bytes: {manifest.max_total_bytes}",
         ]
     )
     required_artifacts = (
