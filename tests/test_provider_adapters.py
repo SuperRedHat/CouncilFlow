@@ -158,6 +158,107 @@ def test_gemini_adapter_supports_specific_model() -> None:
     assert m_idx < p_idx
 
 
+def test_openai_adapter_raises_environment_not_ready_when_sdk_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Simulate `import openai` failing even if the SDK happens to be
+    # installed in this test environment.
+    import sys as _sys
+
+    from councilflow.providers.base import ProviderRequest
+    from councilflow.providers.openai_api import OpenAIChatAdapter
+
+    class _RaisingFinder:
+        def find_spec(self, fullname, path=None, target=None):  # noqa: ANN001
+            if fullname == "openai":
+                raise ImportError("forced missing openai for test")
+            return None
+
+    monkeypatch.setattr("councilflow.providers.openai_api.os.environ", {"OPENAI_API_KEY": "sk"})
+    monkeypatch.setitem(_sys.modules, "openai", None)
+
+    adapter = OpenAIChatAdapter()
+    with pytest.raises(ProviderError) as exc_info:
+        adapter.ask(ProviderRequest(prompt="hi"))
+    assert exc_info.value.kind == "environment_not_ready"
+
+
+def test_openai_adapter_uses_injected_client_to_return_response() -> None:
+    from councilflow.providers.base import ProviderRequest
+    from councilflow.providers.openai_api import OpenAIChatAdapter
+
+    class _FakeChoiceMessage:
+        def __init__(self, content: str) -> None:
+            self.content = content
+
+    class _FakeChoice:
+        def __init__(self, content: str) -> None:
+            self.message = _FakeChoiceMessage(content)
+
+    class _FakeUsage:
+        def model_dump(self) -> dict[str, int]:
+            return {"prompt_tokens": 3, "completion_tokens": 5}
+
+    class _FakeResponse:
+        def __init__(self, content: str) -> None:
+            self.choices = [_FakeChoice(content)]
+            self.usage = _FakeUsage()
+
+    class _FakeCompletions:
+        def create(self, **kwargs):  # noqa: ANN001
+            assert kwargs["model"] == "gpt-4o-mini"
+            assert kwargs["messages"] == [{"role": "user", "content": "ping"}]
+            return _FakeResponse("pong")
+
+    class _FakeClient:
+        def __init__(self) -> None:
+            self.chat = type("chat", (), {"completions": _FakeCompletions()})()
+
+    adapter = OpenAIChatAdapter(model="gpt-4o-mini", client=_FakeClient())
+    response = adapter.ask(ProviderRequest(prompt="ping"))
+
+    assert response.model == "gpt"
+    assert response.content == "pong"
+    assert response.metadata["openai_model"] == "gpt-4o-mini"
+    assert response.metadata["usage"] == {"prompt_tokens": 3, "completion_tokens": 5}
+
+
+def test_openai_adapter_raises_environment_not_ready_when_api_key_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Stub out the SDK import so it looks installed, but clear the API key.
+    import types as _types
+
+    from councilflow.providers.base import ProviderRequest
+    from councilflow.providers.openai_api import OpenAIChatAdapter
+
+    fake_openai = _types.ModuleType("openai")
+    fake_openai.OpenAI = lambda **kwargs: object()  # pragma: no cover
+    monkeypatch.setitem(__import__("sys").modules, "openai", fake_openai)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    adapter = OpenAIChatAdapter()
+    with pytest.raises(ProviderError) as exc_info:
+        adapter.ask(ProviderRequest(prompt="hi"))
+    assert exc_info.value.kind == "environment_not_ready"
+
+
+def test_registry_resolves_gpt_family_through_openai_adapter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from councilflow.providers.openai_api import OpenAIChatAdapter
+    from councilflow.providers.registry import resolve_adapter
+
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-4o-mini")
+    adapter = resolve_adapter("gpt")
+    assert isinstance(adapter, OpenAIChatAdapter)
+    assert adapter.openai_model == "gpt-4o-mini"
+
+    specific = resolve_adapter("gpt-4o")
+    assert isinstance(specific, OpenAIChatAdapter)
+    assert specific.openai_model == "gpt-4o"
+
+
 def test_codex_adapter_stream_mode_adds_json_flag_and_uses_monitored_runner(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

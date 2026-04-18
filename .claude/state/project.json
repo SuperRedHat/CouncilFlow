@@ -1,7 +1,7 @@
 {
   "name": "CouncilFlow",
   "created_at": "2026-04-16T06:05:18.182Z",
-  "updated_at": "2026-04-18T13:09:35.518Z",
+  "updated_at": "2026-04-18T13:12:27.326Z",
   "status": "planned",
   "tech_stack": [
     "Python 3.13",
@@ -17,7 +17,7 @@
     "total": 63,
     "done": 56,
     "in_progress": 1,
-    "awaiting_acceptance": 3,
-    "todo": 3
+    "awaiting_acceptance": 4,
+    "todo": 2
   }
 }

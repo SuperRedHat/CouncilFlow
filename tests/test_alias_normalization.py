@@ -53,17 +53,23 @@ def test_resolve_adapter_model_accepts_registered_families() -> None:
     assert resolve_adapter_model("gemini-2.5-pro") == "gemini-2.5-pro"
 
 
+def test_resolve_adapter_model_accepts_gpt_family_after_openai_adapter() -> None:
+    assert resolve_adapter_model("gpt") == "gpt"
+    assert resolve_adapter_model("gpt-4o-mini") == "gpt-4o-mini"
+    assert resolve_adapter_model("o1-preview") == "o1-preview"
+
+
 def test_resolve_adapter_model_rejects_unknown_names() -> None:
-    assert resolve_adapter_model("gpt") is None
     assert resolve_adapter_model("clood") is None
     assert resolve_adapter_model("mistral") is None
+    assert resolve_adapter_model("llama-3") is None
 
 
 def test_validate_model_name_raises_actionable_value_error() -> None:
     with pytest.raises(ValueError, match="No provider adapter"):
         validate_model_name("clood")
     with pytest.raises(ValueError, match="No provider adapter"):
-        validate_model_name("gpt-4")
+        validate_model_name("llama-3")
 
 
 def test_role_mapping_rejects_unknown_adapter_at_load_time() -> None:

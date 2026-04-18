@@ -2039,6 +2039,30 @@
       "from_status": "in_progress",
       "to_status": "auto_verified",
       "message": "TASK-053 in_progress → auto_verified: Automated gate passed. docs/integration.md has new \"Workflow Failure Report Protocol\" section with 6-field JSON spec + MCP add_log dual sink + council_available classification. 9 shared skills (project-init/design/plan/change/next/review/ask/discuss/feedback) reference the protocol in their notes. ruff clean, full pytest 169, sync-skills synced 11 skills to 3 targets."
+    },
+    {
+      "timestamp": "2026-04-18T13:09:50.849Z",
+      "type": "task_status_change",
+      "task_id": "TASK-053",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-053 auto_verified → awaiting_manual_acceptance: Manual smoke required: in real Claude Code / Codex / Gemini sessions trigger a council delegate failure (e.g. wrong --role) and verify all three produce identical JSON failure reports + MCP add_log entries per review_checklist. Commit 1aaddb2."
+    },
+    {
+      "timestamp": "2026-04-18T13:10:11.362Z",
+      "type": "task_status_change",
+      "task_id": "TASK-055",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-055 todo → in_progress: Starting openai-advisor-adapter. Will implement OpenAIChatAdapter with lazy openai import, register in providers/registry.py, document OPENAI_API_KEY, add extras in pyproject.toml, and add tests covering both \"openai not installed\" and mock-based success paths. Template advisor=claude stays (works out of box); gpt path becomes opt-in once the extras are installed."
+    },
+    {
+      "timestamp": "2026-04-18T13:12:27.327Z",
+      "type": "task_status_change",
+      "task_id": "TASK-055",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-055 in_progress → auto_verified: Automated gate passed. New providers/openai_api.py with OpenAIChatAdapter (lazy openai import, env-driven api key, injectable client for tests). Registered in providers/registry.py as 'gpt' family, with variant passthrough for gpt-4o / o1-* names. roles.py accepts gpt and gpt-/o1- prefixed variants. pyproject extras add openai>=1.0. docs/integration.md + readme.md document the opt-in pattern. 4 new tests + 1 registry test cover SDK-missing, API-key-missing, injected-client success, and registry family resolution. Full pytest 178 passes, ruff clean."
     }
   ]
 }

@@ -19,6 +19,9 @@ dev = [
     "pytest>=9,<10",
     "ruff>=0.15,<0.16",
 ]
+openai = [
+    "openai>=1.0,<2.0",
+]
 
 [project.scripts]
 council = "councilflow.cli.app:main"

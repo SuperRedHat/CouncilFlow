@@ -8,14 +8,16 @@ need to register here.
 
 from __future__ import annotations
 
+import os
 from collections.abc import Callable
 
 from councilflow.models.config import ProviderRuntimeSettings
-from councilflow.models.roles import normalize_model_name, resolve_adapter_model
+from councilflow.models.roles import normalize_model_name
 from councilflow.providers.base import ProviderAdapter, ProviderError
 from councilflow.providers.claude_code_cli import ClaudeCodeCliAdapter
 from councilflow.providers.codex_cli import CodexCliAdapter
 from councilflow.providers.gemini_cli import GeminiCliAdapter
+from councilflow.providers.openai_api import OpenAIChatAdapter
 
 AdapterFactory = Callable[[str, ProviderRuntimeSettings | None], ProviderAdapter]
 
@@ -40,10 +42,23 @@ def _make_gemini(model: str, runtime: ProviderRuntimeSettings | None) -> Provide
     return GeminiCliAdapter(model=variant, runtime=runtime)
 
 
+def _make_openai(model: str, runtime: ProviderRuntimeSettings | None) -> ProviderAdapter:
+    # The normalized family name is "gpt"; the concrete OpenAI model is only
+    # taken from an explicit "gpt-<...>" alias. Anything else defaults to the
+    # cheapest reasonable fallback so the user does not pay for gpt-4 by
+    # accident. Set OPENAI_MODEL to override from the environment.
+    if model != "gpt" and model.startswith("gpt-"):
+        openai_model = model
+    else:
+        openai_model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+    return OpenAIChatAdapter(model=openai_model, runtime=runtime)
+
+
 REGISTRY: dict[str, AdapterFactory] = {
     "codex": _make_codex,
     "claude": _make_claude,
     "gemini": _make_gemini,
+    "gpt": _make_openai,
 }
 
 
@@ -51,6 +66,18 @@ def register_adapter_factory(family: str, factory: AdapterFactory) -> None:
     """Register a new adapter factory. Intended for out-of-tree extensions."""
 
     REGISTRY[family] = factory
+
+
+def _family_for_normalized(normalized: str) -> str | None:
+    """Collapse a normalized model name to its adapter family."""
+
+    if normalized in REGISTRY:
+        return normalized
+    if normalized.startswith("gemini-"):
+        return "gemini"
+    if normalized.startswith("gpt-") or normalized.startswith("o1-"):
+        return "gpt"
+    return None
 
 
 def resolve_adapter(
@@ -61,20 +88,21 @@ def resolve_adapter(
 
     Raises a ProviderError(kind="adapter_missing") when no registered family
     can serve the request. The model string can be any alias accepted by
-    normalize_model_name; specific variants (e.g. gemini-1.5-flash) resolve to
-    the gemini family but are passed through to the adapter so it can pick the
-    correct concrete backend.
+    normalize_model_name; specific variants (e.g. gemini-1.5-flash, gpt-4o)
+    resolve to the gemini / gpt family but are passed through to the factory
+    so it can pick the concrete backend.
     """
 
     normalized = normalize_model_name(model)
-    family = resolve_adapter_model(model)
-    factory = REGISTRY.get(family) if family else None
-    if factory is None:
+    family = _family_for_normalized(normalized)
+    # Guard: roles.resolve_adapter_model already vets unknown names, but keep
+    # a defensive None-check so that adapters not actually registered (for
+    # example if an out-of-tree build deletes 'gpt' from REGISTRY) still
+    # produce the canonical adapter_missing error.
+    if family is None or family not in REGISTRY:
         raise ProviderError(
             f"No provider adapter is registered for model '{model}' "
             f"(normalized='{normalized}').",
             kind="adapter_missing",
         )
-    # Pass the normalized name so the factory can use variant-style dispatch
-    # without us having to special-case it here.
-    return factory(normalized, runtime)
+    return REGISTRY[family](normalized, runtime)

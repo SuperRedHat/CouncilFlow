@@ -332,6 +332,34 @@ decide whether to accept the sidecar output:
 These fields are informational in TASK-042 (the contract-only phase); subsequent
 isolation work (TASK-043 / TASK-044) makes the orchestrator produce and enforce them.
 
+## Optional: OpenAI (`gpt`) Adapter
+
+CouncilFlow ships an opt-in `OpenAIChatAdapter` that lets the `advisor` role
+(or any other role you want to map) resolve to the OpenAI Chat Completions
+API. It is *not* part of the base install — enabling it requires two things:
+
+1. Install the extra:
+
+   ```bash
+   pip install 'councilflow[openai]'
+   ```
+
+2. Set `OPENAI_API_KEY` in the environment where CouncilFlow runs. You can
+   also set `OPENAI_MODEL` to override the default `gpt-4o-mini` for a
+   specific project.
+
+Once both conditions are met, `roles.advisor: gpt` in `.council/config.yaml`
+routes through `OpenAIChatAdapter` just like `codex` / `claude` / `gemini`
+roles route through their CLI adapters. If the SDK is missing or the API key
+is absent at call time, the delegation fails with a structured
+`ProviderError(kind="environment_not_ready")` so the workflow failure report
+protocol classifies it correctly.
+
+Specific OpenAI models (e.g. `gpt-4o`, `gpt-4o-mini`, `o1-preview`) are
+accepted directly as the model name in config or via `--model`. The adapter
+normalizes the family back to `gpt` in `ProviderResponse.model` so downstream
+`speaker_model` / `participants` comparisons stay stable.
+
 ## Workflow Failure Report Protocol
 
 Every `role_driven` and `discussion` shared skill must emit the same failure

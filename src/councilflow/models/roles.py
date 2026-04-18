@@ -106,6 +106,7 @@ _REGISTERED_ADAPTER_MODELS: frozenset[str] = frozenset(
         ControllerName.CODEX.value,
         ControllerName.CLAUDE.value,
         ControllerName.GEMINI.value,
+        "gpt",
     }
 )
 
@@ -119,6 +120,9 @@ def resolve_adapter_model(value: str) -> str | None:
     # Accept specific Gemini variants (gemini-1.5-flash etc.) that still route to
     # the Gemini adapter family even if they are not in MODEL_ALIASES yet.
     if normalized.startswith("gemini-"):
+        return normalized
+    # Accept specific OpenAI variants (gpt-4o, gpt-4o-mini, o1-preview, ...).
+    if normalized.startswith("gpt-") or normalized.startswith("o1-"):
         return normalized
     return None
 

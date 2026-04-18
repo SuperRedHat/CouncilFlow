@@ -2434,11 +2434,11 @@
         "在 Gemini 里同样触发失败，确认 JSON 字段和 add_log 与 Claude 一致"
       ],
       "stage_gate": true,
-      "status": "auto_verified",
+      "status": "awaiting_manual_acceptance",
       "created_at": "2026-04-18T12:07:59.561Z",
-      "updated_at": "2026-04-18T13:09:35.497Z",
+      "updated_at": "2026-04-18T13:09:50.831Z",
       "commit_hash": "",
-      "notes": "Automated gate passed. docs/integration.md has new \"Workflow Failure Report Protocol\" section with 6-field JSON spec + MCP add_log dual sink + council_available classification. 9 shared skills (project-init/design/plan/change/next/review/ask/discuss/feedback) reference the protocol in their notes. ruff clean, full pytest 169, sync-skills synced 11 skills to 3 targets."
+      "notes": "Manual smoke required: in real Claude Code / Codex / Gemini sessions trigger a council delegate failure (e.g. wrong --role) and verify all three produce identical JSON failure reports + MCP add_log entries per review_checklist. Commit 1aaddb2."
     },
     {
       "id": "TASK-054",
@@ -2510,11 +2510,11 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "todo",
+      "status": "auto_verified",
       "created_at": "2026-04-18T12:07:59.561Z",
-      "updated_at": "2026-04-18T12:07:59.561Z",
+      "updated_at": "2026-04-18T13:12:27.309Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Automated gate passed. New providers/openai_api.py with OpenAIChatAdapter (lazy openai import, env-driven api key, injectable client for tests). Registered in providers/registry.py as 'gpt' family, with variant passthrough for gpt-4o / o1-* names. roles.py accepts gpt and gpt-/o1- prefixed variants. pyproject extras add openai>=1.0. docs/integration.md + readme.md document the opt-in pattern. 4 new tests + 1 registry test cover SDK-missing, API-key-missing, injected-client success, and registry family resolution. Full pytest 178 passes, ruff clean."
     }
   ]
 }
