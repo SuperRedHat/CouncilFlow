@@ -25,7 +25,12 @@ from councilflow.models.delegation import (
     WorkspaceFileChange,
 )
 from councilflow.models.roles import RoleName
-from councilflow.providers.base import ProviderAdapter, ProviderError, ProviderRequest
+from councilflow.providers.base import (
+    ProviderAdapter,
+    ProviderError,
+    ProviderRequest,
+    build_sandboxed_env,
+)
 from councilflow.state.store import CouncilStateStore
 from councilflow.utils.io import (
     apply_import_changes,
@@ -521,6 +526,7 @@ class DelegationOrchestrator:
                         != self.store.paths.project_root
                         else None
                     ),
+                    env_override=build_sandboxed_env(delegation_id),
                 )
             )
 

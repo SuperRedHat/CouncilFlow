@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import threading
 import time
@@ -17,6 +18,40 @@ CommandRunner = Callable[..., "ProviderRunResult | str"]
 DEFAULT_PROVIDER_TOTAL_TIMEOUT_SECONDS = 900.0
 DEFAULT_PROVIDER_IDLE_TIMEOUT_SECONDS = 180.0
 
+# Host environment keys that identify a controller to CouncilFlow. Sidecar
+# subprocesses must NOT inherit these or host detection inside the sidecar
+# would recursively re-identify the same controller and re-enter workflow
+# code paths.
+CONTROLLER_ENV_KEYS: tuple[str, ...] = (
+    "CODEX_SHELL",
+    "CODEX_THREAD_ID",
+    "CODEX_INTERNAL_ORIGINATOR_OVERRIDE",
+    "CLAUDECODE",
+    "CLAUDE_CODE",
+    "CLAUDE_CODE_SHELL",
+    "CLAUDE_SHELL",
+    "CLAUDECODE_SHELL",
+    "GEMINI_CLI",
+    "GEMINI_CLI_SESSION",
+    "GEMINI_CLI_IDE_PID",
+)
+
+# Sidecar marker variables. When the CouncilFlow CLI observes
+# COUNCILFLOW_DELEGATED_STAGE=1 on startup, it refuses workflow-entry
+# subcommands (delegate / discuss / synthesize) to prevent recursion.
+DELEGATED_STAGE_ENV_FLAG = "COUNCILFLOW_DELEGATED_STAGE"
+DELEGATION_ID_ENV_KEY = "COUNCILFLOW_DELEGATION_ID"
+
+
+def build_sandboxed_env(delegation_id: str) -> dict[str, str]:
+    """Build a subprocess environment with controller signals stripped and
+    delegated-stage markers injected."""
+
+    env = {key: value for key, value in os.environ.items() if key not in CONTROLLER_ENV_KEYS}
+    env[DELEGATED_STAGE_ENV_FLAG] = "1"
+    env[DELEGATION_ID_ENV_KEY] = delegation_id
+    return env
+
 
 class ProviderRequest(BaseModel):
     """Request payload sent to a provider adapter."""
@@ -24,6 +59,7 @@ class ProviderRequest(BaseModel):
     prompt: str
     context: dict[str, Any] = Field(default_factory=dict)
     cwd: str | None = None
+    env_override: dict[str, str] | None = None
 
 
 class ProviderResponse(BaseModel):
@@ -61,7 +97,8 @@ class ProviderError(RuntimeError):
     ) -> None:
         super().__init__(message)
         # Common kinds include process_exit, total_timeout, idle_timeout, os_error,
-        # permission_blocked, environment_not_ready, and guardrail_violation.
+        # permission_blocked, environment_not_ready, guardrail_violation,
+        # adapter_missing, and recursive_workflow_violation.
         self.kind = kind
         self.metadata = metadata or {}
 
@@ -97,6 +134,7 @@ def run_command(
     prompt: str,
     runtime: ProviderRuntimeSettings | None = None,
     cwd: str | None = None,
+    env: dict[str, str] | None = None,
 ) -> ProviderRunResult:
     """Execute a CLI command with the prompt appended as the final argument."""
 
@@ -109,6 +147,7 @@ def run_command(
             text=False,
             timeout=runtime_settings.total_timeout_seconds,
             cwd=cwd,
+            env=env,
         )
     except subprocess.TimeoutExpired as exc:
         raise ProviderError(
@@ -155,6 +194,7 @@ def run_monitored_process(
     prompt_argument: str | None = None,
     stdin_payload: bytes | None = None,
     cwd: str | None = None,
+    env: dict[str, str] | None = None,
 ) -> MonitoredProcessResult:
     """Execute a subprocess while tracking both total duration and output activity."""
 
@@ -180,6 +220,7 @@ def run_monitored_process(
             errors="replace",
             bufsize=1,
             cwd=cwd,
+            env=env,
         )
     except OSError as exc:
         raise ProviderError(

@@ -8,8 +8,12 @@ import pytest
 
 from councilflow.models.config import ProviderRuntimeSettings
 from councilflow.providers.base import (
+    CONTROLLER_ENV_KEYS,
+    DELEGATED_STAGE_ENV_FLAG,
+    DELEGATION_ID_ENV_KEY,
     MonitoredProcessResult,
     ProviderError,
+    build_sandboxed_env,
     run_command,
     run_monitored_process,
 )
@@ -185,6 +189,51 @@ def test_strip_runtime_notices_removes_gemini_cli_noise() -> None:
     )
 
     assert cleaned == "hello"
+
+
+def test_build_sandboxed_env_strips_controller_signals_and_injects_markers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    for key in CONTROLLER_ENV_KEYS:
+        monkeypatch.setenv(key, "leak")
+    monkeypatch.setenv("PATH", "/usr/bin")  # benign key is preserved
+
+    env = build_sandboxed_env("del_testenv")
+
+    for key in CONTROLLER_ENV_KEYS:
+        assert key not in env, f"{key} leaked into sandboxed env"
+    assert env[DELEGATED_STAGE_ENV_FLAG] == "1"
+    assert env[DELEGATION_ID_ENV_KEY] == "del_testenv"
+    assert env["PATH"] == "/usr/bin"
+
+
+def test_run_command_threads_cwd_and_env_into_subprocess(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_run(*args: object, **kwargs: object) -> object:
+        captured["cwd"] = kwargs.get("cwd")
+        captured["env"] = kwargs.get("env")
+
+        class Result:
+            returncode = 0
+            stdout = b"ok"
+            stderr = b""
+
+        return Result()
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    run_command(
+        ["codex", "exec"],
+        "prompt",
+        cwd="/tmp/workspace",
+        env={"HELLO": "world"},
+    )
+
+    assert captured["cwd"] == "/tmp/workspace"
+    assert captured["env"] == {"HELLO": "world"}
 
 
 def test_parse_claude_stream_json_prefers_final_result() -> None:

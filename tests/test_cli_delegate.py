@@ -458,3 +458,72 @@ def test_delegate_with_gemini_controller_alias_normalization(tmp_path: Path) -> 
     assert payload["data"]["model"] == "gemini"
     assert payload["data"]["status"] == "local_execution"
     assert payload["data"]["via_sidecar"] is False
+
+
+def test_delegate_command_refuses_recursive_invocation_inside_delegated_stage(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(
+        delegate_module,
+        "get_provider_adapter",
+        lambda *args, **kwargs: FakeSuccessAdapter(),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "delegate",
+            "--role",
+            "implementer",
+            "--objective",
+            "Try to recurse from sidecar.",
+            "--task-summary",
+            "Must be rejected by the recursion guard.",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={
+            "COUNCILFLOW_DELEGATED_STAGE": "1",
+            "COUNCILFLOW_DELEGATION_ID": "del_parent",
+            "CODEX_SHELL": None,
+            "CODEX_THREAD_ID": None,
+            "CODEX_INTERNAL_ORIGINATOR_OVERRIDE": None,
+            "CLAUDECODE": None,
+            "CLAUDE_CODE": None,
+            "CLAUDE_SHELL": None,
+            "CLAUDE_CODE_SHELL": None,
+            "CLAUDECODE_SHELL": None,
+            "GEMINI_CLI": None,
+        },
+    )
+
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 2
+    assert payload["error"]["error_kind"] == "recursive_workflow_violation"
+    assert payload["error"]["delegation_id"] == "del_parent"
+    assert payload["data"] is None
+
+
+def test_status_command_is_allowed_inside_delegated_stage(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "status",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={
+            "COUNCILFLOW_DELEGATED_STAGE": "1",
+            "COUNCILFLOW_DELEGATION_ID": "del_parent",
+            "CODEX_SHELL": "1",  # host context still needs a controller signal
+        },
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["data"]["current_controller"] == "codex"

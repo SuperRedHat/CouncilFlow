@@ -1847,6 +1847,30 @@
       "from_status": "in_progress",
       "to_status": "auto_verified",
       "message": "TASK-043 in_progress → auto_verified: Automated gate passed. utils/io.py implements materialize_workspace/detect/classify/apply/cleanup; DelegationOrchestrator wires materialize before provider.ask with cwd set, classifies + imports after, and cleanup on both success and failure. ProviderRequest.cwd plumbed through codex/claude/gemini adapters. 3 new tests cover import success / protected-path reject / writable_globs reject; full pytest 127 passes and ruff is clean."
+    },
+    {
+      "timestamp": "2026-04-18T12:49:20.182Z",
+      "type": "task_status_change",
+      "task_id": "TASK-043",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-043 auto_verified → done: Acceptance mode auto → done. Commit 7a19823. Materialization + controlled import-back live; TASK-044 (non-recursive guard) and TASK-045 (isolation smoke) unblocked."
+    },
+    {
+      "timestamp": "2026-04-18T12:49:40.142Z",
+      "type": "task_status_change",
+      "task_id": "TASK-044",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-044 todo → in_progress: Starting sidecar-recursion-guard: build_sandboxed_env() strips CODEX/CLAUDE/GEMINI env keys and injects COUNCILFLOW_DELEGATED_STAGE=1 + COUNCILFLOW_DELEGATION_ID; ProviderRequest.env_override, run_command + run_monitored_process thread env to subprocess; cli/app.py root rejects council delegate/discuss/synthesize when COUNCILFLOW_DELEGATED_STAGE=1 with error_kind=recursive_workflow_violation; tests cover env strip, injection, recursion rejection."
+    },
+    {
+      "timestamp": "2026-04-18T12:52:39.351Z",
+      "type": "task_status_change",
+      "task_id": "TASK-044",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-044 in_progress → auto_verified: Automated gate passed. build_sandboxed_env + CONTROLLER_ENV_KEYS + DELEGATED_STAGE_ENV_FLAG/DELEGATION_ID_ENV_KEY in providers/base.py; ProviderRequest.env_override plumbed through adapters + subprocess helpers; DelegationOrchestrator now passes sandboxed env + cwd; cli/app.py rejects delegate/discuss/synthesize when DELEGATED_STAGE flag is 1 (status/version still allowed). ProviderError docstring lists new kinds. 4 new tests: env strip + cwd/env threading + recursion rejection + status allowed. Full pytest 131 passes, ruff clean."
     }
   ]
 }

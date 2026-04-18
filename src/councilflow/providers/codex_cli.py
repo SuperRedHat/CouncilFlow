@@ -32,13 +32,20 @@ class CodexCliAdapter:
         self.command = command or _default_codex_command()
         self.runtime = runtime or default_runtime_settings()
         self.runner = runner or (
-            lambda command, prompt, cwd=None: _run_codex_command(
-                command, prompt, runtime=self.runtime, cwd=cwd,
+            lambda command, prompt, cwd=None, env=None: _run_codex_command(
+                command, prompt, runtime=self.runtime, cwd=cwd, env=env,
             )
         )
 
     def ask(self, request: ProviderRequest) -> ProviderResponse:
-        result = coerce_run_result(self.runner(self.command, request.prompt, cwd=request.cwd))
+        result = coerce_run_result(
+            self.runner(
+                self.command,
+                request.prompt,
+                cwd=request.cwd,
+                env=request.env_override,
+            )
+        )
         return ProviderResponse(
             model=self.model_name,
             content=result.content,
@@ -66,6 +73,7 @@ def _run_codex_command(
     prompt: str,
     runtime: ProviderRuntimeSettings | None = None,
     cwd: str | None = None,
+    env: dict[str, str] | None = None,
 ) -> ProviderRunResult:
     """Execute Codex with the prompt provided on stdin for Windows compatibility."""
 
@@ -79,6 +87,7 @@ def _run_codex_command(
             text=False,
             timeout=runtime_settings.total_timeout_seconds,
             cwd=cwd,
+            env=env,
         )
     except subprocess.TimeoutExpired as exc:
         raise ProviderError(
