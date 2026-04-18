@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from councilflow.models.roles import (
-    DEFAULT_ROLE_MODELS,
     ControllerName,
     RoleName,
     normalize_model_name,
@@ -13,18 +14,32 @@ from councilflow.models.roles import (
 
 
 class RoleMapping(BaseModel):
-    """Role-to-model mapping with default assignments for CouncilFlow v1."""
+    """Role-to-model mapping backed by the packaged template as single source."""
 
     model_config = ConfigDict(extra="forbid")
 
-    planner: str = DEFAULT_ROLE_MODELS[RoleName.PLANNER]
-    architect: str = DEFAULT_ROLE_MODELS[RoleName.ARCHITECT]
-    implementer: str = DEFAULT_ROLE_MODELS[RoleName.IMPLEMENTER]
-    tester: str = DEFAULT_ROLE_MODELS[RoleName.TESTER]
-    reviewer: str = DEFAULT_ROLE_MODELS[RoleName.REVIEWER]
-    fixer: str = DEFAULT_ROLE_MODELS[RoleName.FIXER]
-    advisor: str = DEFAULT_ROLE_MODELS[RoleName.ADVISOR]
-    synthesizer: str = DEFAULT_ROLE_MODELS[RoleName.SYNTHESIZER]
+    planner: str
+    architect: str
+    implementer: str
+    tester: str
+    reviewer: str
+    fixer: str
+    advisor: str
+    synthesizer: str
+
+    @model_validator(mode="before")
+    @classmethod
+    def apply_template_defaults(cls, value: Any) -> Any:
+        """Merge packaged template defaults into any partial roles input."""
+
+        from councilflow.config.loader import default_role_mapping_payload
+
+        if value is None:
+            return default_role_mapping_payload()
+        if isinstance(value, dict):
+            template = default_role_mapping_payload()
+            return {**template, **value}
+        return value
 
     @field_validator("*", mode="before")
     @classmethod

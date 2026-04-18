@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -27,13 +28,31 @@ def load_default_config_text() -> str:
     return default_config_template_path().read_text(encoding="utf-8")
 
 
+@lru_cache(maxsize=1)
+def _cached_default_payload() -> dict[str, Any]:
+    raw = yaml.safe_load(load_default_config_text()) or {}
+    if not isinstance(raw, dict):
+        raise ValueError("default-config.yaml must deserialize to a mapping.")
+    return raw
+
+
+def default_role_mapping_payload() -> dict[str, str]:
+    """Return the `roles` mapping defined in the packaged template.
+
+    RoleMapping falls back to this payload when the user config omits a role so
+    the shipped template is the single source of truth for default roles.
+    """
+
+    roles = _cached_default_payload().get("roles", {})
+    if not isinstance(roles, dict):
+        raise ValueError("default-config.yaml must contain a `roles` mapping.")
+    return {str(role): str(model) for role, model in roles.items()}
+
+
 def build_default_config() -> CouncilConfig:
     """Build the default project configuration from the packaged template."""
 
-    raw = yaml.safe_load(load_default_config_text()) or {}
-    if not isinstance(raw, dict):
-        raise ValueError("Default CouncilFlow config template must deserialize to a mapping.")
-    return CouncilConfig.model_validate(raw)
+    return CouncilConfig.model_validate(_cached_default_payload())
 
 
 def ensure_config_exists(path: Path | None = None) -> Path:
