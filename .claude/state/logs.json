@@ -2063,6 +2063,46 @@
       "from_status": "in_progress",
       "to_status": "auto_verified",
       "message": "TASK-055 in_progress → auto_verified: Automated gate passed. New providers/openai_api.py with OpenAIChatAdapter (lazy openai import, env-driven api key, injectable client for tests). Registered in providers/registry.py as 'gpt' family, with variant passthrough for gpt-4o / o1-* names. roles.py accepts gpt and gpt-/o1- prefixed variants. pyproject extras add openai>=1.0. docs/integration.md + readme.md document the opt-in pattern. 4 new tests + 1 registry test cover SDK-missing, API-key-missing, injected-client success, and registry family resolution. Full pytest 178 passes, ruff clean."
+    },
+    {
+      "timestamp": "2026-04-18T13:12:45.758Z",
+      "type": "task_status_change",
+      "task_id": "TASK-055",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-055 auto_verified → done: Auto → done. Commit 200638d."
+    },
+    {
+      "timestamp": "2026-04-18T14:00:14.281Z",
+      "type": "smoke_results",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "Chess 项目 process-internal smoke（controller_override=codex）结果：7 个自动化场景，6 PASS + 1 部分 PASS。通过：S1 codex 主控 route→codex 角色 local_execution；S2 codex 主控 route→claude 角色 delegated；S3 递归 guard 拦截 exit=2 error_kind=recursive_workflow_violation；S5 protected_paths 拒绝 .claude/state/*（host 未被触及）；S6 tester preflight 将 allowlist 外命令正确分类为 permission_blocked；S7 DelegationExecutionError 透传 adapter_missing；CLI 失败报告 JSON 所有字段齐全（手工跑 council delegate --model clood 验证）；orphan 自动清理 + malformed 花括号目录清理在三端（codex/claude/gemini）均工作。S4 部分 PASS：materialize + import 目标文件 src/smoke/probe_marker.ts 成功导回，但 detect_workspace_changes 对 git_worktree HEAD 快照与 source 工作树的差异存在噪音（.gitignore 内容被判 deleted、CRLF 差异被判 modified）——不会误覆盖受保护路径（3 个 .claude/state/*.json 被 protected_paths 拦截），但若 writable_globs 包含一个有未提交改动的文件，则会被 HEAD 版本覆盖（真实数据丢失风险）。chess 项目 config.yaml + .claude/settings.json 已从 .smoke/backups/ 还原到 null controller_override，git 状态与 smoke 前一致。"
+    },
+    {
+      "timestamp": "2026-04-18T14:00:46.440Z",
+      "type": "followup_needed",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "Smoke-exposed latent bug: utils/io.py::detect_workspace_changes compares git_worktree HEAD snapshot against live source filesystem, which produces false positives for (a) .gitignored files present in source but absent from workspace (detected as \"deleted\"), and (b) files with line-ending differences between HEAD checkout and source working tree (detected as \"modified\" due to SHA-256 byte comparison). With the current default writable_globs=[] this is noise only; with explicit writable_globs in common real tasks, it can cause the orchestrator to overwrite the user's uncommitted work by silently \"re-importing\" HEAD into source. Root cause: detect_workspace_changes should compare workspace-before-provider vs workspace-after-provider, not workspace vs source_root. Suggested fix lives in TASK-043 follow-up; needs a new task to capture."
+    },
+    {
+      "timestamp": "2026-04-18T14:35:13.516Z",
+      "type": "task_status_change",
+      "task_id": "TASK-057",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-057 todo → in_progress: Writing code + tests + docs for dependency symlink support."
+    },
+    {
+      "timestamp": "2026-04-18T14:35:18.077Z",
+      "type": "task_status_change",
+      "task_id": "TASK-057",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-057 in_progress → auto_verified: Automated gate passed. models/delegation.py adds DEFAULT_DEPENDENCY_SYMLINKS + IsolatedWorkspace.dependency_symlinks. utils/io.py::_link_dependency_dirs creates junctions (Windows mklink /J) or symlinks (Unix) after copy/git_worktree, silently skips missing deps, logs materialize.dependency_linked INFO. cleanup_workspace now unlinks top-level junctions via _unlink_top_level_links before rmtree/worktree-remove so source dep dirs are never touched. 6 new tests pass: defaults cover, symlink works + cleanup safe, missing deps no-op, opt-out skips symlink, Windows cleanup removes junction without source damage, git_worktree path also links. docs/integration.md documents read-only semantics. Ruff clean, full pytest 184/184."
     }
   ]
 }

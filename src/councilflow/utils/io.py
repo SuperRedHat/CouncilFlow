@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import fnmatch
 import hashlib
+import os
 import shutil
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -14,6 +16,9 @@ from councilflow.models.delegation import (
     IsolatedWorkspace,
     WorkspaceFileChange,
 )
+from councilflow.utils.logging import get_logger
+
+_logger = get_logger(__name__)
 
 # Performance-only skip for the change detector. Workflow state paths such as
 # .claude/skills, .workflow-core, .council deliberately stay visible here so
@@ -93,6 +98,11 @@ def materialize_workspace(
                     check=True,
                     text=True,
                 )
+                _link_dependency_dirs(
+                    source=project_root,
+                    destination=workspace_path,
+                    dependency_symlinks=isolated.dependency_symlinks,
+                )
                 return WorkspaceMaterialization(
                     workspace_path=workspace_path,
                     effective_strategy="git_worktree",
@@ -107,10 +117,86 @@ def materialize_workspace(
         include_patterns=isolated.include_patterns,
         exclude_patterns=isolated.exclude_patterns,
     )
+    _link_dependency_dirs(
+        source=project_root,
+        destination=workspace_path,
+        dependency_symlinks=isolated.dependency_symlinks,
+    )
     return WorkspaceMaterialization(
         workspace_path=workspace_path,
         effective_strategy="copy",
     )
+
+
+def _link_dependency_dirs(
+    *,
+    source: Path,
+    destination: Path,
+    dependency_symlinks: list[str],
+) -> None:
+    """Expose source's dependency directories inside the workspace via
+    junctions (Windows) or symlinks (Unix) so tester stages can resolve
+    package-manager binaries without paying the materialize copy cost.
+
+    The sidecar is expected to treat these as read-only shared references:
+    any write via the junction lands in the host project. Errors are logged
+    and then swallowed — a missing or unlinkable dependency should not abort
+    the whole materialization.
+    """
+
+    for name in dependency_symlinks:
+        if not name or name in {".", ".."}:
+            continue
+        src_path = source / name
+        if not src_path.exists() or not src_path.is_dir():
+            continue
+        dst_path = destination / name
+        if dst_path.exists() or dst_path.is_symlink():
+            # Prefer whatever materialize produced (copy may have included a
+            # selected subset); do not overwrite it with a symlink.
+            continue
+        try:
+            dst_path.parent.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            _logger.debug("materialize.symlink_parent_mkdir_failed name=%s reason=%s", name, exc)
+            continue
+
+        linked = False
+        if sys.platform == "win32":
+            # Directory junctions work without admin on NTFS; fall back to
+            # os.symlink if junction creation fails.
+            try:
+                subprocess.run(
+                    ["cmd", "/c", "mklink", "/J", str(dst_path), str(src_path)],
+                    capture_output=True,
+                    check=True,
+                    text=True,
+                )
+                linked = True
+            except (subprocess.CalledProcessError, OSError) as exc:
+                _logger.debug(
+                    "materialize.junction_failed name=%s reason=%s",
+                    name,
+                    exc,
+                )
+
+        if not linked:
+            try:
+                os.symlink(src_path, dst_path, target_is_directory=True)
+                linked = True
+            except OSError as exc:
+                _logger.debug(
+                    "materialize.symlink_failed name=%s reason=%s",
+                    name,
+                    exc,
+                )
+
+        if linked:
+            _logger.info(
+                "materialize.dependency_linked name=%s workspace=%s",
+                name,
+                str(dst_path),
+            )
 
 
 def _copy_project_tree(
@@ -293,6 +379,11 @@ def cleanup_workspace(
     if workspace_path == project_root or not workspace_path.exists():
         return
 
+    # Unlink any top-level junctions / symlinks first so subsequent rmtree or
+    # git worktree remove does not accidentally descend into the real source
+    # dependency directory (e.g. deleting node_modules under source).
+    _unlink_top_level_links(workspace_path)
+
     if effective_strategy == "git_worktree":
         try:
             subprocess.run(
@@ -310,6 +401,50 @@ def cleanup_workspace(
         shutil.rmtree(workspace_path, ignore_errors=True)
     except OSError:
         pass
+
+
+def _unlink_top_level_links(workspace_path: Path) -> None:
+    """Remove top-level junctions / symlinks inside the workspace without
+    descending into their targets. Windows junctions and Unix symlinks both
+    get detected via os.path.islink / junction heuristics."""
+
+    try:
+        entries = list(workspace_path.iterdir())
+    except OSError:
+        return
+
+    for entry in entries:
+        try:
+            is_link = entry.is_symlink() or _is_windows_junction(entry)
+        except OSError:
+            is_link = False
+        if not is_link:
+            continue
+        try:
+            if sys.platform == "win32":
+                # For junctions on Windows, os.rmdir unlinks without following.
+                os.rmdir(entry)
+            else:
+                entry.unlink()
+        except OSError as exc:
+            _logger.debug(
+                "cleanup.unlink_top_level_failed entry=%s reason=%s",
+                entry,
+                exc,
+            )
+
+
+def _is_windows_junction(path: Path) -> bool:
+    """Best-effort junction detection for Windows NTFS directories."""
+
+    if sys.platform != "win32":
+        return False
+    try:
+        attrs = os.stat(path, follow_symlinks=False).st_file_attributes  # type: ignore[attr-defined]
+    except (AttributeError, OSError):
+        return False
+    reparse_flag = 0x400  # FILE_ATTRIBUTE_REPARSE_POINT
+    return bool(attrs & reparse_flag)
 
 
 def summarize_import_outcome(

@@ -2510,11 +2510,85 @@
       ],
       "review_checklist": [],
       "stage_gate": false,
-      "status": "auto_verified",
+      "status": "done",
       "created_at": "2026-04-18T12:07:59.561Z",
-      "updated_at": "2026-04-18T13:12:27.309Z",
+      "updated_at": "2026-04-18T13:12:45.739Z",
       "commit_hash": "",
-      "notes": "Automated gate passed. New providers/openai_api.py with OpenAIChatAdapter (lazy openai import, env-driven api key, injectable client for tests). Registered in providers/registry.py as 'gpt' family, with variant passthrough for gpt-4o / o1-* names. roles.py accepts gpt and gpt-/o1- prefixed variants. pyproject extras add openai>=1.0. docs/integration.md + readme.md document the opt-in pattern. 4 new tests + 1 registry test cover SDK-missing, API-key-missing, injected-client success, and registry family resolution. Full pytest 178 passes, ruff clean."
+      "notes": "Auto → done. Commit 200638d."
+    },
+    {
+      "id": "TASK-056",
+      "title": "修复 git_worktree 模式下 detect_workspace_changes 的误报与数据丢失风险",
+      "description": "当前 utils/io.py::detect_workspace_changes 把工作区文件跟 source_root 工作树比较，导致两类误报：(1) .gitignore 的文件在 source 存在但 git_worktree HEAD 快照里缺席，被判为 'deleted'；(2) HEAD 检出的线结尾与 source 工作树不一致（Windows CRLF 场景）时被判为 'modified'。当前默认 writable_globs=[] 或限制 src/** 时仅为噪音，但使用者如果宽松 writable_globs 并在 source 有未提交改动，orchestrator 会用 HEAD 版本覆盖这些未提交改动，造成真实数据丢失。修复思路：改为 'workspace 内部 baseline 对比 post-provider snapshot'，不再与 source 直接比较。",
+      "dependencies": [
+        "TASK-043"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "detect_workspace_changes 只基于 workspace 自己的之前/之后对比生成变更清单，不再直接与 source_root 比较",
+        "新增回归测试覆盖：.gitignore 内容在 source 存在时不会被判为 deleted",
+        "新增回归测试覆盖：source 和 workspace 同一文件仅线结尾不同时不会被判为 modified（Windows CRLF / autocrlf 场景）",
+        "新增回归测试覆盖：source 下有未提交改动的 src/foo.ts，sidecar 不触碰 foo.ts，import_outcome 应为 none 或只包含真正的 sidecar 输出，不应覆盖未提交改动",
+        "文档（docs/integration.md）更新说明新的比对语义： 'workspace snapshot 之前 / 之后' 而非 'workspace vs source'"
+      ],
+      "files": [
+        "src/councilflow/utils/io.py",
+        "src/councilflow/controller/delegation_orchestrator.py",
+        "tests/test_delegation_orchestrator.py",
+        "tests/test_workspace_detect.py",
+        "docs/integration.md"
+      ],
+      "module": "workspace-detect-fix",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_delegation_orchestrator.py tests/test_workspace_detect.py tests/test_workflow_integration.py"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-18T14:01:19.476Z",
+      "updated_at": "2026-04-18T14:01:19.476Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-057",
+      "title": "materialize_workspace 支持 dependency_symlinks，修复 node_modules/.venv 等依赖目录在 sidecar 里缺席导致 tester 无法运行的问题",
+      "description": "Chess 项目真实 smoke 2026-04-18 暴露：DEFAULT_ISOLATION_EXCLUDE_PATTERNS 排除 node_modules/**，导致 sidecar tester 无法跑 pnpm exec / python -m pytest / cargo test 等命令（找不到 .bin 二进制）。修复：为 IsolatedWorkspace 新增 dependency_symlinks 字段，默认覆盖 node_modules / .venv / venv / vendor / .gradle 等常见依赖目录；materialize_workspace 在 copy/git_worktree 成功后为每个存在的路径从 source 创建 junction (Windows mklink /J) 或 symlink (Unix)。sidecar 可读依赖但不应写入（文档说明；进一步隔离留给后续）。",
+      "dependencies": [],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "IsolatedWorkspace 新增 dependency_symlinks: list[str] 字段，默认包含 node_modules / .venv / venv / vendor / .gradle",
+        "materialize_workspace 在 copy / git_worktree 策略下完成后，为每个在 source 存在的路径于 workspace 里创建 junction/symlink，source 缺席时静默跳过",
+        "Windows 下使用 mklink /J 不需 admin 权限；Unix 使用 os.symlink(target_is_directory=True)；错误仅记录 debug 日志而不失败整个 materialize",
+        "新增回归测试：copy 策略 + source/node_modules/.bin/fake 存在 → workspace/node_modules/.bin/fake 可读",
+        "新增回归测试：dependency_symlinks 条目在 source 缺席时 materialize 不抛错，workspace 相应路径也缺席",
+        "docs/integration.md 更新说明：dependency 目录以只读共享方式暴露给 sidecar，不允许在 sidecar 里改变依赖（例如删 node_modules/.cache）——进一步隔离留给后续"
+      ],
+      "files": [
+        "src/councilflow/models/delegation.py",
+        "src/councilflow/utils/io.py",
+        "tests/test_workspace_symlinks.py",
+        "docs/integration.md"
+      ],
+      "module": "workspace-dependency-symlinks",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_workspace_symlinks.py tests/test_delegation_orchestrator.py tests/test_workflow_integration.py"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "auto_verified",
+      "created_at": "2026-04-18T14:32:09.559Z",
+      "updated_at": "2026-04-18T14:35:18.057Z",
+      "commit_hash": "",
+      "notes": "Automated gate passed. models/delegation.py adds DEFAULT_DEPENDENCY_SYMLINKS + IsolatedWorkspace.dependency_symlinks. utils/io.py::_link_dependency_dirs creates junctions (Windows mklink /J) or symlinks (Unix) after copy/git_worktree, silently skips missing deps, logs materialize.dependency_linked INFO. cleanup_workspace now unlinks top-level junctions via _unlink_top_level_links before rmtree/worktree-remove so source dep dirs are never touched. 6 new tests pass: defaults cover, symlink works + cleanup safe, missing deps no-op, opt-out skips symlink, Windows cleanup removes junction without source damage, git_worktree path also links. docs/integration.md documents read-only semantics. Ruff clean, full pytest 184/184."
     }
   ]
 }

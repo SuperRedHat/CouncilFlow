@@ -74,6 +74,21 @@ DEFAULT_ISOLATION_EXCLUDE_PATTERNS: tuple[str, ...] = (
     ".git/**",
 )
 
+# Dependency directories whose contents are expensive to copy but essential
+# for tester-stage verification commands (pnpm exec, python -m pytest,
+# cargo test, ...). materialize_workspace exposes each of these as a junction
+# / symlink into the source project so sidecar processes can read them.
+# The sidecar is expected to treat them as read-only shared references.
+DEFAULT_DEPENDENCY_SYMLINKS: tuple[str, ...] = (
+    "node_modules",
+    ".venv",
+    "venv",
+    "vendor",
+    ".gradle",
+    ".cargo",
+    "target",
+)
+
 
 class IsolatedWorkspace(BaseModel):
     """Sidecar workspace isolation contract for a delegated stage."""
@@ -84,6 +99,9 @@ class IsolatedWorkspace(BaseModel):
         default_factory=lambda: list(DEFAULT_ISOLATION_EXCLUDE_PATTERNS)
     )
     workspace_path: str | None = None
+    dependency_symlinks: list[str] = Field(
+        default_factory=lambda: list(DEFAULT_DEPENDENCY_SYMLINKS)
+    )
 
 
 class ImportManifest(BaseModel):

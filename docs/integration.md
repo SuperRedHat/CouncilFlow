@@ -311,6 +311,17 @@ objects that describe how the sidecar runs and how its results flow back:
   `.workflow-core`, `.claude/skills`, `.codex/skills`, and `.gemini/skills`. Any change
   under these paths is refused even if the sidecar produced one.
 
+- `execution_guardrails.isolated_workspace.dependency_symlinks` lists directories that
+  must be exposed inside the sidecar workspace so package-manager verification commands
+  (`pnpm exec`, `python -m pytest`, `cargo test`, ...) can resolve their binaries. The
+  default set covers `node_modules`, `.venv`, `venv`, `vendor`, `.gradle`, `.cargo`, and
+  `target`. On Windows these are mounted as NTFS junctions (`mklink /J`, no admin
+  required); on Unix they become `os.symlink(..., target_is_directory=True)` entries.
+  The sidecar is expected to treat them as read-only shared references — writing
+  through the junction lands in the host project, so guardrail-relying tasks should not
+  modify dependency contents. Entries that do not exist under the source are silently
+  skipped, so the feature is zero-cost for projects without those ecosystems.
+
 Ordinary code tasks must not override these defaults. Only workflow-maintenance tasks
 may relax `allow_workflow_state_write` or extend `writable_paths`; the controller is
 responsible for that decision and must justify it in the handoff package.
