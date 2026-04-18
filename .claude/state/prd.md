@@ -655,3 +655,49 @@ V1 完成时，至少满足：
 1. 本次变更同时影响 `CouncilFlow` 本体的 delegation/review artifact 契约、共享 `project-next` skill、集成文档、发布清单与自动化测试。
 2. 本次变更的目标是把“测试通过但主控仍需肉眼补审”的隐式流程，升级为正式可路由、可验证、可回放的 reviewer 闭环，而不是让 `tester` 无限膨胀成兼做语义评审的超级角色。
 3. 本节覆盖并 supersede 当前文档中所有“tester 通过后即可直接综合收口”的旧理解；新的产品语义应为：**只有当 tester 和 reviewer 都以显式 artifact 给出通过结论时，任务才允许完成流转。**
+
+## 28. 变更记录（2026-04-18，sidecar isolation 与非递归委派）
+本次变更聚焦 delegated sidecar 对宿主 workflow 状态面的污染风险，目标是把当前“在主项目工作区内执行 sidecar，再靠事后 guardrail 拦截”的模式，升级为“先隔离 sidecar，再按允许规则把结果导回主项目”的安全委派模式。
+
+新增产品要求：
+1. **普通 delegated stage 默认不得直接在主项目根目录执行**。`implementer`、`tester`、`reviewer`、`fixer` 这类 sidecar 角色，在常规代码任务中应运行于独立的 sidecar 工作区，而不是直接复用 controller 当前所在的项目根目录。
+2. **sidecar 工作区必须与 workflow 状态面隔离**。默认情况下，delegated sidecar 不应看见或写入宿主项目中的：
+   - `.council/state.json`
+   - `.claude/state/**`
+   - 共享 workflow 安装目录与全局 skill/MCP 配置
+   除非任务本身就是维护 `CouncilFlow` workflow 基础设施，且宿主显式允许。
+3. **委派结果应以受控导回为主，而不是直接原地生效**。sidecar 在隔离工作区内完成实现、测试、评审或修复后，应把结果以 patch / 允许文件变更 / 结构化 artifact 的形式交回，由 `CouncilFlow` 或当前主控按白名单规则导回主项目。
+4. **递归 workflow 入口必须默认关闭**。delegated sidecar 不应再递归触发 `council`、`project-*` skills 或 `project-manager` 状态写入；若检测到这类递归调用，应视为结构化错误而不是允许继续。
+5. **guardrail 继续保留，但降级为最后一道兜底**。现有“受保护路径写入”和“sidecar 擅自 git commit”检测仍然保留，但产品主路径应从“事后发现越权”升级为“事前减少 sidecar 可触达面”。
+6. **真实验收需要证明 sidecar 隔离后仍能完成常规任务**。新的 release/workflow gate 不仅要验证 `.council` / `.claude/state` 不再被 sidecar 触碰，还要验证 implementer/fixer 的代码结果能够安全导回主项目，并继续进入 tester/reviewer 闭环。
+
+范围说明：
+1. 本次变更优先聚焦 `delegate` 主路径及其与 `project-next` 的集成，不顺手把 provider 调度、异步 wait 或新的 UI 表面混入同一轮范围。
+2. 本节补充并 supersede 当前文档中“sidecar 只要不允许写受保护路径就够了”的旧理解；新的产品语义应为：**sidecar 默认应被隔离在 workflow 状态面之外，guardrail 只负责兜底，而不是承担主要隔离职责。**
+
+## 29. 变更记录（2026-04-18，code-review 综合修复批次）
+本次变更依据 `docs/code-review-2026-04-18.md` 与 `docs/code-review-2026-04-18-solutions.md` 两份审查报告，统一收口 Python 本体、共享 skills 与三端 MCP 层遗留的 34 条修复方案。
+
+新增产品要求：
+1. **默认角色映射必须有单一真源**：`templates/default-config.yaml` 与代码中 `DEFAULT_ROLE_MODELS` / `RoleMapping` 字段默认值必须对齐到同一来源，不允许"YAML 模板默认一套、Python 类默认另一套"的两份真值。
+2. **默认 advisor 模型必须映射到已实现 adapter 的主控**：在 `OpenAIChatAdapter` 未落地前，默认模板里的 `roles.advisor` 必须指向 `codex` / `claude` / `gemini` 其中之一，禁止指向没有 adapter 的 `gpt`；不可识别的模型名必须在 config 加载期被 `RoleMapping.normalize_models` 主动拒绝，而不是拖到运行时才报 "no adapter"。
+3. **`tester` 阶段的 preflight 契约必须由 orchestrator 主动计算**：caller 提供的 preflight 仅在已有明确 status ∈ {passed, permission_blocked, environment_not_ready} 时生效；否则 orchestrator 必须重新计算当前工作区的 command availability 与 permission allow 集合，避免"caller 伪造 passed"场景。
+4. **`--controller-position` 模式下不得坍缩 `min_rounds`**：当用户提供本地初始立场且未显式传 `--max-rounds` 时，`effective_max_rounds` 与 `effective_min_rounds` 必须沿用 `.council/config.yaml` 的 `discussion.max_rounds` / `discussion.min_rounds`，不再把 max_rounds 硬编码为 1。若确需"local initial position 下少跑轮"，应用独立命名字段（例如 `discussion.max_rounds_when_local_initial_position`），不得与 `min_rounds` 的"最小闭环"语义混用。
+5. **错误分类字段必须统一命名为 `kind`**：`ProviderError.kind`、`UnavailableParticipantError.kind`、`DelegationExecutionError.error_kind` 对外必须对齐到同一字段名 `kind`；旧的 `.error_kind` 保留 deprecated 别名至少一个次版本。`DelegationRecord` / `TesterPreflight` 等序列化结构字段名保持向后兼容不改。
+6. **specific Gemini 版本名不得污染 `ProviderResponse.model` 与 `DiscussionTurn.speaker_model`**：即便用户请求 `gemini-1.5-flash`，adapter 对外的 `model_name` 仍须归一化为 `"gemini"`；具体版本进入 `ProviderResponse.metadata.gemini_variant` 字段。
+7. **verification_commands 必须以结构化列表形式传递**：共享 skills（特别是 `project-next`）不得再用 `--input verification_commands="<joined>"` 的 legacy 字符串写法；改用可重复的 `--verification-command` list 参数。`handoff/packages.py` 中 `&&` 拆分的 legacy 分支进入 DeprecationWarning 状态，下一个次版本移除。
+8. **共享 skills 源必须保持清洁**：`.workflow-core/skills/project-*/` 目录内禁止出现 `*.bak`、编辑器临时文件或其他非 SKILL 内容。同步脚本必须主动过滤 `*.bak`、主动清理非 `project-*` 白名单之外的目录（含 brace-expansion 之类的误创目录），并在同步后做 SHA-256 一致性校验。
+9. **同步脚本不再伪装"备份"**：`sync-skills.ps1` 的 `-CreateBackup` 分支不得在目标目录内先写 `.bak` 再把目标整体删除；真实备份统一由 `backup-global-workflow.ps1` 快照承担。
+10. **MCP 服务器路径必须有单一真源**：不允许把 `~/.claude/mcp-project-manager/dist/index.js` 这样的绝对路径硬编码在 5 个不同位置。新增 `C:\Users\David Zhai\.workflow-core\mcp-manifest.json` 作为 manifest 真源；`install-global-workflow.ps1` / `backup-global-workflow.ps1` / `restore-global-workflow.ps1` 与三端注册命令都从 manifest 派生。
+11. **Gemini provider 默认不得启用 YOLO 审批模式**：`GeminiCliAdapter` 的默认 `--approval-mode` 改为 `default`；仅当 project config 或任务级明确要求时才允许切换到 `yolo`。`.gemini/settings.json` 的 `mcpServers.trust` 字段默认值必须能被 manifest 配置，而不是装机脚本硬编码 `--trust`。
+12. **skill 失败上报必须有统一协议**：所有 `role_driven` / `discussion` 技能在路由失败或 artifact 缺失时，必须按 `docs/integration.md` 新增的"工作流失败上报协议"输出一条结构化 JSON（含 `workflow`、`failed_stage`、`error_kind`、`council_available`、`artifact_paths`、`fallback_attempted`）并调用 project-manager MCP `add_log`，然后停止。不允许三主控各自用自由文本描述同一类失败。
+13. **skill 文案一致性**：`project-feedback` 必须补齐 `milestone_manual + stage_gate=true` 的正向通过与阶段 gate closed 标记分支；`project-init` / `project-plan` 必须明确"项目目录已确定"的判定依据与"未确定"时允许的行为集合；`project-review` / `project-change` / `project-plan` 的 Markdown 标题层级必须整理为清晰的 H2/H3/H4 结构，不得把子章节头 H3 混入有序列表打断编号。
+
+阶段策略：
+1. **Phase 0 + Phase 1**：先做共享源清理 + sync-skills 重构 + `project-next` 改 list 参数（TASK-049），再做 R0 代码修复（TASK-046 默认配置真源、TASK-047 advisor 默认、TASK-048 命名/路由一组小修）。
+2. **Phase 2**：skill 层收口（TASK-053 失败上报协议、TASK-054 结构/文案）。
+3. **Phase 3**：运维加固（TASK-050 MCP manifest、TASK-051 structured logging）。
+4. **Phase 4**：承接现有 TASK-042/043/044/045，落地 sidecar isolation；其中 TASK-052（Codex/Gemini 流式 runtime）依赖 TASK-044 + TASK-051。
+5. **Phase 5（可选）**：TASK-055 `OpenAIChatAdapter` 正式落地，同步放开 `advisor=gpt` 默认路径（依赖 TASK-047）。
+
+本节覆盖并 supersede 文档中先前所有"默认配置与实际模板可以不一致"、"verification_commands 可以用 `&&` 拼接传给 `--input`"、"Gemini 默认 YOLO + trust 可接受"、"skill 失败文案由各主控自由发挥"等旧约定。

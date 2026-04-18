@@ -1735,6 +1735,70 @@
       "from_status": "auto_verified",
       "to_status": "done",
       "message": "TASK-040 auto_verified → done: Acceptance mode is auto, so TASK-040 is complete after tester preflight, permission/environment failure classes, and sidecar guardrail detection all passed targeted verification."
+    },
+    {
+      "timestamp": "2026-04-18T10:46:41.918Z",
+      "type": "task_status_change",
+      "task_id": "TASK-041",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-041 todo → in_progress: Starting workflow-review-gate verification. Will run automated verification and sync first, then stop at manual acceptance with the real-controller smoke checklist for reviewer loop, tester preflight, and sidecar guard behavior."
+    },
+    {
+      "timestamp": "2026-04-18T10:47:01.215Z",
+      "type": "task_status_change",
+      "task_id": "TASK-041",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-041 in_progress → auto_verified: Automated gate passed for TASK-041: python -m ruff check ., python -m pytest (122 passed), and workflow-core sync-skills.ps1 all succeeded. Remaining work is the manual real-controller smoke for reviewer loop, tester preflight, and sidecar guard behavior."
+    },
+    {
+      "timestamp": "2026-04-18T10:47:04.322Z",
+      "type": "task_status_change",
+      "task_id": "TASK-041",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-041 auto_verified → awaiting_manual_acceptance: Manual gate required. Automated verification passed, but final acceptance still needs real Codex/Claude/Gemini controller smoke to confirm reviewer-loop routing, tester preflight failure reporting, and sidecar no-commit/no-state-write behavior in a live project."
+    },
+    {
+      "timestamp": "2026-04-18T11:34:03.084Z",
+      "type": "review_completed",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "完成全量代码审查，产出 docs/code-review-2026-04-18.md。发现：2 个 🔴 R0 级问题（默认配置双真源不一致、advisor=gpt 无 adapter）、1 个 🔴 tester preflight 被静默覆盖 bug、1 个 🟠 --controller-position 下 min_rounds 被压为 1（与 PRD §23.4 冲突）、10+ 个中低优先级问题。对 TASK-041/042/043/044/045 逐个评估：整体合理；TASK-042 建议把 contract 字段提前定细（推荐升级复杂度为 L），TASK-043 建议拆成 3 个子任务（materialize / manifest / import）。建议追加 5 个收尾任务：修默认配置、修 advisor adapter、修 min_rounds bug 与 error_kind 命名、引入 structured logging、Codex/Gemini 流式 runtime 探针。"
+    },
+    {
+      "timestamp": "2026-04-18T11:49:55.830Z",
+      "type": "review_completed",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "完成共享 skills + MCP 层审查，并输出完整解决方案 docs/code-review-2026-04-18-solutions.md。新发现 12 条问题：其中 4 个 🔴 R0（共享源 .bak 文件污染、sync-skills 自毁型备份、project-next 违反 PRD §27.5 用 &&join 传 verification_commands、默认配置双真源在前次审查已列）、6 个 🟠 R1（codex skills 里孤儿 {project-init,...} 目录、MCP 路径 5 处硬编码、Gemini trust+YOLO+非隔离三重叠加、sync 不清理 orphan、skill 失败上报无统一协议、Claude Code MCP per-project 重复）、2 个 🟢 R2（skill 标题层级混乱、init/plan 项目目录未确定时路由文案模糊）。解决方案分为 Phase 0（一次性清理）→ 1（R0 缺陷）→ 2（命名/协议）→ 3（运维加固）→ 4（架构隔离 TASK-042/043/044）五个阶段，并建议新增 TASK-046 ~ TASK-055 共 10 个任务。"
+    },
+    {
+      "timestamp": "2026-04-18T12:08:04.522Z",
+      "type": "decision",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "project-change 完成（2026-04-18）：依据 code-review-2026-04-18.md 与 code-review-2026-04-18-solutions.md 两份审查报告，通过 architect → planner → synthesizer route-first 阶段机（三阶段均 local_execution，因默认 config 全 claude），追加 TASK-046 ~ TASK-055 共 10 个任务。分阶段策略：Phase 0/1（TASK-046/047/048/049）→ Phase 2（TASK-053/054）→ Phase 3（TASK-050/051）→ Phase 4（TASK-052 + 既有 TASK-042/043/044/045 sidecar isolation）→ Phase 5（TASK-055 可选 OpenAIChatAdapter）。PRD §29 与架构 §25 同步记录本轮变更。"
+    },
+    {
+      "timestamp": "2026-04-18T12:20:28.736Z",
+      "type": "task_status_change",
+      "task_id": "TASK-049",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-049 todo → in_progress: Starting shared-skills-hygiene. Will route implementer/tester/reviewer, then clean .bak, rewrite sync-skills.ps1, remove orphan, refactor project-next SKILL.md to use repeatable --verification-command."
+    },
+    {
+      "timestamp": "2026-04-18T12:33:59.672Z",
+      "type": "task_status_change",
+      "task_id": "TASK-049",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-049 in_progress → auto_verified: Automated gate passed: ruff OK, pytest 122 passed, sync-skills.ps1 new version synced 11 skills to 3 targets with SHA-256 verify passing, all 4 trees free of .bak, codex orphan {project-init,...} dir removed, project-next SKILL.md refactored to --verification-command list. Next: create commit then await manual smoke (stage_gate=true)."
     }
   ]
 }

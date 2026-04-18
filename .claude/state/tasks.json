@@ -1946,11 +1946,11 @@
         "python -m pytest",
         "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'"
       ],
-      "status": "todo",
+      "status": "awaiting_manual_acceptance",
       "created_at": "2026-04-18T08:10:40.000Z",
-      "updated_at": "2026-04-18T08:10:40.000Z",
+      "updated_at": "2026-04-18T10:47:04.302Z",
       "commit_hash": "",
-      "notes": "",
+      "notes": "Manual gate required. Automated verification passed, but final acceptance still needs real Codex/Claude/Gemini controller smoke to confirm reviewer-loop routing, tester preflight failure reporting, and sidecar no-commit/no-state-write behavior in a live project.",
       "review_checklist": [
         "在真实项目中验证 project-next 的 tester -> reviewer -> fixer -> tester -> reviewer 闭环",
         "故意制造一次 tester 权限阻塞，确认 workflow 报告 permission_blocked 或 environment_not_ready，而不是静默回退",
@@ -1958,6 +1958,563 @@
         "确认最终只有在 tester 与 reviewer 都明确通过后，controller 才执行任务状态流转与提交"
       ],
       "stage_gate": true
+    },
+    {
+      "id": "TASK-042",
+      "title": "建模 isolated sidecar workspace 与受控导回契约",
+      "description": "扩展 delegation/handoff/result 契约，正式引入 sidecar workspace、导回清单与受保护 workflow 路径默认隔离语义，为后续实现提供单一真相源。",
+      "dependencies": [
+        "TASK-040"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "delegation 模型可显式表达 isolated workspace、受控导回文件清单与只读 artifact 清单",
+        "集成文档明确普通代码任务默认不让 sidecar 直接运行在主项目根目录",
+        "workflow 状态目录和全局 workflow 配置被建模为 sidecar 默认不可见/不可写区域",
+        "自动化测试覆盖新的 handoff/result 契约字段与默认 guardrail 语义"
+      ],
+      "files": [
+        "src/councilflow/models/delegation.py",
+        "src/councilflow/handoff/packages.py",
+        "src/councilflow/handoff/prompts.py",
+        "docs/integration.md",
+        "tests/test_workflow_integration.py",
+        "tests/test_cli_delegate.py"
+      ],
+      "module": "sidecar-isolation-contract",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_workflow_integration.py tests/test_cli_delegate.py tests/test_delegation_orchestrator.py"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-18T11:14:26.000Z",
+      "updated_at": "2026-04-18T11:14:26.000Z",
+      "commit_hash": "",
+      "notes": "",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-043",
+      "title": "实现 delegation 的隔离工作区 materialize 与合法变更导回",
+      "description": "在 delegation_orchestrator 中为 delegated stage 创建独立 sidecar workspace，允许 sidecar 只在隔离工作区内修改文件，再把合法代码变更和只读 artifact 受控导回主项目。",
+      "dependencies": [
+        "TASK-042"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "delegated implementer/fixer/tester/reviewer 默认在独立 sidecar workspace 中运行，而不是直接写主工作区",
+        "orchestrator 能生成并持久化 sidecar workspace artifact manifest，并把允许的代码变更导回主项目",
+        "workflow 状态文件与受保护路径不会被导回，即使 sidecar 工作区里出现对应修改也会被拒绝",
+        "自动化测试覆盖导回成功、导回冲突和受保护路径变更被拦截场景"
+      ],
+      "files": [
+        "src/councilflow/controller/delegation_orchestrator.py",
+        "src/councilflow/state/paths.py",
+        "src/councilflow/utils/io.py",
+        "tests/test_delegation_orchestrator.py",
+        "tests/test_cli_delegate.py"
+      ],
+      "module": "sidecar-workspace-import",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_delegation_orchestrator.py tests/test_cli_delegate.py tests/test_workflow_integration.py"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-18T11:14:26.000Z",
+      "updated_at": "2026-04-18T11:14:26.000Z",
+      "commit_hash": "",
+      "notes": "",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-044",
+      "title": "实现 delegated-stage 非递归 runtime 与环境剥离",
+      "description": "为非主控 sidecar 启动路径加入 delegated-stage 环境剥离和递归 workflow 禁用逻辑，防止 sidecar 在运行时再次调用 council、project-* 或 project-manager，并保留现有 guardrail 作为最后兜底。",
+      "dependencies": [
+        "TASK-042",
+        "TASK-043"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "sidecar 子进程默认不会继承会触发 controller/workflow 识别的环境信号",
+        "delegated stage 内部再次调用 council 或 project-* 时会返回结构化错误，而不是递归进入新 workflow",
+        "provider 层与 CLI 层能区分普通 provider 失败和 recursive workflow violation",
+        "自动化测试覆盖递归调用阻断、环境剥离非回归和 guardrail 兜底路径"
+      ],
+      "files": [
+        "src/councilflow/providers/base.py",
+        "src/councilflow/providers/claude_code_cli.py",
+        "src/councilflow/providers/codex_cli.py",
+        "src/councilflow/providers/gemini_cli.py",
+        "src/councilflow/cli/delegate.py",
+        "src/councilflow/cli/discuss.py",
+        "tests/test_provider_adapters.py",
+        "tests/test_cli_delegate.py",
+        "tests/test_workflow_integration.py"
+      ],
+      "module": "sidecar-recursion-guard",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_provider_adapters.py tests/test_cli_delegate.py tests/test_workflow_integration.py"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-18T11:14:26.000Z",
+      "updated_at": "2026-04-18T11:14:26.000Z",
+      "commit_hash": "",
+      "notes": "",
+      "review_checklist": [],
+      "stage_gate": false
+    },
+    {
+      "id": "TASK-045",
+      "title": "验收 sidecar isolation 的真实主控行为",
+      "description": "在真实 Codex/Claude/Gemini 主控项目中验证 isolated sidecar workspace、合法变更导回与非递归 guard：确认 delegated implementer/fixer 不再触碰宿主 .council/.claude 状态文件，同时代码结果仍可继续进入 tester/reviewer 闭环。",
+      "dependencies": [
+        "TASK-043",
+        "TASK-044"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "真实 delegated implementer/fixer 不会再直接修改宿主 .council/state.json 或 .claude/state/**",
+        "在隔离工作区模式下，合法代码变更能够被安全导回主项目，并继续进入 tester/reviewer 闭环",
+        "故意触发 sidecar 内部 council/project-* 递归调用时，workflow 会返回结构化错误并停止",
+        "release checklist 明确覆盖 isolated workspace、导回成功路径和非递归 guard 的 smoke 步骤"
+      ],
+      "files": [
+        "docs/release-checklist.md",
+        "docs/integration.md",
+        "tests/test_workflow_integration.py",
+        "src/councilflow/controller/delegation_orchestrator.py",
+        "src/councilflow/cli/delegate.py"
+      ],
+      "module": "sidecar-isolation-gate",
+      "needs_manual_review": true,
+      "acceptance_mode": "manual",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest",
+        "& 'C:\\Users\\David Zhai\\.workflow-core\\scripts\\sync-skills.ps1'"
+      ],
+      "status": "todo",
+      "created_at": "2026-04-18T11:14:26.000Z",
+      "updated_at": "2026-04-18T11:14:26.000Z",
+      "commit_hash": "",
+      "notes": "",
+      "review_checklist": [
+        "在真实项目中验证 delegated implementer/fixer 不再触碰宿主 .council/state.json 或 .claude/state/**",
+        "验证隔离工作区中的合法代码改动会被安全导回主项目，并继续进入 tester/reviewer 闭环",
+        "故意触发 sidecar 内部 council/project-* 递归调用，确认 workflow 返回结构化错误并停止",
+        "确认 release checklist 已覆盖 isolated workspace、导回成功路径和非递归 guard 的 smoke 步骤"
+      ],
+      "stage_gate": true
+    },
+    {
+      "id": "TASK-046",
+      "title": "统一默认配置真源（default-config.yaml ↔ RoleMapping）",
+      "description": "把 templates/default-config.yaml 设为默认角色映射的唯一真源；RoleMapping 字段默认改为 model_validator(mode='before') 从模板派生。新增一致性测试，确保代码默认与 YAML 模板字节级一致。",
+      "dependencies": [],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "RoleMapping.model_validate({}) 返回的字段值与 templates/default-config.yaml roles 段完全一致",
+        "DEFAULT_ROLE_MODELS 字典标记为 deprecated 且内部委托给模板派生函数",
+        "新增 tests/test_config_defaults_consistency.py 用例并通过",
+        "任何未来修改模板 roles 段或 RoleMapping 默认值时该测试能捕获漂移"
+      ],
+      "files": [
+        "src/councilflow/config/loader.py",
+        "src/councilflow/models/config.py",
+        "src/councilflow/models/roles.py",
+        "tests/test_config_defaults_consistency.py",
+        "tests/test_config_loader.py"
+      ],
+      "module": "config-single-source",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_config_loader.py tests/test_config_defaults_consistency.py"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-18T12:07:59.561Z",
+      "updated_at": "2026-04-18T12:07:59.561Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-047",
+      "title": "修复默认 advisor 角色无 adapter 的启动失败路径",
+      "description": "把 templates/default-config.yaml 中 roles.advisor 与 DEFAULT_ROLE_MODELS[ADVISOR] 统一改到已实现 adapter 的主控（claude 或 gemini）；normalize_model_name 对未知模型主动抛错，不再静默降级；ProviderError 新增 kind='adapter_missing'。",
+      "dependencies": [
+        "TASK-046"
+      ],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "默认 config 下 council delegate --role advisor 返回 local_execution 或正常委派，不抛 'No provider adapter'",
+        "RoleMapping.model_validate({'planner': 'clood'}) 在 config 加载期抛 ValueError",
+        "ProviderError 支持 kind='adapter_missing' 并被 DelegationOrchestrator._persist_failure 正确透传",
+        "tests/test_alias_normalization.py 覆盖未知模型拒绝路径"
+      ],
+      "files": [
+        "src/councilflow/templates/default-config.yaml",
+        "src/councilflow/models/roles.py",
+        "src/councilflow/models/config.py",
+        "src/councilflow/providers/base.py",
+        "src/councilflow/cli/delegate.py",
+        "tests/test_alias_normalization.py",
+        "tests/test_cli_delegate.py"
+      ],
+      "module": "advisor-adapter-fallback",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_alias_normalization.py tests/test_cli_delegate.py tests/test_config_loader.py"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-18T12:07:59.561Z",
+      "updated_at": "2026-04-18T12:07:59.561Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-048",
+      "title": "discuss min_rounds 坍缩 + error kind 统一 + Gemini variant 名隔离 + adapter registry",
+      "description": "一组高密度修复：1) 移除 cli/discuss.py 里 --controller-position 下把 effective_max_rounds 压为 1 的自动降级；2) UnavailableParticipantError 字段改名为 kind，error_kind 保留为 deprecated 别名；3) GeminiCliAdapter.model_name 归一化为 'gemini'，specific 版本进 metadata.gemini_variant；4) 新增 providers/registry.py，cli/delegate 与 cli/discuss 的 adapter factory 改调 resolve_adapter。",
+      "dependencies": [],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "council discuss --controller-position '<pos>' 不再把 effective_max_rounds 压为 1；effective_min_rounds 与 config.discussion.min_rounds 对齐",
+        "raise UnavailableParticipantError(msg, kind='...') 可被 discussion_orchestrator 正确持久化到 record.json 的 error_kind",
+        "GeminiCliAdapter(model='gemini-1.5-flash').ask(...) 返回的 ProviderResponse.model == 'gemini'，metadata 含 gemini_variant",
+        "新增 providers/registry.py 并被 cli/delegate.py 与 cli/discuss.py 共享；tests/test_provider_adapters.py 覆盖 registry 查表与未知模型的 adapter_missing 分类"
+      ],
+      "files": [
+        "src/councilflow/cli/discuss.py",
+        "src/councilflow/cli/delegate.py",
+        "src/councilflow/controller/discussion_orchestrator.py",
+        "src/councilflow/providers/gemini_cli.py",
+        "src/councilflow/providers/registry.py",
+        "tests/test_cli_discuss.py",
+        "tests/test_discussion_orchestrator.py",
+        "tests/test_provider_adapters.py"
+      ],
+      "module": "naming-and-routing-harmonization",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_cli_discuss.py tests/test_discussion_orchestrator.py tests/test_provider_adapters.py tests/test_cli_delegate.py"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-18T12:07:59.561Z",
+      "updated_at": "2026-04-18T12:07:59.561Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-049",
+      "title": "共享 skills 清理 + sync-skills.ps1 重构 + project-next 改 --verification-command list",
+      "description": "一次性修复共享源污染与分发机制缺陷：1) 删除 .workflow-core/skills/project-*/SKILL.md.bak；2) 重写 sync-skills.ps1（白名单过滤、排除 .bak、orphan 清理、malformed 目录清理、SHA-256 校验、不再伪装备份）；3) 清除 .codex/skills 里 {project-init,...} 孤儿目录；4) 修改 .workflow-core/skills/project-next/SKILL.md，把 --input verification_commands 改成可重复的 --verification-command list。",
+      "dependencies": [],
+      "complexity": "M",
+      "acceptance_criteria": [
+        ".workflow-core/skills/**/*.bak 全部清除；三端目标目录 .codex/.claude/.gemini skills 下均无 .bak",
+        ".codex/skills/ 下不再存在 '{project-init,...}' 这种字面名目录，sync-skills.ps1 对 malformed 目录有主动清理",
+        "sync-skills.ps1 在同步后对每个技能的 SKILL.md 做 SHA-256 比对，不一致时 throw；-CreateBackup 开关不再在目标目录内写 .bak",
+        ".workflow-core/skills/project-next/SKILL.md 的 tester 阶段 delegate 命令使用 --verification-command（可重复），不再用 --input verification_commands=<joined>",
+        "手工在真实 Codex/Claude/Gemini 主控会话里运行一次 /project-next 或 /project-status，确认 slash 列表不再出现 .bak 对应的重复/异常条目"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/scripts/sync-skills.ps1",
+        "C:/Users/David Zhai/.workflow-core/skills/project-next/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-init/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-plan/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-change/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-feedback/SKILL.md",
+        "docs/integration.md"
+      ],
+      "module": "shared-skills-hygiene",
+      "needs_manual_review": true,
+      "acceptance_mode": "milestone_manual",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest",
+        "& 'C:/Users/David Zhai/.workflow-core/scripts/sync-skills.ps1'"
+      ],
+      "review_checklist": [
+        "在真实 Claude Code / Codex / Gemini 会话里 /project-status 确认三端 skills 目录无 .bak",
+        "故意在 .workflow-core/skills/ 放一个临时 project-foo 目录再 sync-skills，确认 orphan 在三端被自动清理",
+        "在 Claude 主控里跑一次 project-next 的 tester 阶段，确认 handoff.yaml 的 verification_commands 是结构化列表而非单条字符串"
+      ],
+      "stage_gate": true,
+      "status": "auto_verified",
+      "created_at": "2026-04-18T12:07:59.561Z",
+      "updated_at": "2026-04-18T12:33:59.639Z",
+      "commit_hash": "",
+      "notes": "Automated gate passed: ruff OK, pytest 122 passed, sync-skills.ps1 new version synced 11 skills to 3 targets with SHA-256 verify passing, all 4 trees free of .bak, codex orphan {project-init,...} dir removed, project-next SKILL.md refactored to --verification-command list. Next: create commit then await manual smoke (stage_gate=true)."
+    },
+    {
+      "id": "TASK-050",
+      "title": "MCP 路径抽离到 .workflow-core/mcp-manifest.json 单一真源",
+      "description": "新增 .workflow-core/mcp-manifest.json 承担 MCP server 注册的绝对路径、args、trust、env 等配置真源；install-global-workflow.ps1 / backup-global-workflow.ps1 / restore-global-workflow.ps1 从 manifest 派生三端注册命令，不再在五处硬编码 mcp-project-manager/dist/index.js。",
+      "dependencies": [
+        "TASK-049"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "新增 .workflow-core/mcp-manifest.json，字段至少包含 version, servers.<name>.command, args_template, env, trust",
+        "install-global-workflow.ps1 读取 manifest 并派生 codex/claude/gemini 注册；改动 MCP 路径只需修改 manifest 一处",
+        "backup-global-workflow.ps1 把 mcp-manifest.json 一并纳入快照；restore-global-workflow.ps1 能用 manifest 还原三端注册",
+        "docs/integration.md 记录 Claude Code MCP per-project 语义与 manifest 使用指南",
+        "真实跑一次 install-global-workflow.ps1，三端 CLI 均能 list 到 project-manager MCP"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/mcp-manifest.json",
+        "C:/Users/David Zhai/.workflow-core/scripts/install-global-workflow.ps1",
+        "C:/Users/David Zhai/.workflow-core/scripts/backup-global-workflow.ps1",
+        "C:/Users/David Zhai/.workflow-core/scripts/restore-global-workflow.ps1",
+        "docs/integration.md"
+      ],
+      "module": "mcp-manifest-single-source",
+      "needs_manual_review": true,
+      "acceptance_mode": "milestone_manual",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "& 'C:/Users/David Zhai/.workflow-core/scripts/install-global-workflow.ps1'"
+      ],
+      "review_checklist": [
+        "在 Claude Code 里 claude mcp get project-manager 的命令/参数与 manifest 一致",
+        "在 Codex 里 codex mcp get project-manager 的命令/参数与 manifest 一致",
+        "在 Gemini 里读取 .gemini/settings.json 确认 command/args/trust 与 manifest 一致",
+        "故意修改 manifest 里的 args 版本，重跑 install，确认三端都能更新到新路径"
+      ],
+      "stage_gate": true,
+      "status": "todo",
+      "created_at": "2026-04-18T12:07:59.561Z",
+      "updated_at": "2026-04-18T12:07:59.561Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-051",
+      "title": "引入 structured logging（COUNCILFLOW_DEBUG + councilflow.<module> logger）",
+      "description": "新增 utils/logging.py 暴露 configure_logging()，cli/app.py::main 最早调用；在 DelegationOrchestrator、DiscussionOrchestrator、run_monitored_process、guardrail 触发点补齐 logger.info / logger.debug。严禁记录 prompt 文本内容，只记录耗时、event count、guardrail 触发理由。",
+      "dependencies": [],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "新增 src/councilflow/utils/logging.py，提供 configure_logging() 并遵循 COUNCILFLOW_DEBUG=1 切 DEBUG 的协议",
+        "cli/app.py::main 在 Typer 调用前触发 configure_logging",
+        "DelegationOrchestrator.run / DiscussionOrchestrator.run / run_monitored_process / guardrail 触发点至少各有一条 INFO 级日志，包含 delegation/discussion id、role、耗时",
+        "grep 全仓源码，日志中不出现任何 prompt / handoff 正文 / user input 字符串",
+        "tests/test_logging.py 覆盖 COUNCILFLOW_DEBUG=0 vs =1 的行为差异"
+      ],
+      "files": [
+        "src/councilflow/utils/logging.py",
+        "src/councilflow/cli/app.py",
+        "src/councilflow/controller/delegation_orchestrator.py",
+        "src/councilflow/controller/discussion_orchestrator.py",
+        "src/councilflow/providers/base.py",
+        "tests/test_logging.py"
+      ],
+      "module": "structured-logging",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_logging.py",
+        "python -m pytest"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-18T12:07:59.561Z",
+      "updated_at": "2026-04-18T12:07:59.561Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-052",
+      "title": "Codex / Gemini 流式 runtime 探针与切换（PRD §25 尾巴）",
+      "description": "新增 providers/runtime_probe.py，在启动时探测 Codex 是否支持 --json、Gemini 是否支持 --output-format stream-json，结果缓存到 .council/runtime/providers.json。当探针显示支持时，CodexCliAdapter / GeminiCliAdapter 切换到 run_monitored_process 路径，和 ClaudeCodeCliAdapter 共享 idle_timeout 语义。不支持时保持现有 blocking 路径。",
+      "dependencies": [
+        "TASK-044",
+        "TASK-051"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "新增 runtime_probe 模块并能缓存探测结果到 .council/runtime/providers.json",
+        "当探针显示支持流式时，对应 adapter 走 run_monitored_process，捕获 event-level metadata",
+        "当探针失败时 fallback 到现有 subprocess.run 实现，行为与切换前一致",
+        "idle_timeout 错误分类在 Codex / Gemini 路径上与 Claude 一致（kind='idle_timeout'）",
+        "新增集成测试：mock 探针返回 True / False 两种路径，断言超时分类正确"
+      ],
+      "files": [
+        "src/councilflow/providers/base.py",
+        "src/councilflow/providers/runtime_probe.py",
+        "src/councilflow/providers/codex_cli.py",
+        "src/councilflow/providers/gemini_cli.py",
+        "tests/test_provider_adapters.py",
+        "tests/test_runtime_probe.py"
+      ],
+      "module": "provider-runtime-unification",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_provider_adapters.py tests/test_runtime_probe.py"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-18T12:07:59.561Z",
+      "updated_at": "2026-04-18T12:07:59.561Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-053",
+      "title": "共享 skills 失败上报统一协议",
+      "description": "在 docs/integration.md 新增『工作流失败上报协议』章节（workflow, failed_stage, error_kind, council_available, artifact_paths, fallback_attempted 六字段 JSON + MCP add_log 双载体）；所有 role_driven / discussion 类型的共享 skill 在注意事项中引用该协议。",
+      "dependencies": [],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "docs/integration.md 新增『工作流失败上报协议』章节，字段、载体、council_available 分类描述完整",
+        "project-init / project-design / project-plan / project-change / project-next / project-review / project-ask / project-discuss / project-feedback 9 个共享 skill 的注意事项引用该协议",
+        "在真实 Claude Code / Codex / Gemini 会话里制造一次 council delegate 失败，观察到三端输出字段一致的 JSON 失败报告 + MCP add_log",
+        "sync-skills.ps1 跑完后，三端 SKILL.md SHA256 与共享源一致"
+      ],
+      "files": [
+        "docs/integration.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-init/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-design/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-plan/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-change/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-next/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-review/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-ask/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-discuss/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-feedback/SKILL.md"
+      ],
+      "module": "skill-failure-report",
+      "needs_manual_review": true,
+      "acceptance_mode": "milestone_manual",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest",
+        "& 'C:/Users/David Zhai/.workflow-core/scripts/sync-skills.ps1'"
+      ],
+      "review_checklist": [
+        "在 Claude Code 里 /project-next 故意走错参数触发 delegate 失败，确认输出了 JSON 失败报告",
+        "在 Codex 里同样触发失败，确认 JSON 字段和 add_log 与 Claude 一致",
+        "在 Gemini 里同样触发失败，确认 JSON 字段和 add_log 与 Claude 一致"
+      ],
+      "stage_gate": true,
+      "status": "todo",
+      "created_at": "2026-04-18T12:07:59.561Z",
+      "updated_at": "2026-04-18T12:07:59.561Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-054",
+      "title": "共享 skills 结构梳理 + milestone gate / 项目目录未确定文案补齐",
+      "description": "project-review / project-change / project-plan 的 Markdown 标题层级重新整理为 H2/H3/H4 的清晰结构，『多模型协作（可选）』降级为 H4 子章节并移出有序列表；project-feedback 补齐 milestone_manual + stage_gate=true 分支；project-init / project-plan 明确『项目目录已确定』的判定依据与未确定时允许的行为。",
+      "dependencies": [
+        "TASK-049"
+      ],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "project-review / project-change / project-plan 三个 skill 的标题层级不再打断编号列表，H3/H4 层级一致",
+        "project-feedback 新增 milestone_manual + stage_gate=true 正向通过 / 阶段 gate closed 标记的具体 MCP 调用顺序",
+        "project-init / project-plan 明确『项目目录已确定』的判定方式（get_project_info.project_dir 有值且目录存在）与未确定时的行为集合",
+        "sync-skills.ps1 跑完后三端 SHA256 与共享源一致"
+      ],
+      "files": [
+        "C:/Users/David Zhai/.workflow-core/skills/project-review/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-change/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-plan/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-feedback/SKILL.md",
+        "C:/Users/David Zhai/.workflow-core/skills/project-init/SKILL.md"
+      ],
+      "module": "skill-content-harmonization",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "& 'C:/Users/David Zhai/.workflow-core/scripts/sync-skills.ps1'"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-18T12:07:59.561Z",
+      "updated_at": "2026-04-18T12:07:59.561Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-055",
+      "title": "（可选）OpenAIChatAdapter 实现，恢复 advisor=gpt 默认路径",
+      "description": "新增 src/councilflow/providers/openai_api.py，通过延迟 import openai SDK 避免硬依赖；注册到 providers/registry.py；恢复 templates/default-config.yaml 的 advisor=gpt 作为推荐默认。pyproject.toml 引入 openai 作为 extras 依赖，README 与 integration.md 注明 API key 配置方式。",
+      "dependencies": [
+        "TASK-047"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "src/councilflow/providers/openai_api.py 实现 OpenAIChatAdapter，未安装 openai SDK 时抛 ProviderError(kind='environment_not_ready')",
+        "providers/registry.py 注册 'gpt' family；cli/delegate 与 cli/discuss 通过 resolve_adapter 可解析 gpt",
+        "templates/default-config.yaml 恢复 advisor=gpt（或保留现值，改由配置明确说明可选）",
+        "pyproject.toml extras 引入 openai >= 1.0；README 与 docs/integration.md 补充 OPENAI_API_KEY 使用说明",
+        "tests/test_provider_adapters.py 覆盖：未装 openai 时 adapter 抛 environment_not_ready；装了之后 ask() 能走 OpenAI mock 返回正常 response"
+      ],
+      "files": [
+        "src/councilflow/providers/openai_api.py",
+        "src/councilflow/providers/registry.py",
+        "src/councilflow/templates/default-config.yaml",
+        "pyproject.toml",
+        "docs/integration.md",
+        "readme.md",
+        "tests/test_provider_adapters.py"
+      ],
+      "module": "openai-advisor-adapter",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_provider_adapters.py"
+      ],
+      "review_checklist": [],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-18T12:07:59.561Z",
+      "updated_at": "2026-04-18T12:07:59.561Z",
+      "commit_hash": "",
+      "notes": ""
     }
   ]
 }

@@ -870,3 +870,70 @@ graph TD
 1. 本次变更优先修改集成契约、共享 `project-next` skill、handoff/result 模型与自动化测试；只有在现有 provider runtime 不足以表达 tester preflight 时，才补充 provider 或 CLI 表面。
 2. 本次变更不要求把所有 role-driven skills 都立即升级为带 reviewer 的多阶段技能；优先收口 `project-next` 这一条闭环最长、风险最高的执行路径。
 3. 本节补充并 supersede 当前架构中“tester 已能承担验证闭环”的旧假设；新的架构语义应为：**验证是否可交付，需要 tester 的执行证据和 reviewer 的语义证据共同成立。**
+
+## 24. 变更记录（2026-04-18，sidecar isolation 与非递归委派）
+本次变更聚焦 delegated sidecar 的执行边界。当前架构虽然已经能在 sidecar 越权写入 `.council/state.json` 或创建 git commit 时事后报错，但 sidecar 仍运行在宿主项目工作区附近，存在递归触发 workflow、污染状态面和误修改受保护文件的风险。新的目标是把隔离前移到 sidecar 运行时本身。
+
+新增架构要求：
+1. **delegated stage 需要独立工作区抽象**。`delegation_orchestrator` 不应再默认让 provider 直接在宿主项目根目录内工作；它需要先为本次 delegation materialize 一个独立的 sidecar workspace，再把 handoff prompt 和文件上下文交给 provider。
+2. **优先采用“隔离执行 -> 受控导回”的模型**。推荐架构为：
+   - 为 delegation 创建宿主外部的临时 sidecar workspace；
+   - 将任务相关代码、测试和必要上下文 materialize 到该工作区；
+   - sidecar 只在该工作区内修改文件并产出 result artifact；
+   - orchestrator 按 `execution_guardrails` 的允许范围，把合法变更导回宿主项目。
+   这样 sidecar 永远不直接触碰宿主 `.council` / `.claude/state`。
+3. **宿主 workflow 状态目录默认不进入 sidecar workspace**。`.council/state.json`、`.claude/state/**`、共享 skills 安装目录、用户级 MCP 配置等路径，默认应从 sidecar 可见工作区中排除；普通实现/测试/评审任务无权声明它们为可写输入。
+4. **需要显式的导回契约**。Delegation result 除了 `result.md` 外，还应具备机器可读的 sidecar workspace 产物清单，用于告诉 controller：
+   - 哪些文件被修改；
+   - 哪些修改可安全导回；
+   - 哪些 artifact 仅供读取（如测试日志、review findings）；
+   - 若导回失败，宿主应停止并报告，而不是 silently partially apply。
+5. **需要非递归 runtime guard**。sidecar 子进程启动时应剥离会导致递归 workflow 的环境信号，并增加显式 delegated-stage guard，例如阻止在 sidecar 内再次调用 `council` / `project-*` 主工作流。即使 provider 仍能访问同一台机器，也不应默认继承 controller 的 workflow 入口语义。
+6. **guardrail 检测继续保留为 post-run safety net**。现有 protected-path diff 检查和 git HEAD 检查不应删除，但它们的角色应从“主要隔离机制”降为“导回前的最后一道防线”。
+7. **集成层需要区分两类任务**：
+   - 普通代码任务：默认 isolated workspace + 受控导回；
+   - workflow-maintenance 任务：只有宿主显式允许时，才可放宽写入范围以修改 `.council` / `.claude/state` 等 workflow 文件。
+8. **真实验收要覆盖 sidecar isolation 成功路径**。新的 smoke 和回归不仅要验证越权时会被拦下，还要验证在隔离工作区模式下，implementer/fixer 的合法代码修改能被成功导回宿主项目，并继续进入 tester/reviewer 闭环。
+
+实现边界：
+1. 本次变更优先影响 `delegation_orchestrator`、handoff/result 模型、provider 启动环境和集成文档；不要求在同一轮里同时重写 discuss 协议或新增长期后台进程。
+2. 对 git 仓库与非 git 目录，sidecar workspace 的 materialize 策略可以不同，但对宿主 workflow 的要求应一致：**sidecar 不直接写主工作区，controller 只消费显式 artifact 与受控导回结果。**
+3. 本节补充并 supersede 当前架构中“protected path diff 足以代表隔离”的旧假设；新的架构语义应为：**先隔离 sidecar 的执行表面，再用 guardrail 检查导回结果。**
+
+## 25. 变更记录（2026-04-18，code-review 综合修复架构）
+本次架构变更承接 PRD §29，把代码审查暴露的 22 条代码层问题与 12 条 skills/MCP 层问题整理为一份可追踪的架构调整清单。
+
+新增架构要求：
+
+1. **配置真源层**：`config/loader.py` 新增 `_cached_default_payload()` / `default_role_mapping_payload()` 辅助函数，作为 `RoleMapping` 默认字段的唯一来源；`models/config.py::RoleMapping` 的字段默认改为 `model_validator(mode="before")` 从模板派生。`DEFAULT_ROLE_MODELS` 常量保留一个版本并内部委托给模板派生函数。
+2. **model name 归一化层**：`models/roles.py` 新增 `resolve_provider_family(name) -> Literal["codex","claude","gemini","gpt"] | None` 与 `validate_model_name(name)`；`RoleMapping.normalize_models` 改调 `validate_model_name`，未知模型名在 config 加载期即被拒绝，错误信息明确提示合法模型集合。
+3. **Provider adapter registry 层**：新增 `providers/registry.py`，暴露 `REGISTRY: dict[str, AdapterFactory]` 与 `resolve_adapter(model, runtime)`。`cli/delegate.py::get_provider_adapter` 与 `cli/discuss.py::get_participant` 改调 `resolve_adapter`；后续新增 adapter（如 `OpenAIChatAdapter`）只需注册到 registry，不再动 CLI 分支。
+4. **错误分类统一**：`ProviderError.kind` 不变；`UnavailableParticipantError` 新增 `.kind` 字段，`.error_kind` 作为 deprecated property 保留一个版本；`DelegationOrchestrator._persist_failure` 对"adapter 未注册"类错误新增 `kind="adapter_missing"`。Sidecar 层预留 `kind="recursive_workflow_violation"` 供 TASK-044 使用。
+5. **Provider response 归一化**：`GeminiCliAdapter.model_name` 固定为 `"gemini"`；specific 版本放入 `ProviderResponse.metadata.gemini_variant`；`run_monitored_process` 的 `wait(timeout=1)` 包 `try/except subprocess.TimeoutExpired`，失败退路为 `_terminate_process` + 二次 wait；`_strip_runtime_notices` 改为正则匹配避免误杀合法前缀。
+6. **Discussion orchestration 协议**：`cli/discuss.py` 移除"`--controller-position` + 未传 `--max-rounds` → `effective_max_rounds=1`"的自动降级；`_round_has_converged` 只检查 `supports_current_direction` 与 `has_new_information`，不再把 `open_questions` / `disagreements` 非空作为收敛阻断。
+7. **Handoff 结构化**：`handoff/packages.py::_coerce_verification_commands` 的 legacy `&&` 分支进入 DeprecationWarning 状态；`HandoffPackage` 新增 `controller_context` 字段承担原本塞在 `inputs` 里的 `controller` / `configured_language`，保留 `inputs` 作纯用户输入；`_infer_fixer_input_sources` 把 stage 推断改为白名单 `{tester, reviewer, implementer, fixer, planner, architect, synthesizer, advisor}`，不在白名单内的标记 `"upstream"`。
+8. **State 原子性**：`state/store.py` 所有写操作走 `_atomic_write_text`（temp file + `os.replace`）；`append_run_record` 在文件名冲突时追加 `-1` / `-2`；`config/loader.py::dump_config` 复用同一 atomic 工具函数。
+9. **日志层**：新增 `utils/logging.py` 导出 `configure_logging()`；`cli/app.py::main` 在任何 subcommand 前调用；orchestrators、providers、guardrail enforcement 点加入 `logger.info` / `logger.debug`，严禁记录 prompt 内容。`COUNCILFLOW_DEBUG=1` 切 DEBUG，默认 WARNING。
+10. **Sidecar isolation 契约（承接 TASK-042 ~ TASK-045）**：
+    - `models/delegation.py` 新增 `IsolatedWorkspace`（`strategy ∈ {copy, git_worktree, none}`、`include_patterns`、`exclude_patterns`、`workspace_path`）与 `ImportManifest`（`writable_globs`、`readonly_artifact_paths`、`max_file_count`、`max_total_bytes`）。
+    - `ExecutionGuardrails` 新增 `isolated_workspace` 与 `import_manifest` 字段；`protected_paths` 默认追加 `.workflow-core`、`.claude/skills`、`.codex/skills`、`.gemini/skills`。
+    - `DelegationResult` 新增 `workspace_manifest: list[WorkspaceFileChange]`、`import_outcome ∈ {none, applied, partial, rejected}`、`import_rejected_reason`。
+    - `providers/base.py` 新增 `build_sandboxed_env(delegation_id)`；所有 adapter 子进程启动时使用该函数派生 env，剥离 `CODEX_*` / `CLAUDE*` / `GEMINI_*` env keys，注入 `COUNCILFLOW_DELEGATED_STAGE=1`、`COUNCILFLOW_DELEGATION_ID`。
+    - `cli/app.py::root` 检测到 `COUNCILFLOW_DELEGATED_STAGE=1` 时拒绝 `discuss/delegate/synthesize`，返回 `error_kind="recursive_workflow_violation"`。
+11. **Provider runtime 探针层**：新增 `providers/runtime_probe.py`，启动时探测 Codex / Gemini 是否支持流式 output，结果缓存到 `.council/runtime/providers.json`；由 orchestrator 根据探针结果决定是否切换到 `run_monitored_process` 执行路径。探针不自动修改 provider 默认参数，仅在 runtime 中选择路径。
+12. **共享 skills 发布层**：
+    - `sync-skills.ps1` 重构为"白名单过滤 + `.bak` 排除 + orphan 清理 + malformed 目录清理 + SHA-256 校验"的新流水；`-CreateBackup` 开关实际不再在目标目录内写 `.bak`，备份统一由 `backup-global-workflow.ps1` 承担。
+    - `.workflow-core/skills/project-*/` 不再允许出现 `*.bak`；一次性清理后通过新版 `sync-skills.ps1` 在三端全量覆盖。
+    - 新增 `.workflow-core/mcp-manifest.json` 作为 MCP 注册真源；`install-global-workflow.ps1` / `backup-global-workflow.ps1` / `restore-global-workflow.ps1` 从 manifest 读取 command / args / env / trust 表达式，向三端注册。
+    - `docs/integration.md` 新增"工作流失败上报协议"段落与"Claude Code MCP per-project 语义"说明。
+13. **共享 skill 文案调整**：
+    - `project-next/SKILL.md` 的 tester 阶段 delegate 命令改用 `--verification-command`（可重复列表），不再用 `--input verification_commands=<joined>`；明确说明 legacy 路径已 deprecated。
+    - `project-review` / `project-change` / `project-plan` 的标题层级重构为 H2/H3/H4 一致结构；"多模型协作（可选）"降级为 H4 子章节，不得打断编号列表。
+    - `project-feedback` 补齐 `milestone_manual + stage_gate=true` 的正向通过与阶段 gate closed 标记分支。
+    - `project-init` / `project-plan` 明确"项目目录已确定"的判定依据（`get_project_info().project_dir` 有值且目录存在）与"未确定"时允许的行为集合。
+    - 所有 `role_driven` / `discussion` skill 的注意事项增加一条"失败时按 integration.md::工作流失败上报协议输出 JSON + add_log，再停止 workflow"。
+
+实现边界：
+1. 本次变更不新增外部运行依赖（保持 Python 3.13 + Typer + Pydantic + PyYAML），仅在"可选 OpenAIChatAdapter"阶段才引入 `openai` SDK 作为 extras 依赖。
+2. 本次变更不扩大 CLI 表面，只在现有 `delegate` / `discuss` / `status` / `synthesize` 基础上补齐路由、错误分类、守护与日志。
+3. 本节覆盖并 supersede 文中先前所有"`RoleMapping` 默认与 template 默认可以不一致"、"verification_commands `&&` 拼接仍为合规主路径"、"同步脚本的 `-CreateBackup` 等价于真实快照"的旧表述。
