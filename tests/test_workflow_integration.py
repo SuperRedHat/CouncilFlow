@@ -24,6 +24,16 @@ runner = CliRunner()
 WORKFLOW_CORE_ROOT = Path.home() / ".workflow-core"
 
 
+def _write_claude_permission_settings(tmp_path: Path, *commands: str) -> None:
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True, exist_ok=True)
+    allow_entries = [f"Bash({command}:*)" for command in commands]
+    settings_path.write_text(
+        json.dumps({"permissions": {"allow": allow_entries}}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+
 class IntegrationDiscussionParticipant:
     def respond(self, request: DiscussionRequest) -> ParticipantResponse:
         return ParticipantResponse(
@@ -221,6 +231,8 @@ def test_project_next_stage_contracts_are_explicit(
     next_success: list[str],
     next_failure: list[str],
 ) -> None:
+    if role is RoleName.TESTER:
+        _write_claude_permission_settings(tmp_path, "python -m pytest")
     store = CouncilStateStore(tmp_path)
     orchestrator = DelegationOrchestrator(
         store=store,
@@ -259,6 +271,7 @@ def test_project_next_stage_contracts_are_explicit(
 def test_tester_and_fixer_contracts_expose_preflight_findings_and_guardrails(
     tmp_path: Path,
 ) -> None:
+    _write_claude_permission_settings(tmp_path, "pnpm exec eslint", "pnpm exec vitest")
     store = CouncilStateStore(tmp_path)
     orchestrator = DelegationOrchestrator(
         store=store,
@@ -288,7 +301,7 @@ def test_tester_and_fixer_contracts_expose_preflight_findings_and_guardrails(
         result_path=tester_result.result_path,
     )
 
-    assert tester_contract["handoff_schema"]["tester_preflight"]["status"] == "pending"
+    assert tester_contract["handoff_schema"]["tester_preflight"]["status"] == "passed"
     assert tester_contract["handoff_schema"]["verification_commands"] == [
         {"command": "pnpm exec eslint .", "purpose": "lint"},
         {"command": "pnpm exec vitest run", "purpose": "unit"},

@@ -1908,11 +1908,11 @@
         "python -m ruff check .",
         "python -m pytest tests/test_cli_delegate.py tests/test_delegation_orchestrator.py tests/test_workflow_integration.py tests/test_provider_adapters.py"
       ],
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-18T08:10:30.000Z",
-      "updated_at": "2026-04-18T08:10:30.000Z",
+      "updated_at": "2026-04-18T10:46:13.504Z",
       "commit_hash": "",
-      "notes": "",
+      "notes": "Acceptance mode is auto, so TASK-040 is complete after tester preflight, permission/environment failure classes, and sidecar guardrail detection all passed targeted verification.",
       "review_checklist": [],
       "stage_gate": false
     },

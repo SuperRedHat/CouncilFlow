@@ -13,6 +13,16 @@ from councilflow.providers.base import ProviderError, ProviderRequest, ProviderR
 runner = CliRunner()
 
 
+def _write_claude_permission_settings(tmp_path: Path, *commands: str) -> None:
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True, exist_ok=True)
+    allow_entries = [f"Bash({command}:*)" for command in commands]
+    settings_path.write_text(
+        json.dumps({"permissions": {"allow": allow_entries}}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+
 class FakeSuccessAdapter:
     model_name = "claude"
 
@@ -81,6 +91,7 @@ def test_delegate_command_returns_structured_success(monkeypatch, tmp_path: Path
         "get_provider_adapter",
         lambda *args, **kwargs: FakeSuccessAdapter(),
     )
+    _write_claude_permission_settings(tmp_path, "python -m pytest")
 
     result = runner.invoke(
         app,
@@ -96,8 +107,8 @@ def test_delegate_command_returns_structured_success(monkeypatch, tmp_path: Path
             "Run tester stage verification through the delegated contract.",
             "--input",
             "verification_profile=workflow_meta",
-            "--input",
-            "verification_commands=python -m pytest",
+            "--verification-command",
+            "python -m pytest",
             "--required-artifact",
             "implementer_result=.council/delegations/del_prev/result.md",
             "--next-on-success",
@@ -124,7 +135,7 @@ def test_delegate_command_returns_structured_success(monkeypatch, tmp_path: Path
     assert payload["data"]["verification_commands"] == [
         {"command": "python -m pytest", "purpose": None}
     ]
-    assert payload["data"]["tester_preflight"]["status"] == "pending"
+    assert payload["data"]["tester_preflight"]["status"] == "passed"
     assert payload["data"]["execution_guardrails"]["allow_commit"] is False
     assert payload["data"]["next_actions_on_success"] == ["Continue to tester synthesis."]
     assert payload["data"]["next_actions_on_failure"] == [
@@ -132,6 +143,90 @@ def test_delegate_command_returns_structured_success(monkeypatch, tmp_path: Path
     ]
     assert (tmp_path / payload["data"]["handoff_path"]).is_file()
     assert (tmp_path / payload["data"]["result_path"]).is_file()
+
+
+def test_delegate_command_reports_permission_blocked_tester_preflight(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(
+        delegate_module,
+        "get_provider_adapter",
+        lambda *args, **kwargs: FakeSuccessAdapter(),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "delegate",
+            "--role",
+            "tester",
+            "--model",
+            "claude",
+            "--objective",
+            "Validate tester preflight.",
+            "--task-summary",
+            "Detect missing Claude permissions before verification starts.",
+            "--verification-command",
+            "python -m pytest",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={"CODEX_SHELL": "1"},
+    )
+
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 1
+    assert payload["data"] is None
+    assert payload["error"]["error_kind"] == "permission_blocked"
+    assert payload["error"]["tester_preflight"]["status"] == "permission_blocked"
+    assert payload["error"]["tester_preflight"]["permission_status"] == "blocked"
+    assert payload["error"]["tester_preflight"]["permission_requirements"] == [
+        "Bash(python -m pytest:*)"
+    ]
+
+
+def test_delegate_command_reports_environment_not_ready_for_missing_command(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(
+        delegate_module,
+        "get_provider_adapter",
+        lambda *args, **kwargs: FakeSuccessAdapter(),
+    )
+    _write_claude_permission_settings(tmp_path, "missing-tool")
+
+    result = runner.invoke(
+        app,
+        [
+            "delegate",
+            "--role",
+            "tester",
+            "--model",
+            "claude",
+            "--objective",
+            "Validate tester preflight.",
+            "--task-summary",
+            "Detect missing tooling before delegated verification starts.",
+            "--verification-command",
+            "missing-tool run",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={"CODEX_SHELL": "1"},
+    )
+
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 1
+    assert payload["data"] is None
+    assert payload["error"]["error_kind"] == "environment_not_ready"
+    assert payload["error"]["tester_preflight"]["status"] == "environment_not_ready"
+    assert payload["error"]["tester_preflight"]["command_availability"] == {
+        "missing-tool run": "missing"
+    }
 
 
 @pytest.mark.parametrize(

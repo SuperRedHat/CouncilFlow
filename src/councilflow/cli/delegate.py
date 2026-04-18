@@ -54,6 +54,14 @@ INPUT_OPTION = typer.Option(
     "--input",
     help="Repeat KEY=VALUE to attach structured stage inputs.",
 )
+VERIFICATION_COMMAND_OPTION = typer.Option(
+    None,
+    "--verification-command",
+    help=(
+        "Repeat to attach structured tester verification commands without relying "
+        "on a joined shell string."
+    ),
+)
 REQUIRED_ARTIFACT_OPTION = typer.Option(
     None,
     "--required-artifact",
@@ -120,6 +128,7 @@ def delegate(
     relevant_file: list[str] | None = RELEVANT_FILE_OPTION,
     expected_output: str = EXPECTED_OUTPUT_OPTION,
     stage_input: list[str] | None = INPUT_OPTION,
+    verification_command: list[str] | None = VERIFICATION_COMMAND_OPTION,
     required_artifact: list[str] | None = REQUIRED_ARTIFACT_OPTION,
     next_on_success: list[str] | None = NEXT_ON_SUCCESS_OPTION,
     next_on_failure: list[str] | None = NEXT_ON_FAILURE_OPTION,
@@ -186,6 +195,7 @@ def delegate(
                 **structured_inputs,
             },
             required_artifacts=required_artifacts,
+            verification_commands=list(verification_command or []),
             next_actions_on_success=list(next_on_success or []),
             next_actions_on_failure=list(next_on_failure or []),
             expected_output=expected_output,
@@ -208,6 +218,11 @@ def delegate(
                     "delegation_id": exc.delegation_id,
                     "handoff_path": exc.handoff_path,
                     "record_path": exc.record_path,
+                    "tester_preflight": (
+                        exc.tester_preflight.model_dump(mode="json")
+                        if exc.tester_preflight is not None
+                        else None
+                    ),
                 },
             )
         )

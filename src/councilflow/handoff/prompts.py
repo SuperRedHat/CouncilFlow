@@ -96,6 +96,8 @@ def render_delegation_prompt(package: HandoffPackage) -> str:
         f"Inputs:\n{inputs}\n\n"
         f"Verification Commands:\n{verification_commands}\n\n"
         f"Tester Preflight Contract:\n{tester_preflight}\n\n"
+        "If the tester preflight status is not passed, do not attempt verification commands. "
+        "Report the blocked state instead.\n\n"
         f"Review Findings:\n{review_findings}\n\n"
         f"Fixer Input Sources:\n{fixer_input_sources}\n\n"
         f"Execution Guardrails:\n{execution_guardrails}\n\n"

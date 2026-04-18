@@ -59,6 +59,8 @@ class ProviderError(RuntimeError):
         metadata: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message)
+        # Common kinds include process_exit, total_timeout, idle_timeout, os_error,
+        # permission_blocked, environment_not_ready, and guardrail_violation.
         self.kind = kind
         self.metadata = metadata or {}
 

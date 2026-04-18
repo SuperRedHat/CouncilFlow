@@ -1711,6 +1711,30 @@
       "from_status": "auto_verified",
       "to_status": "done",
       "message": "TASK-039 auto_verified → done: Acceptance mode is auto, so TASK-039 is complete after the reviewer loop was enforced in the shared project-next skill, the docs/checklist were aligned, the workflow integration regression was updated, and all verification commands plus sync/hash checks passed."
+    },
+    {
+      "timestamp": "2026-04-18T10:38:07.050Z",
+      "type": "task_status_change",
+      "task_id": "TASK-040",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-040 todo → in_progress: Starting tester preflight and sidecar-guard implementation after TASK-039. Will inspect delegate/provider/runtime paths, then add explicit permission/environment failure categories and commit/state-write guard enforcement."
+    },
+    {
+      "timestamp": "2026-04-18T10:46:10.800Z",
+      "type": "task_status_change",
+      "task_id": "TASK-040",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-040 in_progress → auto_verified: Implemented tester preflight execution, repo-local Claude permission checks, environment-not-ready classification, structured --verification-command input, and sidecar guardrail detection for protected workflow state and unexpected git commits. Full TASK-040 verification passed (ruff + targeted pytest)."
+    },
+    {
+      "timestamp": "2026-04-18T10:46:13.528Z",
+      "type": "task_status_change",
+      "task_id": "TASK-040",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-040 auto_verified → done: Acceptance mode is auto, so TASK-040 is complete after tester preflight, permission/environment failure classes, and sidecar guardrail detection all passed targeted verification."
     }
   ]
 }

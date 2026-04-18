@@ -119,3 +119,4 @@ class DelegationRecord(BaseModel):
     result_path: str | None = None
     error: str | None = None
     error_kind: str | None = None
+    tester_preflight: dict[str, object] | None = None
