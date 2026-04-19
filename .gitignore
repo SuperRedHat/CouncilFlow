@@ -4,3 +4,13 @@ __pycache__/
 .council/
 .venv/
 *.pyc
+
+# Editable install metadata
+*.egg-info/
+
+# Claude Code per-machine local overrides (may contain user-specific allowlists)
+.claude/settings.local.json
+
+# Smoke harness generated outputs
+.smoke/smoke-results-*.json
+.smoke/backups/

@@ -2287,6 +2287,14 @@
       "from_status": null,
       "to_status": null,
       "message": "Final manual gate accepted 2026-04-19: TASK-050 MCP manifest single source moves to done. Live install-global-workflow.ps1 confirmed manifest-driven registration matches all three controllers (codex/claude/gemini) already-configured; .gemini/settings.json carries command/args/trust=true per manifest. Commit a39778d. This closes the 63-task originally-planned batch plus the 4 new tasks (TASK-056/057/058/059) that emerged from the real chess-project Codex smoke on 2026-04-18. Project status: 67/67 done, 0 awaiting, 0 todo."
+    },
+    {
+      "timestamp": "2026-04-18T22:50:26.631Z",
+      "type": "qa",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "Full live smoke 22/22 pass against D:/AIProjects/test/councilflow-smoke-2026-04-19 @ 8910b2d. Baseline ruff clean, pytest 189/189. Report: docs/full-smoke-report-2026-04-19.md. JSON: .smoke/smoke-results-2026-04-19.json."
     }
   ]
 }
