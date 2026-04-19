@@ -28,6 +28,15 @@ def detect_controller(
 
     env = os.environ if environ is None else environ
 
+    gemini_keys = (
+        "GEMINI_CLI",
+        "GEMINI_CLI_SESSION",
+        "GEMINI_CLI_IDE_PID",
+    )
+    for key in gemini_keys:
+        if env.get(key):
+            return ControllerContext(controller=ControllerName.GEMINI, source=key)
+
     codex_origin = env.get("CODEX_INTERNAL_ORIGINATOR_OVERRIDE", "").lower()
     if env.get("CODEX_SHELL"):
         return ControllerContext(controller=ControllerName.CODEX, source="CODEX_SHELL")
@@ -49,15 +58,6 @@ def detect_controller(
     for key in claude_keys:
         if env.get(key):
             return ControllerContext(controller=ControllerName.CLAUDE, source=key)
-
-    gemini_keys = (
-        "GEMINI_CLI",
-        "GEMINI_CLI_SESSION",
-        "GEMINI_CLI_IDE_PID",
-    )
-    for key in gemini_keys:
-        if env.get(key):
-            return ControllerContext(controller=ControllerName.GEMINI, source=key)
 
     raise HostContextError(
         "Unable to detect the current controller from the environment. "
