@@ -62,6 +62,19 @@ def test_claude_command_wraps_powershell_script(monkeypatch: pytest.MonkeyPatch)
     assert "--include-partial-messages" in command
 
 
+def test_claude_command_includes_dangerously_skip_permissions(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Pins the 0.1.1 decision: delegated Claude subprocesses must bypass the
+    CLI permission gate since worktree + guardrails are the enforcing layer.
+    Regressing this flag silently would re-introduce the permission_blocked
+    tester preflight friction that 0.1.1 explicitly removed."""
+
+    monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/claude")
+    command = _default_claude_command()
+    assert "--dangerously-skip-permissions" in command
+
+
 def test_run_command_wraps_os_errors() -> None:
     with pytest.raises(ProviderError) as exc_info:
         run_command(["this-command-should-not-exist"], "prompt")

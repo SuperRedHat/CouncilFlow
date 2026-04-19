@@ -145,10 +145,16 @@ def test_delegate_command_returns_structured_success(monkeypatch, tmp_path: Path
     assert (tmp_path / payload["data"]["result_path"]).is_file()
 
 
-def test_delegate_command_reports_permission_blocked_tester_preflight(
+def test_delegate_command_skips_claude_permission_preflight(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
+    """Since 0.1.1 the Claude adapter runs with --dangerously-skip-permissions,
+    so tester preflight no longer probes .claude/settings.json. A tester stage
+    whose verification command would previously have tripped
+    ``permission_blocked`` must now pass the preflight — the worktree +
+    guardrails stack is the enforcing layer."""
+
     monkeypatch.setattr(
         delegate_module,
         "get_provider_adapter",
@@ -166,7 +172,7 @@ def test_delegate_command_reports_permission_blocked_tester_preflight(
             "--objective",
             "Validate tester preflight.",
             "--task-summary",
-            "Detect missing Claude permissions before verification starts.",
+            "Run without pre-seeded claude allow-list.",
             "--verification-command",
             "python -m pytest",
             "--project-root",
@@ -177,14 +183,13 @@ def test_delegate_command_reports_permission_blocked_tester_preflight(
 
     payload = json.loads(result.output)
 
-    assert result.exit_code == 1
-    assert payload["data"] is None
-    assert payload["error"]["error_kind"] == "permission_blocked"
-    assert payload["error"]["tester_preflight"]["status"] == "permission_blocked"
-    assert payload["error"]["tester_preflight"]["permission_status"] == "blocked"
-    assert payload["error"]["tester_preflight"]["permission_requirements"] == [
-        "Bash(python -m pytest:*)"
-    ]
+    assert result.exit_code == 0
+    assert payload["error"] is None
+    data = payload["data"]
+    assert data is not None
+    assert data["status"] == "delegated"
+    assert data["tester_preflight"]["status"] == "passed"
+    assert data["tester_preflight"]["permission_status"] == "not_required"
 
 
 def test_delegate_command_reports_environment_not_ready_for_missing_command(

@@ -3,15 +3,11 @@
 from __future__ import annotations
 
 import hashlib
-import json
-import shutil
 import subprocess
 import time
 from collections.abc import Callable
 from datetime import UTC, datetime
-from fnmatch import fnmatchcase
 from pathlib import Path
-from shlex import split as shlex_split
 
 from councilflow.handoff.packages import create_handoff_package, save_handoff_package
 from councilflow.handoff.prompts import render_delegation_prompt
@@ -49,6 +45,7 @@ from councilflow.utils.io import (
     summarize_import_outcome,
 )
 from councilflow.utils.logging import get_logger
+from councilflow.utils.permissions import command_is_available
 
 _logger = get_logger(__name__)
 
@@ -76,94 +73,28 @@ class DelegationExecutionError(RuntimeError):
         self.tester_preflight = tester_preflight
 
 
-def _split_command(command: str) -> list[str]:
-    """Split a shell-ish command string into tokens without executing it."""
-
-    try:
-        tokens = shlex_split(command, posix=False)
-    except ValueError:
-        tokens = command.split()
-    return [token for token in tokens if token]
-
-
-def _command_subject_for_permissions(command: str) -> str:
-    """Extract a stable command subject for permission matching."""
-
-    tokens = _split_command(command)
-    if not tokens:
-        return command.strip()
-    if len(tokens) >= 3 and tokens[0] == "pnpm" and tokens[1] == "exec":
-        return " ".join(tokens[:3])
-    if len(tokens) >= 3 and tokens[0] == "python" and tokens[1] == "-m":
-        return " ".join(tokens[:3])
-    return tokens[0]
-
-
-def _command_is_available(command: str) -> bool:
-    """Determine whether the command executable exists in the current environment."""
-
-    tokens = _split_command(command)
-    if not tokens:
-        return False
-    executable = tokens[0]
-    path = Path(executable)
-    if path.is_absolute():
-        return path.exists()
-    return shutil.which(executable) is not None
-
-
-def _load_permission_allow_entries(project_root: Path) -> list[str]:
-    """Load Claude permission allow entries from repo-local settings only."""
-
-    entries: list[str] = []
-    seen: set[str] = set()
-    candidate_paths = [
-        project_root / ".claude" / "settings.json",
-        project_root / ".claude" / "settings.local.json",
-    ]
-    for path in candidate_paths:
-        if not path.is_file():
-            continue
-        try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            continue
-        allow_entries = payload.get("permissions", {}).get("allow", [])
-        if not isinstance(allow_entries, list):
-            continue
-        for item in allow_entries:
-            if not isinstance(item, str) or item in seen:
-                continue
-            seen.add(item)
-            entries.append(item)
-    return entries
-
-
-def _permission_requirement_for_command(command: str) -> str:
-    """Build the Claude permission requirement string for a verification command."""
-
-    return f"Bash({_command_subject_for_permissions(command)}:*)"
-
-
-def _permission_entry_allows(requirement: str, allow_entries: list[str]) -> bool:
-    """Return whether any allowlist entry covers the required permission pattern."""
-
-    return any(fnmatchcase(requirement, entry) or entry == "Bash(*)" for entry in allow_entries)
-
-
 def _run_tester_preflight(
     project_root: Path,
     *,
     target_model: str,
     verification_commands: list[VerificationCommand],
 ) -> TesterPreflight:
-    """Probe the local environment before delegating a tester stage."""
+    """Probe the local environment before delegating a tester stage.
+
+    Since 0.1.1 all three adapters run delegated subprocesses with auto-
+    approval (Claude via ``--dangerously-skip-permissions``, Gemini via
+    ``--approval-mode yolo``, Codex via user-configured policy), so the only
+    check left is whether the verification commands' executables actually
+    resolve on PATH. If any are missing, ``environment_not_ready`` fires so
+    the controller fails fast instead of letting the sidecar hit a missing
+    binary after it has started.
+    """
 
     if not verification_commands:
         return TesterPreflight()
 
     availability = {
-        item.command: ("available" if _command_is_available(item.command) else "missing")
+        item.command: ("available" if command_is_available(item.command) else "missing")
         for item in verification_commands
     }
     workspace_ready = project_root.exists()
@@ -179,32 +110,13 @@ def _run_tester_preflight(
             permission_status="not_checked",
         )
 
-    if target_model != "claude":
-        return TesterPreflight(
-            status="passed",
-            provider_ready=provider_ready,
-            workspace_ready=workspace_ready,
-            command_availability=availability,
-            permission_requirements=[],
-            permission_status="not_required",
-        )
-
-    requirements = [
-        _permission_requirement_for_command(item.command) for item in verification_commands
-    ]
-    allow_entries = _load_permission_allow_entries(project_root)
-    blocked_requirements = [
-        requirement
-        for requirement in requirements
-        if not _permission_entry_allows(requirement, allow_entries)
-    ]
     return TesterPreflight(
-        status="passed" if not blocked_requirements else "permission_blocked",
+        status="passed",
         provider_ready=provider_ready,
         workspace_ready=workspace_ready,
         command_availability=availability,
-        permission_requirements=requirements,
-        permission_status="satisfied" if not blocked_requirements else "blocked",
+        permission_requirements=[],
+        permission_status="not_required",
     )
 
 
@@ -448,31 +360,20 @@ class DelegationOrchestrator:
             }
         )
 
-        if package.tester_preflight.status in {"permission_blocked", "environment_not_ready"}:
-            if package.tester_preflight.status == "permission_blocked":
-                blocked_requirements = ", ".join(package.tester_preflight.permission_requirements)
-                error = ProviderError(
-                    "Tester preflight blocked delegated verification because required "
-                    f"permissions are missing: {blocked_requirements}.",
-                    kind="permission_blocked",
-                    metadata={
-                        "tester_preflight": package.tester_preflight.model_dump(mode="json"),
-                    },
-                )
-            else:
-                missing_commands = ", ".join(
-                    command
-                    for command, status in package.tester_preflight.command_availability.items()
-                    if status != "available"
-                )
-                error = ProviderError(
-                    "Tester preflight blocked delegated verification because the environment "
-                    f"is not ready for: {missing_commands}.",
-                    kind="environment_not_ready",
-                    metadata={
-                        "tester_preflight": package.tester_preflight.model_dump(mode="json"),
-                    },
-                )
+        if package.tester_preflight.status == "environment_not_ready":
+            missing_commands = ", ".join(
+                command
+                for command, status in package.tester_preflight.command_availability.items()
+                if status != "available"
+            )
+            error = ProviderError(
+                "Tester preflight blocked delegated verification because the environment "
+                f"is not ready for: {missing_commands}.",
+                kind="environment_not_ready",
+                metadata={
+                    "tester_preflight": package.tester_preflight.model_dump(mode="json"),
+                },
+            )
             raise self._persist_failure(
                 delegation_id=delegation_id,
                 role=role,

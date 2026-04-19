@@ -116,11 +116,14 @@ Phase-machine rules:
 - `verification_commands` and `verification_profile` belong to the `tester` stage. They are stage
   inputs, not an automatic controller-local action after `implementer` finishes.
 - `tester` should treat verification as a two-part contract: preflight first, then command
-  execution. The preflight result should explicitly state whether the sidecar is ready, whether the
-  workspace and required commands are available, and whether command permissions are blocked before
-  any verification command is attempted.
-- `tester` artifacts should distinguish `verification_failed`, `permission_blocked`, and
-  `environment_not_ready` instead of collapsing all three into a generic test failure.
+  execution. The preflight result should explicitly state whether the sidecar is ready and whether
+  the workspace and required commands are available before any verification command is attempted.
+  Since 0.1.1 the CouncilFlow preflight no longer probes Claude Code's per-project `permissions.allow`
+  — see **Permission and approval model per CLI** below for why and the trust posture that replaces
+  it.
+- `tester` artifacts should distinguish `verification_failed` and `environment_not_ready` instead of
+  collapsing both into a generic test failure. (`permission_blocked` was the third discriminator
+  before 0.1.1; it has been removed from the preflight path.)
 - `reviewer` is a first-class stage. A passing tester result does not authorize task completion on
   its own; the workflow still needs an explicit reviewer artifact to confirm the implementation is
   semantically acceptable.
@@ -342,6 +345,29 @@ decide whether to accept the sidecar output:
 
 These fields are informational in TASK-042 (the contract-only phase); subsequent
 isolation work (TASK-043 / TASK-044) makes the orchestrator produce and enforce them.
+
+### Permission and approval model per CLI
+
+Each of the three first-party CLIs has its own gate for letting model-driven
+Bash tool calls run. CouncilFlow delegations run inside a materialized
+worktree with the full guardrail stack (writable-glob allow-list,
+DEFAULT_PROTECTED_PATHS snapshot/restore, MCP role policy, recursion guard,
+sandboxed env). Because all four layers already constrain what a sidecar can
+touch, CouncilFlow's adapters default to **auto-approve in delegation** for
+every CLI. This keeps the three controllers symmetric — you don't need to
+know whether the target model happens to be Claude or Gemini before you
+schedule a task.
+
+| CLI | Approval gate | How CouncilFlow handles it |
+| --- | --- | --- |
+| Claude Code | `.claude/settings.json::permissions.allow` array of `Bash(<subject>:*)` entries. Non-interactive `-p` mode without a matching entry refuses the tool call and usually emits a "claims tested but didn't" result. | Adapter appends `--dangerously-skip-permissions` to the default command line (since 0.1.1). The name surfaces the risk intentionally; the actual safety lies in the four guardrail layers above. |
+| Gemini CLI | Tool-approval prompts driven by `--approval-mode {default,auto-edit,yolo}`. | Adapter passes `--approval-mode yolo` by default. Same posture as Claude. |
+| Codex CLI | User-configured `~/.codex/config.toml::approval_policy` (and project-level overrides). | Adapter does **not** force a policy flag. If you use Codex as a delegation target, make sure your Codex install is configured so `codex exec` can run bash tool calls without an interactive approval (e.g. `approval_policy = "never"` or `"full-auto"`). Otherwise a delegated `tester` stage may hang on an approval prompt the sidecar can't satisfy. |
+
+The tester preflight therefore only checks one thing before handing off to
+the sidecar: **does every verification command resolve on PATH?** A missing
+`pnpm` or `pytest` still fails fast with `error_kind=environment_not_ready`.
+The older `error_kind=permission_blocked` path was removed in 0.1.1.
 
 ### Change detection is baseline-driven
 

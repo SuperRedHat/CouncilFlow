@@ -146,7 +146,7 @@ class CapturingProvider:
 
 def s01_version() -> None:
     r = _run_council(["version"])
-    record("S01_version", r.returncode == 0 and "0.1.0" in r.stdout, exit=r.returncode,
+    record("S01_version", r.returncode == 0 and "0.1.1" in r.stdout, exit=r.returncode,
            out=r.stdout.strip()[:40])
 
 

@@ -20,12 +20,22 @@ from councilflow.providers.base import (
     run_monitored_process,
 )
 
+# ``--dangerously-skip-permissions`` is intentional and matches the risk posture
+# taken by the Gemini adapter's ``--approval-mode yolo``: delegated subprocesses
+# run inside a materialized worktree with ``build_sandboxed_env`` markers,
+# ``DEFAULT_PROTECTED_PATHS`` snapshot/restore, deny-by-default
+# ``writable_globs``, and the role-scoped MCP policy, so the upstream CLI
+# permission gate would only add friction on top of those four layers while
+# offering no additional safety for an already-contained stage. Surfacing the
+# ``dangerously`` name is a deliberate cost — if you can read this line you
+# already opted in by invoking ``council delegate``.
 CLAUDE_STREAM_FLAGS = [
     "-p",
     "--verbose",
     "--output-format",
     "stream-json",
     "--include-partial-messages",
+    "--dangerously-skip-permissions",
 ]
 
 

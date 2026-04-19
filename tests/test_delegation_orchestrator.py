@@ -185,7 +185,44 @@ def test_delegation_orchestrator_records_failures(tmp_path: Path) -> None:
     assert error.handoff_path.endswith("handoff.yaml")
 
 
-def test_delegation_orchestrator_blocks_tester_on_missing_permissions(tmp_path: Path) -> None:
+def test_delegation_orchestrator_tester_preflight_no_longer_checks_claude_permissions(
+    tmp_path: Path,
+) -> None:
+    """0.1.1 flipped Claude adapter to --dangerously-skip-permissions and
+    dropped the Claude-only allow-list preflight. A tester stage with no
+    .claude/settings.json at all must now reach the provider and complete."""
+
+    store = CouncilStateStore(tmp_path)
+    orchestrator = DelegationOrchestrator(
+        store=store,
+        participant_factory=lambda _: SuccessfulProvider(),
+    )
+
+    result = orchestrator.run(
+        role=RoleName.TESTER,
+        controller="codex",
+        target_model="claude",
+        objective="Run tester verification.",
+        task_summary="Pass preflight without any claude allow-list.",
+        constraints=[],
+        relevant_files=[],
+        inputs={},
+        verification_commands=[VerificationCommand(command="python -m pytest")],
+        expected_output="Markdown summary with actionable results.",
+    )
+
+    assert result.status == "delegated"
+    assert result.delegation_status == "completed"
+    assert result.tester_preflight is not None
+    assert result.tester_preflight.status == "passed"
+    assert result.tester_preflight.permission_status == "not_required"
+
+
+def test_delegation_orchestrator_blocks_tester_when_command_missing(tmp_path: Path) -> None:
+    """environment_not_ready survives the preflight simplification — if
+    the verification command's executable cannot be resolved on PATH, the
+    tester stage must still fail fast with environment_not_ready."""
+
     store = CouncilStateStore(tmp_path)
     orchestrator = DelegationOrchestrator(
         store=store,
@@ -198,21 +235,21 @@ def test_delegation_orchestrator_blocks_tester_on_missing_permissions(tmp_path: 
             controller="codex",
             target_model="claude",
             objective="Run tester verification.",
-            task_summary="Block when Claude permissions are missing.",
+            task_summary="Trigger environment_not_ready for a bogus command.",
             constraints=[],
             relevant_files=[],
             inputs={},
-            verification_commands=[VerificationCommand(command="python -m pytest")],
+            verification_commands=[
+                VerificationCommand(command="councilflow-definitely-not-a-real-binary")
+            ],
             expected_output="Markdown summary with actionable results.",
         )
 
     error = exc_info.value
     record = json.loads((tmp_path / error.record_path).read_text(encoding="utf-8"))
 
-    assert error.error_kind == "permission_blocked"
-    assert error.tester_preflight is not None
-    assert error.tester_preflight.status == "permission_blocked"
-    assert record["tester_preflight"]["permission_status"] == "blocked"
+    assert error.error_kind == "environment_not_ready"
+    assert record["tester_preflight"]["status"] == "environment_not_ready"
 
 
 def test_delegation_orchestrator_blocks_guardrail_state_writes(tmp_path: Path) -> None:

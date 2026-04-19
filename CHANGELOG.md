@@ -4,6 +4,59 @@ All notable changes to CouncilFlow are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] — 2026-04-19
+
+Patch release that changes the per-CLI permission posture for delegated
+stages. Follow-up to a real-project incident where the Claude Code tester
+preflight returned `permission_blocked` because the chess repo's
+`.claude/settings.json::permissions.allow` didn't yet list the
+`verification_commands` that planning had just added.
+
+### Changed
+
+- **Claude Code adapter now runs delegated subprocesses with
+  `--dangerously-skip-permissions`**, matching the Gemini adapter's long-
+  standing `--approval-mode yolo` posture. Delegation safety is enforced by
+  the worktree + writable-glob + protected-paths + MCP-policy guardrail
+  stack; the upstream CLI permission gate would only add friction on top of
+  those four layers without contributing additional safety for an already-
+  contained stage. The flag name surfaces the risk intentionally.
+- **Tester preflight dropped the Claude-only allow-list comparison.** The
+  preflight now only checks that every verification command resolves to an
+  executable on PATH. If any are missing, `error_kind=environment_not_ready`
+  still fires exactly as before. The `permission_blocked` discriminator is
+  gone from the preflight path.
+- `docs/integration.md` gained a **Permission and approval model per CLI**
+  section that lays out each CLI's gate and what CouncilFlow does with it.
+
+### Fixed
+
+- Planning pipelines no longer need to pre-seed
+  `.claude/settings.json::permissions.allow` for a task's
+  `verification_commands` before `council delegate --role tester` can run.
+  The old behavior surfaced late (at delegation time) and required either
+  reading orchestrator source or guessing the exact `Bash(<subject>:*)`
+  subject pattern.
+
+### Notes for operators
+
+- If you use Codex CLI as a delegation target, verify that your local
+  `~/.codex/config.toml::approval_policy` does not require interactive
+  approval for `codex exec`. CouncilFlow's adapter does not force a Codex
+  approval flag (Codex configs are user-specific); an overly restrictive
+  policy will hang a delegated `tester` stage.
+- No upgrade steps are required beyond bumping to 0.1.1. Existing
+  `.claude/settings.json` files keep working; their allow-lists are simply
+  no longer consulted by CouncilFlow's preflight.
+
+### Tests
+
+- 190 pytest cases (net +1: the former Claude allow-list regression is
+  replaced by two positive tests — preflight-passes-without-allowlist and
+  environment_not_ready-still-fires — plus an adapter test that pins
+  `--dangerously-skip-permissions` in `CLAUDE_STREAM_FLAGS`).
+- `ruff check .`: clean.
+
 ## [0.1.0] — 2026-04-19
 
 Initial public release. CouncilFlow is a CLI-first sidecar that lets a single
@@ -155,4 +208,5 @@ giving up local-first guardrails.
   defined for POSIX symlinks but Linux / macOS coverage is exercised through
   unit tests only, not a packaged smoke run.
 
+[0.1.1]: https://github.com/SuperRedHat/CouncilFlow/releases/tag/v0.1.1
 [0.1.0]: https://github.com/SuperRedHat/CouncilFlow/releases/tag/v0.1.0
