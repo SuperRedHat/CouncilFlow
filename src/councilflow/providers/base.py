@@ -18,7 +18,12 @@ from councilflow.utils.logging import get_logger
 _logger = get_logger(__name__)
 
 CommandRunner = Callable[..., "ProviderRunResult | str"]
-DEFAULT_PROVIDER_TOTAL_TIMEOUT_SECONDS = 900.0
+# Delegated stages may legitimately run for a long time (Canvas-heavy UI
+# implementations, large refactors, multi-file test generation). Cap at 2h so
+# slow CLI work does not get killed by the provider-level timeout; the outer
+# `council delegation wait` subcommand gives controllers a way to poll without
+# re-blocking their own shell.
+DEFAULT_PROVIDER_TOTAL_TIMEOUT_SECONDS = 7200.0
 DEFAULT_PROVIDER_IDLE_TIMEOUT_SECONDS = 180.0
 
 # Host environment keys that identify a controller to CouncilFlow. Sidecar

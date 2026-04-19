@@ -32,6 +32,12 @@ from councilflow.providers.base import (
     ProviderRequest,
     build_sandboxed_env,
 )
+from councilflow.providers.mcp_policy import (
+    build_mcp_denied_env,
+    plan_mcp_policy,
+    role_allows_mcp,
+    write_empty_mcp_configs,
+)
 from councilflow.state.store import CouncilStateStore
 from councilflow.utils.io import (
     apply_import_changes,
@@ -516,6 +522,36 @@ class DelegationOrchestrator:
         # consumers see the effective strategy instead of the requested default.
         save_handoff_package(package, delegation_dir / "handoff.yaml")
 
+        # Apply the MCP access policy for this role. Delegated execution roles
+        # (implementer/tester/reviewer/fixer/advisor) get an empty worktree-
+        # local MCP config so they cannot attach the host's project-manager MCP
+        # and silently write `.claude/state/logs.json`. Controller-facing roles
+        # (architect/planner/synthesizer) keep their access because they are
+        # expected to read PRD / task / architecture data.
+        mcp_policy = plan_mcp_policy(
+            role, self.store.paths.project_root, materialization.workspace_path
+        )
+        mcp_env_extra: dict[str, str] = {}
+        if (
+            not role_allows_mcp(role)
+            and materialization.workspace_path != self.store.paths.project_root
+        ):
+            write_empty_mcp_configs(materialization.workspace_path)
+            mcp_env_extra = build_mcp_denied_env(
+                self.store.paths.project_root, materialization.workspace_path
+            )
+            _logger.info(
+                "delegation.mcp_policy id=%s role=%s decision=deny",
+                delegation_id,
+                role.value,
+            )
+        else:
+            _logger.info(
+                "delegation.mcp_policy id=%s role=%s decision=allow",
+                delegation_id,
+                role.value,
+            )
+
         # Capture a file-level baseline of the freshly materialized workspace
         # BEFORE the provider runs so detect_workspace_changes can later report
         # only the sidecar's own edits. Comparing the post-run workspace to the
@@ -534,6 +570,9 @@ class DelegationOrchestrator:
 
         try:
             provider = self.participant_factory(target_model)
+            sandboxed_env = build_sandboxed_env(delegation_id)
+            if mcp_env_extra:
+                sandboxed_env.update(mcp_env_extra)
             response = provider.ask(
                 ProviderRequest(
                     prompt=render_delegation_prompt(package),
@@ -541,6 +580,7 @@ class DelegationOrchestrator:
                         "delegation_id": delegation_id,
                         "handoff_path": relative_handoff_path,
                         "workspace_path": str(materialization.workspace_path),
+                        "mcp_policy": mcp_policy,
                     },
                     cwd=(
                         str(materialization.workspace_path)
@@ -548,7 +588,7 @@ class DelegationOrchestrator:
                         != self.store.paths.project_root
                         else None
                     ),
-                    env_override=build_sandboxed_env(delegation_id),
+                    env_override=sandboxed_env,
                 )
             )
 
@@ -664,6 +704,7 @@ class DelegationOrchestrator:
                 "role": role.value,
                 "target_model": target_model,
                 "result_path": relative_result_path,
+                "mcp_policy": mcp_policy,
             },
         )
         self.store.write_state(

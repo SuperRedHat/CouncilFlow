@@ -8,6 +8,7 @@ import typer
 
 from councilflow import __version__
 from councilflow.cli.delegate import delegate
+from councilflow.cli.delegation import delegation_app
 from councilflow.cli.discuss import discuss
 from councilflow.cli.status import status
 from councilflow.cli.synthesize import synthesize
@@ -24,9 +25,12 @@ app = typer.Typer(
     help="CouncilFlow CLI-first sidecar for multi-model collaboration.",
 )
 
-# Commands that remain callable inside a delegated sidecar. `status` stays
-# available for inspection/debugging but may not mutate the workflow state.
-_ALLOWED_RECURSIVE_SUBCOMMANDS: frozenset[str] = frozenset({"status", "version"})
+# Commands that remain callable inside a delegated sidecar. `status` and
+# `delegation` (read-only polling) stay available for inspection/debugging but
+# may not mutate the workflow state.
+_ALLOWED_RECURSIVE_SUBCOMMANDS: frozenset[str] = frozenset(
+    {"status", "version", "delegation"}
+)
 
 
 def _is_delegated_stage() -> bool:
@@ -71,6 +75,7 @@ app.command(name="discuss")(discuss)
 app.command(name="delegate")(delegate)
 app.command(name="status")(status)
 app.command(name="synthesize")(synthesize)
+app.add_typer(delegation_app, name="delegation")
 
 
 def main() -> None:
