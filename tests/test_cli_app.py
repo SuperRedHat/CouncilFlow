@@ -21,7 +21,7 @@ def test_version_command_reports_package_version() -> None:
     result = runner.invoke(app, ["version"])
 
     assert result.exit_code == 0
-    assert result.output.strip() == "0.1.1"
+    assert result.output.strip() == "0.1.2"
 
 
 def test_main_disables_windows_glob_expansion() -> None:

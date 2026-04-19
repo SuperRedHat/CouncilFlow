@@ -4,6 +4,50 @@ All notable changes to CouncilFlow are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] — 2026-04-19
+
+Patch release that fixes the second half of the TASK-007A incident. With
+0.1.1 the tester preflight stopped blocking on Claude permissions, which
+exposed a deeper problem: the sidecar worktree created by ``git worktree
+add --detach HEAD`` never included the host's uncommitted changes, so the
+tester stage was verifying an empty module instead of the implementer's
+just-imported code.
+
+### Fixed
+
+- `materialize_workspace` (git_worktree strategy) now **overlays host
+  uncommitted state** onto the freshly-added worktree:
+  - Untracked (non-ignored) files are copied in.
+  - Modified tracked files are overlaid so the worktree sees working-tree
+    content, not HEAD content.
+  - Files deleted in the working tree are removed from the worktree so
+    tests don't see stale HEAD versions.
+  - `IsolatedWorkspace.exclude_patterns` still applies on top of
+    `.gitignore`, keeping guarded paths (`.claude/**`, `.council/**`, …)
+    out regardless of the host's gitignore configuration.
+- This closes the symmetric gap to the TASK-058 baseline-driven diff fix:
+  TASK-058 made sure the sidecar's writes correctly import back to the
+  host; 0.1.2 makes sure the host's uncommitted state correctly materializes
+  into the sidecar. Every delegation phase now sees the same source the
+  controller does.
+
+### Tests
+
+- 201 pytest (was 191): +10 new overlay unit tests in
+  `tests/test_workspace_overlay.py` covering untracked new files, modified
+  tracked files, locally deleted files, gitignored files, isolation
+  exclude_patterns, nested directories, CRLF preservation, clean-tree
+  no-op, and a parametric multi-path case.
+- 29 smoke scenarios (was 27): new S28 (untracked + modified overlay
+  visible in sidecar) and S29 (gitignore + exclude_patterns still
+  enforced).
+- `ruff check .`: clean.
+
+### Operator note
+
+No upgrade steps. If you were pre-committing "intermediate" state in your
+workflow as a workaround for the old behavior, you can stop doing that.
+
 ## [0.1.1] — 2026-04-19
 
 Patch release that changes the per-CLI permission posture for delegated
@@ -208,5 +252,6 @@ giving up local-first guardrails.
   defined for POSIX symlinks but Linux / macOS coverage is exercised through
   unit tests only, not a packaged smoke run.
 
+[0.1.2]: https://github.com/SuperRedHat/CouncilFlow/releases/tag/v0.1.2
 [0.1.1]: https://github.com/SuperRedHat/CouncilFlow/releases/tag/v0.1.1
 [0.1.0]: https://github.com/SuperRedHat/CouncilFlow/releases/tag/v0.1.0

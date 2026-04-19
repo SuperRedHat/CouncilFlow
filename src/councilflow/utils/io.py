@@ -114,6 +114,21 @@ def materialize_workspace(
                     check=True,
                     text=True,
                 )
+                # `git worktree add HEAD` only checks out the committed tree,
+                # so untracked new files and working-tree modifications stay
+                # invisible to the sidecar. That's fine for a pure CI-style
+                # checkout but wrong for CouncilFlow delegations: the
+                # implementer stage imports new files into the host working
+                # tree (still untracked) and the following tester stage needs
+                # to verify THAT code, not the last committed snapshot. Mirror
+                # the host's uncommitted state onto the fresh worktree so
+                # tester / reviewer see what the controller just produced.
+                # See TASK-007A post-mortem / 0.1.2 release notes.
+                _overlay_uncommitted_files(
+                    project_root=project_root,
+                    workspace_path=workspace_path,
+                    exclude_patterns=isolated.exclude_patterns,
+                )
                 _link_dependency_dirs(
                     source=project_root,
                     destination=workspace_path,
@@ -213,6 +228,108 @@ def _link_dependency_dirs(
                 name,
                 str(dst_path),
             )
+
+
+def _overlay_uncommitted_files(
+    *,
+    project_root: Path,
+    workspace_path: Path,
+    exclude_patterns: list[str],
+) -> None:
+    """Mirror host uncommitted state onto a freshly-created git worktree.
+
+    `git worktree add --detach HEAD` gives us the committed tree. That omits:
+
+    * Untracked new files — things the implementer or fixer stage imported
+      back into the host source but the user hasn't staged / committed yet.
+    * Modified tracked files — edits to existing files that live only in the
+      working tree.
+    * Deletions pending commit — files removed from the host working tree
+      but still present at HEAD.
+
+    Without this overlay, a tester / reviewer stage that fires after an
+    uncommitted implementer output ends up testing the last commit, not the
+    code under review. The 0.1.2 fix copies untracked + modified files into
+    the worktree and removes deleted ones, so every delegation phase sees
+    the same source the controller does. ``exclude_patterns`` (from the
+    IsolatedWorkspace config) filters on top of .gitignore so guarded paths
+    like ``.council/**`` and ``.claude/**`` still stay out even if they
+    escaped gitignore.
+    """
+
+    def _git_lines(*args: str) -> list[str]:
+        completed = subprocess.run(
+            ["git", "-C", str(project_root), *args],
+            capture_output=True,
+            check=False,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        if completed.returncode != 0:
+            return []
+        return [line.strip() for line in completed.stdout.splitlines() if line.strip()]
+
+    untracked = _git_lines("ls-files", "--others", "--exclude-standard")
+
+    modified: list[str] = []
+    deleted: list[str] = []
+    for raw in _git_lines("diff", "--name-status", "HEAD"):
+        parts = raw.split("\t")
+        if len(parts) < 2:
+            continue
+        status_code = parts[0]
+        # Diff-filter codes we care about:
+        #   M  modified (overlay new content)
+        #   A  added in index (overlay — not yet committed at HEAD)
+        #   T  type changed (overlay as modified)
+        #   D  deleted in working tree (remove from worktree copy of HEAD)
+        #   R  rename — last path is the new name; the old path is gone at
+        #      HEAD in the new worktree already, so we only need to overlay
+        #      the new path. git emits `R100\told\tnew`; take parts[-1].
+        #   C  copy — overlay the new path.
+        if status_code.startswith("D"):
+            deleted.append(parts[-1])
+        else:
+            modified.append(parts[-1])
+
+    overlaid: list[str] = []
+    for rel_path in (*untracked, *modified):
+        posix_path = rel_path.replace("\\", "/")
+        if _should_exclude(posix_path, exclude_patterns):
+            continue
+        src = project_root / posix_path
+        if not src.is_file():
+            continue
+        dst = workspace_path / posix_path
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)
+        overlaid.append(posix_path)
+
+    removed: list[str] = []
+    for rel_path in deleted:
+        posix_path = rel_path.replace("\\", "/")
+        if _should_exclude(posix_path, exclude_patterns):
+            continue
+        dst = workspace_path / posix_path
+        if dst.is_file() or dst.is_symlink():
+            try:
+                dst.unlink()
+                removed.append(posix_path)
+            except OSError as exc:
+                _logger.debug(
+                    "materialize.overlay_delete_failed path=%s reason=%s",
+                    posix_path,
+                    exc,
+                )
+
+    if overlaid or removed:
+        _logger.info(
+            "materialize.overlay workspace=%s copied=%d removed=%d",
+            str(workspace_path),
+            len(overlaid),
+            len(removed),
+        )
 
 
 def _copy_project_tree(

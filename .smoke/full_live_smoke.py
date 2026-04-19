@@ -146,7 +146,7 @@ class CapturingProvider:
 
 def s01_version() -> None:
     r = _run_council(["version"])
-    record("S01_version", r.returncode == 0 and "0.1.1" in r.stdout, exit=r.returncode,
+    record("S01_version", r.returncode == 0 and "0.1.2" in r.stdout, exit=r.returncode,
            out=r.stdout.strip()[:40])
 
 
@@ -673,6 +673,110 @@ def s26_mcp_policy_denies_implementer_writes_settings() -> None:
     shutil.rmtree(tmp, ignore_errors=True)
 
 
+def s28_overlay_uncommitted_file_visible_in_git_worktree() -> None:
+    """0.1.2 regression: an untracked host file must appear in the sidecar
+    worktree without the controller having to commit first."""
+    import tempfile
+
+    from councilflow.models.delegation import IsolatedWorkspace
+    from councilflow.utils.io import cleanup_workspace, materialize_workspace
+
+    with tempfile.TemporaryDirectory(prefix="councilflow-overlay-") as tmp:
+        source = Path(tmp) / "repo"
+        source.mkdir()
+        subprocess.run(["git", "init", str(source)], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(source), "config", "user.email", "s@t.local"],
+                       check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(source), "config", "user.name", "smoke"],
+                       check=True, capture_output=True)
+        (source / "README.md").write_text("# base\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(source), "add", "-A"],
+                       check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(source), "commit", "-m", "base"],
+                       check=True, capture_output=True)
+
+        untracked_rel = "src/feature/new.ts"
+        (source / untracked_rel).parent.mkdir(parents=True, exist_ok=True)
+        (source / untracked_rel).write_text("export const x = 1;\n", encoding="utf-8")
+
+        modified_rel = "README.md"
+        (source / modified_rel).write_text("# edited\n", encoding="utf-8")
+
+        isolated = IsolatedWorkspace(
+            strategy="git_worktree",
+            exclude_patterns=[".council/**"],
+        )
+        mat = materialize_workspace(
+            project_root=source,
+            council_root=source / ".council",
+            delegation_id="smoke_overlay",
+            isolated=isolated,
+        )
+        try:
+            untracked_visible = (mat.workspace_path / untracked_rel).is_file()
+            modified_applied = (
+                (mat.workspace_path / modified_rel).read_text("utf-8") == "# edited\n"
+            )
+            strategy_ok = mat.effective_strategy == "git_worktree"
+        finally:
+            cleanup_workspace(source, mat.workspace_path, mat.effective_strategy)
+
+    record("S28_overlay_uncommitted_file_visible_in_git_worktree",
+           untracked_visible and modified_applied and strategy_ok,
+           untracked_visible=untracked_visible,
+           modified_applied=modified_applied,
+           strategy=mat.effective_strategy)
+
+
+def s29_overlay_respects_gitignore_and_exclude_patterns() -> None:
+    """Ignored paths and IsolatedWorkspace.exclude_patterns must still
+    suppress copying during the overlay pass."""
+    import tempfile
+
+    from councilflow.models.delegation import IsolatedWorkspace
+    from councilflow.utils.io import cleanup_workspace, materialize_workspace
+
+    with tempfile.TemporaryDirectory(prefix="councilflow-overlay-exc-") as tmp:
+        source = Path(tmp) / "repo"
+        source.mkdir()
+        subprocess.run(["git", "init", str(source)], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(source), "config", "user.email", "s@t.local"],
+                       check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(source), "config", "user.name", "smoke"],
+                       check=True, capture_output=True)
+        (source / ".gitignore").write_text("secrets.env\n", encoding="utf-8")
+        (source / "README.md").write_text("# base\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(source), "add", "-A"],
+                       check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(source), "commit", "-m", "base"],
+                       check=True, capture_output=True)
+
+        (source / "secrets.env").write_text("API_KEY=x\n", encoding="utf-8")
+        (source / ".claude").mkdir(exist_ok=True)
+        (source / ".claude" / "leaked.json").write_text("{}\n", encoding="utf-8")
+
+        isolated = IsolatedWorkspace(
+            strategy="git_worktree",
+            exclude_patterns=[".claude/**", ".council/**"],
+        )
+        mat = materialize_workspace(
+            project_root=source,
+            council_root=source / ".council",
+            delegation_id="smoke_overlay_exc",
+            isolated=isolated,
+        )
+        try:
+            gitignored_blocked = not (mat.workspace_path / "secrets.env").exists()
+            exclude_pattern_blocked = not (mat.workspace_path / ".claude" / "leaked.json").exists()
+        finally:
+            cleanup_workspace(source, mat.workspace_path, mat.effective_strategy)
+
+    record("S29_overlay_respects_gitignore_and_exclude_patterns",
+           gitignored_blocked and exclude_pattern_blocked,
+           gitignored_blocked=gitignored_blocked,
+           exclude_pattern_blocked=exclude_pattern_blocked)
+
+
 def s27_provider_total_timeout_default_is_two_hours() -> None:
     from councilflow.providers.base import (
         DEFAULT_PROVIDER_TOTAL_TIMEOUT_SECONDS,
@@ -721,6 +825,8 @@ def main() -> int:
         s25_delegation_wait_rejects_unknown_id,
         s26_mcp_policy_denies_implementer_writes_settings,
         s27_provider_total_timeout_default_is_two_hours,
+        s28_overlay_uncommitted_file_visible_in_git_worktree,
+        s29_overlay_respects_gitignore_and_exclude_patterns,
     ]
 
     for sc in scenarios:
