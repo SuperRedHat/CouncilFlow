@@ -701,3 +701,66 @@ V1 完成时，至少满足：
 5. **Phase 5（可选）**：TASK-055 `OpenAIChatAdapter` 正式落地，同步放开 `advisor=gpt` 默认路径（依赖 TASK-047）。
 
 本节覆盖并 supersede 文档中先前所有"默认配置与实际模板可以不一致"、"verification_commands 可以用 `&&` 拼接传给 `--input`"、"Gemini 默认 YOLO + trust 可接受"、"skill 失败文案由各主控自由发挥"等旧约定。
+
+## 30. 变更记录（2026-04-19，分发与安装）
+本次变更在 CouncilFlow 0.1.2 已发布、67 个已完成任务全部 done 的前提下，开启一个新的阶段：**分发与安装**。目标是让整套工作流（CouncilFlow 本体 + 共享 skills + project-manager MCP）能够"轻而易举地装到一台新电脑上"，同时保证当前**不开源**、将来想开源时可**无痛切换**。
+
+新增产品要求：
+
+1. **CouncilFlow 本体采用 private pipx 分发路线**：
+   - 主路径为 `pipx install git+https://github.com/SuperRedHat/CouncilFlow.git`
+   - 不发布到 PyPI（至少在本阶段保持仓库私有）
+   - **明确拒绝 Windows `.exe` 安装包方案**：经过评估，PyInstaller 打包后的 30-80MB 体积、AV 误报、SmartScreen 签名成本（$100-400/年）、无自动更新、平台锁定（只 Windows）等代价，均不能被"用户没有 Python"这个不存在的用户群体所证明
+   - 保留 PyInstaller 单文件 `council.exe` 作为 GitHub Releases 上的可选降级资产，但不做 Inno Setup 安装包
+
+2. **Skills + MCP 独立仓库 AutoSkills**：
+   - 新建 GitHub 私有仓库 `SuperRedHat/AutoSkills`，本地路径 `D:\project\AutoSkills`
+   - 内容：共享 `project-*` skills 源 + `project-manager` MCP server 源（Node 工程）+ MCP manifest + 一键 bootstrap 脚本
+   - 从 `~/.workflow-core/skills/` 和 `~/.claude/mcp-project-manager/` **拷贝**过来，保留原始位置不动（搬迁策略是 copy，不是 move）
+   - 所有硬编码的 `C:\Users\David Zhai\...` 用户家目录路径替换为占位符（`~/`、`$HOME`、`${AUTOSKILLS_HOME}` 等），确保仓库在任意用户家目录下都能 bootstrap
+   - `dist/` 和 `node_modules/` 不入仓；bootstrap 时强制 `npm install && npm run build`
+
+3. **一键 bootstrap 脚本（PS1 + Bash 双版本）**：
+   - `scripts/bootstrap.ps1`（Windows PowerShell）
+   - `scripts/bootstrap.sh`（macOS/Linux bash）
+   - 两版本**行为等价**：备份 → 同步 skills 到三端 → 构建 MCP server → 按 manifest 向 codex/claude/gemini 三端 `mcp add` → 校验
+   - 支持 `-DryRun` / `--dry-run` 用于验证脚本逻辑
+   - 失败时写快照到 `~/.workflow-core-backups/<timestamp>/` 可回滚
+
+4. **根目录 `readme.md` 完全重写（中文）**：
+   - 目标受众：**已经会用 Codex / Claude Code / Gemini CLI 之一的开发者**（不是完全零基础用户）
+   - 内容：5 分钟快速上手 + 私有 pipx 安装命令 + 核心命令速查 + `discuss` / `delegate` 实例 + 故障排查入口
+   - 当前 33 行极简英文版被完全替换
+
+5. **新增 `docs/distribution.md`**：
+   - 详细说明"如何装到新电脑"（CouncilFlow + AutoSkills 两步）
+   - 详细说明"如何翻转为开源"（LICENSE、git 历史审计、pyproject 元数据补全、可选 PyPI 发布）
+   - 排错指引：PAT / SSH 配置、AV 误报、PATH 未生效、pipx 版本不兼容、Node.js 版本要求等
+
+6. **LICENSE 文件（MIT）**：
+   - 本阶段就放入仓库，即便仓库当前是 private；这样将来翻转 public 时立即生效，不用再补
+   - pyproject.toml 同步补 `license = {text = "MIT"}`、`authors`、`urls` 字段
+
+7. **Git 历史敏感信息审计**：
+   - 在任何开源动作前，**必须**先扫描 CouncilFlow 仓库的 git 历史，检查是否有误提交的 API key / token / 邮箱 / 私人讨论
+   - 扫描是独立任务，有 finding 时进入人工 gate 决定处置方案（ignore / filter-repo 清洗）
+   - AutoSkills 仓库从 0 开始 commit，不需要审计历史
+
+8. **开源切换的无痛保证**：
+   - 切换动作仅为"在 GitHub 上把仓库从 private 翻为 public"；安装命令不变
+   - PyPI 名字抢注风险留给未来处理（现在不占 placeholder，避免污染 PyPI 心智）
+   - AutoSkills 与 CouncilFlow 物理分仓，将来可以独立决定各自开源时机
+
+9. **本阶段不 bump CouncilFlow 版本**：
+   - 零 Python 源码改动
+   - pyproject.toml 补元数据字段属于 meta-only 变更，若要 bump 版本最多 0.1.3
+   - 67 个 done 任务**零回改**
+
+10. **阶段性 gate**：
+    - `TASK-061`（git 历史审计）：stage_gate=true，findings 须人工定夺
+    - `TASK-070`（AutoSkills 首次 push + 真机 smoke）：stage_gate=true，必须在**不同真机或 clean VM** 上跑通端到端安装
+
+范围说明：
+1. 本次变更聚焦"分发与安装"外围交付物，不改 CouncilFlow 本体的产品语义、角色协议、workflow 契约、provider runtime 等任何内部行为
+2. 本次变更完成后，`~/.workflow-core/` 与 `~/.claude/mcp-project-manager/` 保持原地不动，但其长期真相源会迁移到 AutoSkills；用户可在本阶段 smoke 通过后自行决定是否清理家目录老版本
+3. 本节覆盖并 supersede 当前文档中所有"CouncilFlow 的共享 skills 和 MCP 只能通过 `~/.workflow-core/` 全局目录维护"的暗含假设；新的分发语义应为：**AutoSkills 是共享 skills + MCP 的单一真源仓库，`~/.workflow-core/` 与 `~/.claude/mcp-project-manager/` 成为 bootstrap 脚本的安装目标而不是源**

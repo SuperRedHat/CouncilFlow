@@ -2295,6 +2295,30 @@
       "from_status": null,
       "to_status": null,
       "message": "Full live smoke 22/22 pass against D:/AIProjects/test/councilflow-smoke-2026-04-19 @ 8910b2d. Baseline ruff clean, pytest 189/189. Report: docs/full-smoke-report-2026-04-19.md. JSON: .smoke/smoke-results-2026-04-19.json."
+    },
+    {
+      "timestamp": "2026-04-19T16:55:33.330Z",
+      "type": "decision",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "/project-change 登记 2026-04-19：新阶段「分发与安装」。PRD 新增 §30，架构新增 §26，追加 11 个任务（TASK-060 ~ TASK-070）。要点：(1) CouncilFlow 本体走 `pipx install git+https://github.com/SuperRedHat/CouncilFlow.git` 私有分发，拒绝 .exe 方案，保留 PyInstaller 单 exe 作为可选降级；(2) 新建私有仓库 SuperRedHat/AutoSkills（本地 D:/project/AutoSkills），carve ~/.workflow-core/skills/ + ~/.claude/mcp-project-manager/ 进去（copy，非 move，家目录原件保留），配套 PS1 + Bash 双 bootstrap；(3) 根 readme.md 重写中文版 + 新增 docs/distribution.md；(4) 补 LICENSE (MIT) + pyproject 元数据，为未来无痛翻开源做准备。阶段 gate 两个：TASK-061（git 历史敏感信息审计，有 finding 时人工定夺处置）、TASK-070（新真机/clean VM 上走完整两步安装 smoke，三端 mcp get + pipx install + council status + project-status 均通过）。67 个 done 任务零回改，CouncilFlow Python 源码零改动，本阶段不 bump 版本。架构阶段机走完 architect → planner → synthesizer 三段均 local_execution（配置中 roles 全部映射到 claude，当前主控同模型）；artifact 见 .council/delegations/local-{architect,planner}-change-2026-04-19/。"
+    },
+    {
+      "timestamp": "2026-04-19T17:08:52.030Z",
+      "type": "task_status_change",
+      "task_id": "TASK-060",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-060 todo → in_progress: 开始执行：补 LICENSE (MIT) 文件 + pyproject 元数据字段。进入 implementer 阶段。"
+    },
+    {
+      "timestamp": "2026-04-19T17:10:23.499Z",
+      "type": "task_status_change",
+      "task_id": "TASK-060",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-060 in_progress → auto_verified: tester + reviewer 双通过。verification_commands 2/2 绿。LICENSE 为标准 MIT 全文（Copyright (c) 2026 SuperRedHat）；pyproject.toml 新增 license/authors/urls 三组字段，所有现有字段未变。Python 源码零改动。无新增敏感信息（email 与 git author 已有 email 一致，无新暴露面）。"
     }
   ]
 }

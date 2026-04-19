@@ -607,6 +607,8 @@ graph TD
 - 本次变更聚焦 `project-*` 共享 skills 与它们所依赖的 MCP，不扩展到其它独立插件或非 workflow-core 技能。
 - 现有 `sync-global-rules.ps1` 可继续作为独立能力存在，但不作为本次全局 skill 安装的强依赖。
 
+**分发演进说明（补，2026-04-19）**：本节描述的全局安装脚本 `install-global-workflow.ps1` 仍然有效，但在 §26 引入 AutoSkills 独立仓库后，其 repo-cloneable 等价物将随 AutoSkills 一起分发（`scripts/bootstrap.ps1` / `scripts/bootstrap.sh`）。家目录下的 `~/.workflow-core/scripts/` 老脚本保留，不删除；新电脑安装走 AutoSkills 的 bootstrap 即可。
+
 ## 16. 变更记录（2026-04-17，共享 discuss 工作流补齐）
 本次变更聚焦共享 workflow 层的 discuss 能力补齐，目标是让 `.workflow-core` 中的 `project-*` skills 与 `CouncilFlow` 当前稳定实现重新对齐。
 
@@ -937,3 +939,120 @@ graph TD
 1. 本次变更不新增外部运行依赖（保持 Python 3.13 + Typer + Pydantic + PyYAML），仅在"可选 OpenAIChatAdapter"阶段才引入 `openai` SDK 作为 extras 依赖。
 2. 本次变更不扩大 CLI 表面，只在现有 `delegate` / `discuss` / `status` / `synthesize` 基础上补齐路由、错误分类、守护与日志。
 3. 本节覆盖并 supersede 文中先前所有"`RoleMapping` 默认与 template 默认可以不一致"、"verification_commands `&&` 拼接仍为合规主路径"、"同步脚本的 `-CreateBackup` 等价于真实快照"的旧表述。
+
+## 26. 变更记录（2026-04-19，分发与安装拓扑）
+
+本次架构变更不触及 CouncilFlow 本体的核心模块（host_context / routing / discussion / delegation / providers / state / handoff / models），仅在**项目外围**新增一层"分发与安装"拓扑。0.1.2 已发布版本的任何行为、任何契约、任何 67 个 done 任务对应的架构决策均保持不变。
+
+### 26.1 双仓库拓扑
+
+分发层从单仓库拓扑升级为**双私有仓库**拓扑：
+
+```
+┌─ CouncilFlow (private, SuperRedHat/CouncilFlow) ─┐
+│  Python 源码 + pyproject.toml                     │
+│  readme.md (中文重写) + docs/distribution.md     │
+│  LICENSE (MIT)                                    │
+│  用户安装：pipx install git+https://...CouncilFlow │
+└──────────────────────────────────────────────────┘
+              │
+              │ 运行时解耦；CouncilFlow 自己是 sidecar，
+              │ 不依赖 AutoSkills 也能独立工作
+              │
+┌─ AutoSkills (private, SuperRedHat/AutoSkills) ───┐
+│  skills/project-*/               ← 从 ~/.workflow-core/skills/ 拷贝
+│  mcp/project-manager/src/        ← 从 ~/.claude/mcp-project-manager/ 拷贝
+│  templates/                       ← 从 ~/.workflow-core/templates/ 拷贝
+│  mcp-manifest.json                ← 从 ~/.workflow-core/mcp-manifest.json 迁移
+│  scripts/bootstrap.{ps1,sh}       ← 一键部署
+│  scripts/sync-skills.{ps1,sh}     ← 从 ~/.workflow-core/scripts/ 迁移 + 新增 bash
+│  scripts/backup-global-workflow.{ps1,sh}
+│  scripts/restore-global-workflow.{ps1,sh}
+│  readme.md + docs/bootstrap.md                    │
+│  用户安装：git clone + pwsh scripts/bootstrap.ps1 │
+└──────────────────────────────────────────────────┘
+```
+
+关键架构属性：
+1. **运行时解耦**：CouncilFlow 的 Python 代码不 import、不引用 AutoSkills 的任何文件路径。反之亦然。两个仓库只通过"都被安装到同一台用户环境"这个外部事实关联
+2. **源拷贝而非搬迁**：`~/.workflow-core/` 与 `~/.claude/mcp-project-manager/` 的原始文件**保留不动**；AutoSkills 是它们的新单一真源（canonical source），老位置从 0.1.2 版本起降级为"bootstrap 的安装目标"
+3. **开源路径对称**：两仓库可独立决定可见性翻转时机；CouncilFlow 翻 public 不要求 AutoSkills 同步翻
+
+### 26.2 用户安装流程
+
+新电脑上两步完成：
+
+```bash
+# Step 1: 安装 CouncilFlow 本体
+pipx install git+https://github.com/SuperRedHat/CouncilFlow.git
+
+# Step 2: 克隆 AutoSkills 并运行 bootstrap
+git clone https://github.com/SuperRedHat/AutoSkills.git
+cd AutoSkills
+pwsh scripts/bootstrap.ps1        # Windows
+# 或
+bash scripts/bootstrap.sh          # macOS / Linux
+```
+
+两步均要求已配置 GitHub PAT 或 SSH（因为两仓库当前都是 private）。
+
+### 26.3 Bootstrap 脚本职责
+
+`scripts/bootstrap.{ps1,sh}` 的执行顺序：
+1. 读取 `mcp-manifest.json` 与仓库内的 skills 清单
+2. 备份当前用户环境（如果存在老版本）到 `~/.workflow-core-backups/<ISO8601>/`
+3. 同步 `skills/project-*` 到 `~/.claude/skills/`、`~/.codex/skills/`、`~/.gemini/skills/`
+4. 在 `mcp/project-manager/` 目录运行 `npm install && npm run build`
+5. 按 manifest 向三端 CLI 注册：
+   - `codex mcp add project-manager <node> <path> ...`
+   - `claude mcp add project-manager --scope user <node> <path> ...`
+   - 写入 `~/.gemini/settings.json` 的 `mcpServers` 段（manifest 决定 `trust` 值）
+6. 校验三端 `mcp get project-manager` 均可见；任一端失败则产出 report 并停止
+7. `--dry-run` 模式：只打印上述动作，不实际写盘
+
+### 26.4 MCP manifest 位置迁移
+
+`mcp-manifest.json` 从 `~/.workflow-core/mcp-manifest.json` 迁移到 AutoSkills 仓库根目录。schema 保持与现有兼容（`version: 1`，`servers.project-manager.command` / `args_template` / `trust`）。
+
+路径占位符规则升级：
+- 老：`${MCP_HOME}/dist/index.js`，其中 `${MCP_HOME}` 在 `install-global-workflow.ps1` 里展开为 `~/.claude/mcp-project-manager/`
+- 新：`${AUTOSKILLS_HOME}/mcp/project-manager/dist/index.js`，其中 `${AUTOSKILLS_HOME}` 由 bootstrap 脚本自动识别为 AutoSkills 仓库根
+
+### 26.5 去个人化约束
+
+搬迁 skills 与 MCP server 源码时必须剔除/替换：
+1. 硬编码的 `C:\Users\David Zhai\...` 或 `/c/Users/David Zhai/...` 路径 → 占位符
+2. 邮箱 / token / API key
+3. 任何假设 AutoSkills 运行在特定用户家目录的逻辑
+
+去个人化扫描是独立任务（TASK-065 / TASK-066），产出 migration-report 记录所有替换点。
+
+### 26.6 CouncilFlow 仓库侧新增内容
+
+仅 4 个交付物，**零 Python 源码改动**：
+1. `LICENSE`（MIT 全文）
+2. `readme.md`（中文完全重写，目标受众：已用过 Codex/Claude/Gemini CLI 之一的开发者）
+3. `docs/distribution.md`（新电脑安装 + 开源切换 + 排错）
+4. `pyproject.toml` 补 `license` / `authors` / `urls` 字段（meta-only，不 bump 版本）
+
+### 26.7 与历史章节的关系
+
+- **§15（全局安装与备份）**：老脚本 `install-global-workflow.ps1` 继续存在于 `~/.workflow-core/scripts/`，**不**删除；新电脑安装走 AutoSkills 的 bootstrap。家目录老脚本相当于"本机自举版本"，两者互不干扰
+- **§25.12（共享 skills 发布层）**：`sync-skills.ps1` 的重构版本直接进入 AutoSkills；`mcp-manifest.json` 的真源位置迁移到 AutoSkills 仓库根
+- **§17（Claude commands 包装层）**：包装层生成策略保持不变，仅脚本载体从 `~/.workflow-core/scripts/` 迁到 AutoSkills `scripts/`
+- **§18 / §20 / §22 / §23 / §24**：所有 workflow 硬约束、阶段机、sidecar isolation 契约均**不变**
+
+### 26.8 开源切换影响
+
+当 CouncilFlow 仓库翻 public 时：
+- **零命令变化**：`pipx install git+https://github.com/SuperRedHat/CouncilFlow.git` 原样工作，仅新用户不再需要 PAT
+- **可选**：可以额外发布到 PyPI，用户可切到 `pipx install councilflow`（前提是名字未被抢注）
+- **LICENSE 已存在**：MIT 全文已在仓库中，翻 public 立即生效
+- **Git 历史需预审**：TASK-061 会产出历史扫描报告；如有敏感信息，翻 public 前必须先用 `git filter-repo` 清洗（破坏性操作，须人工 gate）
+- **AutoSkills 独立决定**：可以保持 private，也可以后续也翻 public，互不约束
+
+### 26.9 阶段 gate
+
+整个分发阶段设 1 个最终 milestone gate（TASK-070）：在一台**不同的 Windows 真机或 clean VM** 上走完整两步安装，三端 `mcp get project-manager` 均成功，`council status` 可用，三端新会话调用 `project-status` 可响应。缺任一项不算本阶段收口。
+
+本节覆盖并 supersede 文档中所有"共享 skills 只能通过 `~/.workflow-core/` 分发"、"新电脑必须手动拷贝 skills 目录"、"MCP server 源码只住在用户家目录"等旧隐含假设。新分发语义应理解为：**AutoSkills 是共享 skills + MCP server 的单一真源仓库；用户家目录下的对应位置从 0.1.2 版本起降级为 bootstrap 的安装目标，而不是源。**
