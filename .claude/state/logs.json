@@ -3231,6 +3231,30 @@
       "from_status": "auto_verified",
       "to_status": "done",
       "message": "TASK-101 auto_verified → done"
+    },
+    {
+      "timestamp": "2026-04-20T13:26:50.286Z",
+      "type": "task_status_change",
+      "task_id": "TASK-102",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-102 todo → in_progress"
+    },
+    {
+      "timestamp": "2026-04-20T13:28:24.688Z",
+      "type": "task_status_change",
+      "task_id": "TASK-102",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-102 in_progress → auto_verified: project-design SKILL.md updated in both repos (AutoSkills + ~/.workflow-core/skills). Synthesizer artifact-first contract section added with explicit negative constraint; host persistence step clarified to read result.md first."
+    },
+    {
+      "timestamp": "2026-04-20T13:28:27.632Z",
+      "type": "task_status_change",
+      "task_id": "TASK-102",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-102 auto_verified → done"
     }
   ]
 }

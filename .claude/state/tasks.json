@@ -4187,11 +4187,11 @@
         "没有残留旧协议 synthesizer 直接调 save_architecture"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T13:17:01.298Z",
-      "updated_at": "2026-04-20T13:17:01.298Z",
+      "updated_at": "2026-04-20T13:28:27.609Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "project-design SKILL.md updated in both repos (AutoSkills + ~/.workflow-core/skills). Synthesizer artifact-first contract section added with explicit negative constraint; host persistence step clarified to read result.md first."
     },
     {
       "id": "TASK-103",
