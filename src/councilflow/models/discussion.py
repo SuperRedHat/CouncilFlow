@@ -71,6 +71,10 @@ class DiscussionSummary(BaseModel):
     open_questions: list[str] = Field(default_factory=list)
     next_step: str
     summary_path: str | None = None
+    # Per-round convergence decisions, populated by the orchestrator via
+    # convergence_evaluator. Empty list preserves backward-compatible
+    # serialization for consumers that don't expect the field.
+    convergence_trace: list[dict] = Field(default_factory=list)
 
 
 class DiscussionRecord(BaseModel):

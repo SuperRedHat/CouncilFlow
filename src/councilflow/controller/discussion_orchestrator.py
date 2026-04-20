@@ -8,6 +8,12 @@ from pathlib import Path
 from typing import Protocol
 
 from councilflow.config.schema import CouncilConfig
+from councilflow.controller.convergence_evaluator import (
+    DiscussionState,
+)
+from councilflow.controller.convergence_evaluator import (
+    evaluate as evaluate_convergence,
+)
 from councilflow.handoff.summaries import render_discussion_summary
 from councilflow.models.discussion import (
     DiscussionRecord,
@@ -103,6 +109,9 @@ class DiscussionOrchestrator:
         required_rounds = min(min_rounds, allowed_rounds)
         participants = [controller, *external_models]
         turns: list[DiscussionTurn] = []
+        # Per-round convergence trace for audit. Each entry: {round, reason,
+        # decision}. Populated after the orchestrator's post-round check.
+        convergence_trace: list[dict[str, object]] = []
         initial_position: str | None = None
         current_controller_position: str | None = None
         key_options: list[str] = []
@@ -279,10 +288,40 @@ class DiscussionOrchestrator:
                     turns=turns,
                 )
 
-                if round_number >= required_rounds and round_responses and _round_has_converged(
-                    round_responses
-                ):
-                    ended_reason = "converged"
+                # Route convergence decision through the evaluator so that
+                # project-level convergence_policy (strict_count / semantic
+                # / hybrid) determines whether to converge or continue.
+                # Build a lightweight DiscussionState — uses the current
+                # turns list, completed_rounds=round_number, and the number
+                # of external (non-controller) participants.
+                convergence_state = DiscussionState(
+                    question=question,
+                    completed_rounds=round_number,
+                    turns=list(turns),
+                    external_participant_count=len(external_models),
+                )
+                # Prefer the evaluator's config view; `self.config.discussion`
+                # carries convergence_policy + min_rounds_by_topic. We
+                # override min_rounds / max_rounds with the per-run values
+                # already clamped above (they differ from the project defaults
+                # in edge cases like "only 1 external model so max=min(5,max_rounds)").
+                eval_config = self.config.discussion.model_copy(
+                    update={"min_rounds": required_rounds, "max_rounds": allowed_rounds}
+                )
+                decision = evaluate_convergence(convergence_state, eval_config)
+                convergence_trace.append(
+                    {
+                        "round": round_number,
+                        "reason": decision.reason,
+                        "decision": decision.next_action,
+                    }
+                )
+                if decision.converged:
+                    ended_reason = (
+                        "converged"
+                        if decision.next_action == "converge"
+                        else "max_rounds_reached"
+                    )
                     break
         except Exception as exc:
             self._persist_record(
@@ -343,6 +382,7 @@ class DiscussionOrchestrator:
                 next_steps,
                 "Controller should continue the workflow using this discussion summary.",
             ),
+            convergence_trace=convergence_trace,
         )
         persisted_summary = self._persist_summary(
             summary=summary,

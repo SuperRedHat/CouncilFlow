@@ -110,10 +110,28 @@ def _previous_disagreements_count(turns: list[DiscussionTurn]) -> int:
     return sum(len(t.disagreements) for t in externals[:-1])
 
 
+def _latest_round_externals(turns: list[DiscussionTurn]) -> list[DiscussionTurn]:
+    """Return external (non-controller) turns belonging to the highest round."""
+
+    if not turns:
+        return []
+    max_round = max(t.round_number for t in turns)
+    return [
+        t for t in turns
+        if t.round_number == max_round and t.speaker_role == "participant"
+    ]
+
+
 def _evaluate_strict_count(
     state: DiscussionState, config: DiscussionSettings
 ) -> ConvergenceDecision:
-    """Pre-0.1.3 behavior: honor min_rounds hard count + max_rounds cap."""
+    """Pre-0.1.3 behavior: all external turns in latest round must agree.
+
+    Matches the legacy ``_round_has_converged`` check in
+    ``discussion_orchestrator``: every external participant's response
+    must support the current direction, add no new information, and
+    carry no disagreements or open questions.
+    """
 
     if state.completed_rounds >= config.max_rounds:
         return ConvergenceDecision(
@@ -128,17 +146,23 @@ def _evaluate_strict_count(
             next_action="continue",
         )
 
-    last_external = _last_external_turn(state.turns)
-    if last_external is None:
-        # Min rounds met but no external turn yet this round; keep going
-        # so the orchestrator can fetch one.
+    latest_externals = _latest_round_externals(state.turns)
+    if not latest_externals:
+        # Min rounds met but no external turn recorded yet; keep going.
         return ConvergenceDecision(
             converged=False,
             reason="awaiting_external_turn",
             next_action="continue",
         )
 
-    if last_external.supports_current_direction and not last_external.introduced_new_info:
+    all_agreed = all(
+        t.supports_current_direction
+        and not t.introduced_new_info
+        and not t.disagreements
+        and not t.open_questions
+        for t in latest_externals
+    )
+    if all_agreed:
         return ConvergenceDecision(
             converged=True,
             reason="external_agreed",
