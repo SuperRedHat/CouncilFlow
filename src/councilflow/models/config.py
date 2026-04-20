@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -169,13 +169,46 @@ class RoleMapping(BaseModel):
 
 
 class DiscussionSettings(BaseModel):
-    """Project-level defaults for structured multi-model discussions."""
+    """Project-level defaults for structured multi-model discussions.
+
+    0.1.3 adds two new fields for semantic convergence:
+
+    ``convergence_policy``
+        Strategy for deciding when a discussion has converged:
+        ``strict_count`` (default, pre-0.1.3 behavior: honor
+        ``min_rounds`` hard count), ``semantic`` (stop as soon as a
+        round adds no new information and no new disagreements, but
+        still respect ``min_rounds`` as a hard floor), or ``hybrid``
+        (per-topic ``min_rounds_by_topic`` floor plus semantic check
+        after the floor is reached).
+
+    ``min_rounds_by_topic``
+        Optional mapping like ``{"architecture": 2, "clarification": 1}``
+        consulted by the ``hybrid`` policy. Keys are matched against
+        the discussion question's inferred topic. ``None`` disables
+        per-topic overrides entirely.
+
+    In ``semantic`` mode, ``min_rounds`` continues to act as a hard
+    minimum — a discussion never converges before completing that many
+    rounds, even if the very first round produces no new info.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
     default_models: list[str] = Field(default_factory=list)
     min_rounds: int = Field(default=1, ge=1)
     max_rounds: int = Field(default=5, ge=1)
+    convergence_policy: Literal["strict_count", "semantic", "hybrid"] = Field(
+        default="strict_count",
+        description="When to consider a multi-model discussion converged.",
+    )
+    min_rounds_by_topic: dict[str, int] | None = Field(
+        default=None,
+        description=(
+            "Optional per-topic minimum rounds override used by hybrid "
+            "convergence policy."
+        ),
+    )
 
     @field_validator("default_models", mode="before")
     @classmethod

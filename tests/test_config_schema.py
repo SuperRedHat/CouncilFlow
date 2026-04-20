@@ -201,3 +201,47 @@ def test_discussion_settings_backward_compat_defaults() -> None:
     assert settings.default_models == []
     assert settings.min_rounds == 1
     assert settings.max_rounds == 5
+    # New 0.1.3 fields default to backward-compatible values
+    assert settings.convergence_policy == "strict_count"
+    assert settings.min_rounds_by_topic is None
+
+
+def test_discussion_convergence_policy_literal_accepts_valid() -> None:
+    for policy in ("strict_count", "semantic", "hybrid"):
+        settings = DiscussionSettings.model_validate({"convergence_policy": policy})
+        assert settings.convergence_policy == policy
+
+
+def test_discussion_convergence_policy_literal_rejects_invalid() -> None:
+    with pytest.raises(ValidationError):
+        DiscussionSettings.model_validate({"convergence_policy": "aggressive"})
+
+
+def test_discussion_min_rounds_by_topic_accepts_mapping() -> None:
+    settings = DiscussionSettings.model_validate(
+        {
+            "convergence_policy": "hybrid",
+            "min_rounds_by_topic": {"architecture": 2, "clarification": 1},
+        }
+    )
+    assert settings.min_rounds_by_topic == {"architecture": 2, "clarification": 1}
+
+
+def test_discussion_min_rounds_by_topic_defaults_none() -> None:
+    settings = DiscussionSettings.model_validate({"convergence_policy": "semantic"})
+    assert settings.min_rounds_by_topic is None
+
+
+def test_discussion_existing_fields_behavior_unchanged() -> None:
+    """Existing min_rounds/max_rounds/default_models semantics preserved."""
+    settings = DiscussionSettings.model_validate(
+        {
+            "default_models": ["claude", "gemini"],
+            "min_rounds": 3,
+            "max_rounds": 5,
+        }
+    )
+    assert settings.default_models == ["claude", "gemini"]
+    assert settings.min_rounds == 3
+    assert settings.max_rounds == 5
+    assert settings.convergence_policy == "strict_count"  # default
