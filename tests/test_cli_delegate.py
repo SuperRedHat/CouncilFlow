@@ -586,3 +586,174 @@ def test_status_command_is_allowed_inside_delegated_stage(
     assert result.exit_code == 0
     payload = json.loads(result.output)
     assert payload["data"]["current_controller"] == "codex"
+
+
+# ---------------------------------------------------------------------------
+# TASK-077: dynamic routing integration
+# ---------------------------------------------------------------------------
+
+
+def test_delegate_uses_router_when_no_model_override(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    """Without --model, delegate should consult role_router to pick the model."""
+    monkeypatch.setattr(
+        delegate_module,
+        "get_provider_adapter",
+        lambda *args, **kwargs: FakeSuccessAdapter(),
+    )
+
+    # Write a config that routes implementer by complexity.
+    (tmp_path / ".council").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".council" / "config.yaml").write_text(
+        "\n".join(
+            [
+                "config_version: 1",
+                "output_language: en",
+                "roles:",
+                "  implementer:",
+                "    - model: gemini",
+                "      when: \"task.complexity == 'S'\"",
+                "    - model: claude",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "delegate",
+            "--role",
+            "implementer",
+            "--objective",
+            "Ship the S-complexity thing.",
+            "--task-summary",
+            "tiny task",
+            "--input",
+            "complexity=S",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={"CODEX_SHELL": "1"},
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    # Router picked gemini (first route matched on complexity == 'S')
+    data = payload["data"]
+    assert data.get("target_model") == "gemini" or data.get("model") == "gemini"
+
+    # Audit log written
+    routing_log = tmp_path / ".council" / "runs" / "routing.json"
+    assert routing_log.is_file()
+    records = json.loads(routing_log.read_text(encoding="utf-8"))
+    assert any(
+        r.get("primary_model") == "gemini" and r.get("role") == "implementer"
+        for r in records
+    )
+
+
+def test_delegate_routing_no_match_returns_structured_error(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    """When no route matches and no --model is given, emit routing_no_match."""
+    monkeypatch.setattr(
+        delegate_module,
+        "get_provider_adapter",
+        lambda *args, **kwargs: FakeSuccessAdapter(),
+    )
+
+    (tmp_path / ".council").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".council" / "config.yaml").write_text(
+        "\n".join(
+            [
+                "config_version: 1",
+                "output_language: en",
+                "roles:",
+                "  implementer:",
+                "    - model: gemini",
+                "      when: \"task.complexity == 'XL'\"",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "delegate",
+            "--role",
+            "implementer",
+            "--objective",
+            "Ship the M-complexity thing.",
+            "--task-summary",
+            "mid task",
+            "--input",
+            "complexity=M",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={"CODEX_SHELL": "1"},
+    )
+
+    assert result.exit_code == 1
+    payload = json.loads(result.output)
+    assert payload["error"]["error_kind"] == "routing_no_match"
+    assert payload["error"]["role"] == "implementer"
+    assert "tried_routes" in payload["error"]
+
+
+def test_delegate_model_flag_bypasses_router(monkeypatch, tmp_path: Path) -> None:
+    """--model has highest priority and skips route resolution entirely."""
+    monkeypatch.setattr(
+        delegate_module,
+        "get_provider_adapter",
+        lambda *args, **kwargs: FakeSuccessAdapter(),
+    )
+
+    # Config that would route implementer to gemini if routing ran.
+    (tmp_path / ".council").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".council" / "config.yaml").write_text(
+        "\n".join(
+            [
+                "config_version: 1",
+                "output_language: en",
+                "roles:",
+                "  implementer: gemini",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "delegate",
+            "--role",
+            "implementer",
+            "--model",
+            "claude",  # explicit override should win
+            "--objective",
+            "Explicit model wins.",
+            "--task-summary",
+            "explicit model task",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={"CODEX_SHELL": "1"},
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    data = payload["data"]
+    assert data.get("target_model") == "claude" or data.get("model") == "claude"
+
+    # Router should NOT have written a log entry since we skipped it
+    routing_log = tmp_path / ".council" / "runs" / "routing.json"
+    assert not routing_log.exists()
