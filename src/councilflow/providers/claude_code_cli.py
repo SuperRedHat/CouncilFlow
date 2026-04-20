@@ -39,18 +39,73 @@ CLAUDE_STREAM_FLAGS = [
 ]
 
 
+# Short aliases that the Claude Code CLI accepts natively on its ``--model``
+# flag (per Anthropic's CLI docs). When the caller configures a variant like
+# ``claude-haiku``, we strip the ``claude-`` prefix before passing the name to
+# the CLI so the CLI sees a form it recognizes. Longer / versioned names
+# (``claude-sonnet-4-6``, ``claude-3-5-sonnet-20241022``) are passed through
+# unchanged — they are CLI-native full IDs.
+_CLAUDE_CLI_SHORT_ALIASES: frozenset[str] = frozenset({"haiku", "sonnet", "opus"})
+
+
+def _variant_to_cli_model_arg(variant: str) -> str:
+    """Map an internal ``claude-<variant>`` string to the CLI ``--model`` arg."""
+
+    if variant.startswith("claude-"):
+        remainder = variant[len("claude-") :]
+        if remainder in _CLAUDE_CLI_SHORT_ALIASES:
+            return remainder
+    return variant
+
+
 class ClaudeCodeCliAdapter:
-    """Adapter for a Claude Code CLI command."""
+    """Adapter for a Claude Code CLI command.
+
+    Mirrors the :class:`GeminiCliAdapter` variant pattern: the public
+    ``model_name`` stays the canonical family name (``"claude"``) so
+    ``ProviderResponse.model`` and downstream dedup/speaker_model comparisons
+    see a stable identifier, while the specific variant (``claude-haiku``,
+    ``claude-sonnet-4-6``, etc.) is carried on the instance as
+    ``claude_variant`` and surfaced via ``ProviderResponse.metadata``.
+
+    When a variant is supplied, the adapter injects ``--model <name>`` into
+    the constructed CLI command (before ``-p``) so the Claude Code CLI
+    selects the requested model rather than whatever its own default is.
+    """
 
     model_name = "claude"
 
     def __init__(
         self,
+        model: str | None = None,
         command: list[str] | None = None,
         runner: CommandRunner | None = None,
         runtime: ProviderRuntimeSettings | None = None,
     ) -> None:
-        self.command = command or _default_claude_command()
+        # Only store a variant when the caller actually passed one that is
+        # distinct from the bare family name. ``model="claude"`` and
+        # ``model=None`` are equivalent — the 0.1.3 no-variant behavior.
+        self.claude_variant: str | None = (
+            model if model and model.strip() and model != "claude" else None
+        )
+        base_command = command or _default_claude_command()
+
+        if self.claude_variant:
+            cli_model_arg = _variant_to_cli_model_arg(self.claude_variant)
+            # Insert --model before -p so the flag is parsed with the stream
+            # setup, matching the Gemini adapter's insertion point.
+            if "-p" in base_command:
+                idx = base_command.index("-p")
+                self.command = (
+                    base_command[:idx]
+                    + ["--model", cli_model_arg]
+                    + base_command[idx:]
+                )
+            else:
+                self.command = base_command + ["--model", cli_model_arg]
+        else:
+            self.command = base_command
+
         self.runtime = runtime or default_runtime_settings()
         self.runner = runner or (
             lambda command, prompt, cwd=None, env=None: _run_claude_streaming_command(
@@ -71,10 +126,13 @@ class ClaudeCodeCliAdapter:
                 env=request.env_override,
             )
         )
+        metadata = dict(result.metadata)
+        if self.claude_variant:
+            metadata["claude_variant"] = self.claude_variant
         return ProviderResponse(
             model=self.model_name,
             content=result.content,
-            metadata=result.metadata,
+            metadata=metadata,
         )
 
 
