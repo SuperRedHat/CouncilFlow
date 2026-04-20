@@ -1,3 +1,54 @@
+# CouncilFlow project-level configuration template.
+#
+# This file is the single source of default role mappings and discussion
+# behavior. When `council` is first invoked inside a project that has no
+# `.council/config.yaml`, this template is copied verbatim to the project
+# directory; users can then edit it to match their preferences without
+# affecting other projects.
+#
+# ----------------------------------------------------------------------
+# 0.1.3+ supports dynamic role routing. Each role accepts either the
+# shorthand `<role>: <model>` (single model, equivalent to the pre-0.1.3
+# behavior) or an ordered list of route entries. The first entry whose
+# `when` expression evaluates true (or has no `when`) is selected; the
+# entry's `fallback` list is used if the primary adapter call fails.
+#
+# `when` expressions are evaluated in a restricted AST sandbox and can
+# reference `task.<field>` (id / complexity / module / role / objective
+# / task_summary / anything passed via --input KEY=VALUE). Allowed
+# operators: ==, !=, <, <=, >, >=, in, not in, and, or, not. Calls,
+# lambdas, comprehensions, attribute chains, dunder access -- all
+# rejected.
+#
+# Example 1: task-complexity-aware routing + fallback
+# ---------------------------------------------------
+# roles:
+#   implementer:
+#     - model: claude
+#       when: "task.complexity in ['L']"
+#     - model: claude-haiku
+#       when: "task.complexity in ['S', 'M']"
+#       fallback: [claude, gemini]
+#
+# Example 2: module-specific routing
+# -----------------------------------
+# roles:
+#   reviewer:
+#     - model: gemini
+#       when: "'security' in task.module"
+#     - model: codex
+#
+# Example 3: simple fallback without dynamic matching
+# ----------------------------------------------------
+# roles:
+#   advisor:
+#     - model: gpt
+#       fallback: [claude, codex]
+#
+# The default below keeps the shorthand form so nothing changes for
+# users who do not opt in to dynamic routing.
+# ----------------------------------------------------------------------
+
 config_version: 1
 output_language: zh-CN
 controller_override: null
