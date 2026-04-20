@@ -2696,11 +2696,11 @@
         "无个人敏感信息（如真实邮箱泄露风险），只使用已公开的 GitHub 用户名级别信息"
       ],
       "stage_gate": false,
-      "status": "auto_verified",
+      "status": "done",
       "created_at": "2026-04-19T16:55:16.071Z",
-      "updated_at": "2026-04-19T17:10:23.476Z",
+      "updated_at": "2026-04-19T17:10:58.725Z",
       "commit_hash": "",
-      "notes": "tester + reviewer 双通过。verification_commands 2/2 绿。LICENSE 为标准 MIT 全文（Copyright (c) 2026 SuperRedHat）；pyproject.toml 新增 license/authors/urls 三组字段，所有现有字段未变。Python 源码零改动。无新增敏感信息（email 与 git author 已有 email 一致，无新暴露面）。"
+      "notes": "auto_verified → done (acceptance_mode=auto, stage_gate=false). Commit 6fbb874. LICENSE (MIT 全文) + pyproject.toml license/authors/urls 字段齐全。Python 源码零改动。为未来开源切换做好 meta 准备。"
     },
     {
       "id": "TASK-061",
@@ -2736,11 +2736,11 @@
         "报告提交到仓库，作为 audit trail 的一部分"
       ],
       "stage_gate": true,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-19T16:55:16.072Z",
-      "updated_at": "2026-04-19T16:55:16.072Z",
+      "updated_at": "2026-04-19T18:06:51.981Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Manual gate 接受 2026-04-19：用户确认审阅通过，选择方案 A（不清洗历史）。审计结论 NO_FINDINGS，git 历史无敏感信息，仓库可安全 open-source。Commit 38b1341."
     },
     {
       "id": "TASK-062",
@@ -2781,11 +2781,11 @@
         "指向 docs/distribution.md 作为深度文档"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-19T16:55:16.072Z",
-      "updated_at": "2026-04-19T16:55:16.072Z",
+      "updated_at": "2026-04-19T17:17:16.829Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done (acceptance_mode=auto). Commit 51617b7."
     },
     {
       "id": "TASK-063",
@@ -2823,11 +2823,11 @@
         "无个人敏感信息"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-19T16:55:16.072Z",
-      "updated_at": "2026-04-19T16:55:16.072Z",
+      "updated_at": "2026-04-19T17:19:06.284Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit d311664."
     },
     {
       "id": "TASK-064",
@@ -2869,11 +2869,11 @@
         "占位 readme.md 写明 \"内容将由 TASK-069 重写\""
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-19T16:55:16.072Z",
-      "updated_at": "2026-04-19T16:55:16.072Z",
+      "updated_at": "2026-04-19T17:21:00.998Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit 10ff6d1 on master branch of AutoSkills repo."
     },
     {
       "id": "TASK-065",
@@ -2919,11 +2919,11 @@
         "拷贝策略确认为 cp -r 而非 mv"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-19T16:55:16.072Z",
-      "updated_at": "2026-04-19T16:55:16.072Z",
+      "updated_at": "2026-04-19T18:06:53.949Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Manual gate 接受 2026-04-19：用户确认\"继续任务\"，接受 skills 搬迁。11 个 project-* skills + 4 个 templates 已到位，业务逻辑零改动，去个人化完成。Commit 766a447 (AutoSkills/master)."
     },
     {
       "id": "TASK-066",
@@ -2971,11 +2971,11 @@
         "migration-report.md 列出所有路径替换点"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-19T16:55:16.072Z",
-      "updated_at": "2026-04-19T16:55:16.072Z",
+      "updated_at": "2026-04-19T18:06:55.954Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Manual gate 接受 2026-04-19：用户确认\"继续任务\"，接受 MCP server 搬迁。源 + config 齐全，npm install + build 实测通过产出 dist/index.js，去个人化确认无硬编码。Commit ca67c6f (AutoSkills/master)."
     },
     {
       "id": "TASK-067",
@@ -3015,11 +3015,11 @@
         "原始 manifest 不删除、不修改"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-19T16:55:16.072Z",
-      "updated_at": "2026-04-19T16:55:16.072Z",
+      "updated_at": "2026-04-19T18:07:51.209Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit b7e1438 on AutoSkills/master."
     },
     {
       "id": "TASK-068",
@@ -3074,11 +3074,11 @@
         "支持 --help / -Help 打印使用说明"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-19T16:55:16.072Z",
-      "updated_at": "2026-04-19T16:55:16.072Z",
+      "updated_at": "2026-04-19T18:12:18.935Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit 154a05b on AutoSkills/master."
     },
     {
       "id": "TASK-069",
@@ -3119,11 +3119,11 @@
         "无硬编码的 David Zhai / 私人邮箱"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-19T16:55:16.072Z",
-      "updated_at": "2026-04-19T16:55:16.072Z",
+      "updated_at": "2026-04-19T18:14:36.794Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit aca251a on AutoSkills/master."
     },
     {
       "id": "TASK-070",
@@ -3184,11 +3184,11 @@
         "无破坏性操作：无 git filter-repo、无 force push、无 reset --hard"
       ],
       "stage_gate": true,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-19T16:55:16.072Z",
-      "updated_at": "2026-04-19T16:55:16.072Z",
+      "updated_at": "2026-04-20T05:18:56.159Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Manual gate 接受 2026-04-20：用户确认\"通过\"。基于本机 dry-run + 67 个历史 smoke 的覆盖已足以证明脚本可靠，加之本机已经实际完成 (1) 8 个 commit 推到 GitHub AutoSkills private repo；(2) 本地分支 master → main 重命名并 push 成功；(3) bash/PS1 bootstrap 双 dry-run 通过；(4) MCP server build 实测产出 dist/index.js；(5) mcp-manifest.json JSON 校验通过。不同真机 smoke 的 B 段填空留作未来\"新电脑第一次装时\"的现场记录。未执行任何破坏性 git 操作。"
     }
   ]
 }

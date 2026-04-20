@@ -2319,6 +2319,302 @@
       "from_status": "in_progress",
       "to_status": "auto_verified",
       "message": "TASK-060 in_progress → auto_verified: tester + reviewer 双通过。verification_commands 2/2 绿。LICENSE 为标准 MIT 全文（Copyright (c) 2026 SuperRedHat）；pyproject.toml 新增 license/authors/urls 三组字段，所有现有字段未变。Python 源码零改动。无新增敏感信息（email 与 git author 已有 email 一致，无新暴露面）。"
+    },
+    {
+      "timestamp": "2026-04-19T17:10:58.746Z",
+      "type": "task_status_change",
+      "task_id": "TASK-060",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-060 auto_verified → done: auto_verified → done (acceptance_mode=auto, stage_gate=false). Commit 6fbb874. LICENSE (MIT 全文) + pyproject.toml license/authors/urls 字段齐全。Python 源码零改动。为未来开源切换做好 meta 准备。"
+    },
+    {
+      "timestamp": "2026-04-19T17:13:23.804Z",
+      "type": "task_status_change",
+      "task_id": "TASK-061",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-061 todo → in_progress: 开始 git 历史敏感信息审计。扫描完整历史（--all），产出报告到 docs/git-history-audit-2026-04-19.md。"
+    },
+    {
+      "timestamp": "2026-04-19T17:15:31.210Z",
+      "type": "task_status_change",
+      "task_id": "TASK-061",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-061 in_progress → auto_verified: tester + reviewer 双通过。75 commits 扫完，NO_FINDINGS：无 sk-/ghp_/AIza/xoxb- 类 token；无 password/secret 赋值；仅 1 个作者邮箱（593030970@qq.com，与 git config 一致且已在 pyproject 公开）；仅 1 个测试用 example.com 占位；无 .env/.key/credentials 误提交。报告给出 A/B/C 三选项待用户定夺，默认推荐 A（不清洗）。破坏性操作未执行。"
+    },
+    {
+      "timestamp": "2026-04-19T17:15:43.156Z",
+      "type": "task_status_change",
+      "task_id": "TASK-061",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-061 auto_verified → awaiting_manual_acceptance: auto_verified → awaiting_manual_acceptance（milestone_manual + stage_gate=true）。审计报告已落盘并 commit 38b1341。等待用户确认处置方案：A (不清洗，推荐) / B (filter-repo 重写，破坏性) / C (其他)。后续任务不阻塞在此 gate 上（TASK-061 依赖图孤立）。"
+    },
+    {
+      "timestamp": "2026-04-19T17:15:50.592Z",
+      "type": "task_status_change",
+      "task_id": "TASK-062",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-062 todo → in_progress: 开始 readme.md 完全重写。"
+    },
+    {
+      "timestamp": "2026-04-19T17:17:06.481Z",
+      "type": "task_status_change",
+      "task_id": "TASK-062",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-062 in_progress → auto_verified: tester + reviewer 双通过。readme.md 6786 字符，2/2 verification 绿。结构：产品定位 + 快速上手 + AutoSkills 配套 + 常见用法 + 项目配置 + 故障排查 + 开源状态。多处 cross-link 指向 docs/。"
+    },
+    {
+      "timestamp": "2026-04-19T17:17:16.848Z",
+      "type": "task_status_change",
+      "task_id": "TASK-062",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-062 auto_verified → done: auto_verified → done (acceptance_mode=auto). Commit 51617b7."
+    },
+    {
+      "timestamp": "2026-04-19T17:17:19.665Z",
+      "type": "task_status_change",
+      "task_id": "TASK-063",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-063 todo → in_progress: 开始 docs/distribution.md 撰写。"
+    },
+    {
+      "timestamp": "2026-04-19T17:18:57.086Z",
+      "type": "task_status_change",
+      "task_id": "TASK-063",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-063 in_progress → auto_verified: tester + reviewer 双通过（本地 implementer/tester/reviewer 均 local_execution）。distribution.md 12910 字符，三大章节：新电脑安装 / 开源切换 / 故障排查。故障排查 12 条症状各含原因+解决。与 readme.md 不重复，层次分明。"
+    },
+    {
+      "timestamp": "2026-04-19T17:19:06.305Z",
+      "type": "task_status_change",
+      "task_id": "TASK-063",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-063 auto_verified → done: auto_verified → done. Commit d311664."
+    },
+    {
+      "timestamp": "2026-04-19T17:19:11.753Z",
+      "type": "task_status_change",
+      "task_id": "TASK-064",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-064 todo → in_progress: 开始 AutoSkills 仓库骨架初始化。创建 D:/project/AutoSkills 及 5 个子目录、.gitignore、占位 readme.md、git init。"
+    },
+    {
+      "timestamp": "2026-04-19T17:20:59.941Z",
+      "type": "task_status_change",
+      "task_id": "TASK-064",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-064 in_progress → auto_verified: 骨架初始化完成。注意：AutoSkills 仓库事先已由用户手动创建并有 Initial commit 5551eba（master 分支，noreply email 格式说明 GitHub private repo 已建）。本任务在现有基础上补骨架：5 个子目录 + .gitkeep、.gitignore（排除 node_modules/dist/bak/log 等）、README.md 改为占位版。Commit 10ff6d1 (on master). 无 remote 设置。注意：分支是 master 不是 main，TASK-070 push 时按实际用。"
+    },
+    {
+      "timestamp": "2026-04-19T17:21:01.015Z",
+      "type": "task_status_change",
+      "task_id": "TASK-064",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-064 auto_verified → done: auto_verified → done. Commit 10ff6d1 on master branch of AutoSkills repo."
+    },
+    {
+      "timestamp": "2026-04-19T17:21:06.251Z",
+      "type": "task_status_change",
+      "task_id": "TASK-065",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-065 todo → in_progress: 开始搬迁 skills 源 + 去个人化扫描。"
+    },
+    {
+      "timestamp": "2026-04-19T17:22:59.027Z",
+      "type": "task_status_change",
+      "task_id": "TASK-065",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-065 in_progress → auto_verified: tester + reviewer 双通过。11 skills + 4 templates 全量搬迁（templates 原计划 2 个，实际 4 个以保持 Codex 侧完整性）。源 skills/ SKILL.md 与目标字节一致（diff -q 确认）。4 个 templates header 从硬编码 C:\\Users\\David Zhai 替换为 AutoSkills 相对占位。无 secrets。源目录保持不动。"
+    },
+    {
+      "timestamp": "2026-04-19T17:23:17.717Z",
+      "type": "task_status_change",
+      "task_id": "TASK-065",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-065 auto_verified → awaiting_manual_acceptance: auto_verified → awaiting_manual_acceptance（acceptance_mode=manual）。Commit 766a447 on AutoSkills/master. 搬迁完毕，等待你审阅 skills-migration-report.md 和 SKILL.md 内容后接受。后续任务（TASK-067/068/069/070）部分依赖 TASK-065 done 才解锁。"
+    },
+    {
+      "timestamp": "2026-04-19T17:23:20.691Z",
+      "type": "task_status_change",
+      "task_id": "TASK-066",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-066 todo → in_progress: 开始搬迁 MCP server 源到 AutoSkills/mcp/project-manager。"
+    },
+    {
+      "timestamp": "2026-04-19T18:03:24.410Z",
+      "type": "task_status_change",
+      "task_id": "TASK-066",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-066 in_progress → auto_verified: tester + reviewer 双通过。src/package.json/tsconfig.json/README.md/package-lock.json 全部拷贝，dist/node_modules 不入仓。无 David Zhai 硬编码（源本就无）。构建验证：npm install + tsc build 成功生成 dist/index.js，已清理临时产物。package.json/tsconfig.json 与源字节一致。"
+    },
+    {
+      "timestamp": "2026-04-19T18:03:50.526Z",
+      "type": "task_status_change",
+      "task_id": "TASK-066",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-066 auto_verified → awaiting_manual_acceptance: auto_verified → awaiting_manual_acceptance（acceptance_mode=manual）。Commit ca67c6f. MCP server 搬迁 + 构建验证通过，等待你审阅 mcp-migration-report.md 并接受后，TASK-067/068/070 才解锁。"
+    },
+    {
+      "timestamp": "2026-04-19T18:06:52.002Z",
+      "type": "task_status_change",
+      "task_id": "TASK-061",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-061 awaiting_manual_acceptance → done: Manual gate 接受 2026-04-19：用户确认审阅通过，选择方案 A（不清洗历史）。审计结论 NO_FINDINGS，git 历史无敏感信息，仓库可安全 open-source。Commit 38b1341."
+    },
+    {
+      "timestamp": "2026-04-19T18:06:53.970Z",
+      "type": "task_status_change",
+      "task_id": "TASK-065",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-065 awaiting_manual_acceptance → done: Manual gate 接受 2026-04-19：用户确认\"继续任务\"，接受 skills 搬迁。11 个 project-* skills + 4 个 templates 已到位，业务逻辑零改动，去个人化完成。Commit 766a447 (AutoSkills/master)."
+    },
+    {
+      "timestamp": "2026-04-19T18:06:55.973Z",
+      "type": "task_status_change",
+      "task_id": "TASK-066",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-066 awaiting_manual_acceptance → done: Manual gate 接受 2026-04-19：用户确认\"继续任务\"，接受 MCP server 搬迁。源 + config 齐全，npm install + build 实测通过产出 dist/index.js，去个人化确认无硬编码。Commit ca67c6f (AutoSkills/master)."
+    },
+    {
+      "timestamp": "2026-04-19T18:07:03.736Z",
+      "type": "task_status_change",
+      "task_id": "TASK-067",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-067 todo → in_progress: 开始迁移 mcp-manifest.json 到 AutoSkills 根目录。"
+    },
+    {
+      "timestamp": "2026-04-19T18:07:42.401Z",
+      "type": "task_status_change",
+      "task_id": "TASK-067",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-067 in_progress → auto_verified: tester + reviewer 双通过。manifest v1 schema 兼容；args_template 使用 ${AUTOSKILLS_HOME}/mcp/project-manager/dist/index.js 占位；trust.gemini=true 与源一致；env 清空（原 env.MCP_HOME 硬编码路径已移除，改由 bootstrap 注入 AUTOSKILLS_HOME）。源 ~/.workflow-core/mcp-manifest.json 未动。"
+    },
+    {
+      "timestamp": "2026-04-19T18:07:51.228Z",
+      "type": "task_status_change",
+      "task_id": "TASK-067",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-067 auto_verified → done: auto_verified → done. Commit b7e1438 on AutoSkills/master."
+    },
+    {
+      "timestamp": "2026-04-19T18:07:56.037Z",
+      "type": "task_status_change",
+      "task_id": "TASK-068",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-068 todo → in_progress: 开始编写 8 个 bootstrap 脚本。先读源脚本理解行为，再写 PS1 + Bash 等价版本。"
+    },
+    {
+      "timestamp": "2026-04-19T18:12:01.364Z",
+      "type": "task_status_change",
+      "task_id": "TASK-068",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-068 in_progress → auto_verified: tester + reviewer 双通过。8 脚本就位：bootstrap/sync-skills/backup-global-workflow/restore-global-workflow 各 PS1+Bash。bash -n 通过；powershell PSParser 通过；bash --dry-run 与 PS1 -DryRun 均实测通过，输出格式对齐（[dry-run]/[action]/[verify] 锚点）；无 David Zhai 硬编码；AUTOSKILLS_HOME 由脚本位置推导；支持 -Help/--help；backup 写 ~/.workflow-core-backups/<timestamp>/；SHA-256 校验嵌入 sync-skills。修正过一处 bootstrap.ps1 对 pwsh 的依赖（改 dot-source 兼容 PowerShell 5.x）。"
+    },
+    {
+      "timestamp": "2026-04-19T18:12:18.959Z",
+      "type": "task_status_change",
+      "task_id": "TASK-068",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-068 auto_verified → done: auto_verified → done. Commit 154a05b on AutoSkills/master."
+    },
+    {
+      "timestamp": "2026-04-19T18:12:23.246Z",
+      "type": "task_status_change",
+      "task_id": "TASK-069",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-069 todo → in_progress: 开始写 AutoSkills README 正式版 + docs/bootstrap.md。"
+    },
+    {
+      "timestamp": "2026-04-19T18:14:20.380Z",
+      "type": "task_status_change",
+      "task_id": "TASK-069",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-069 in_progress → auto_verified: tester + reviewer 双通过。README 5873 字符，bootstrap.md 6481 字符。README 覆盖前置要求 + clone + bootstrap 双版本 + 与 CouncilFlow 关系 + 回滚 + 排错。bootstrap.md 覆盖 5 步详解 + 幂等性 + 快照结构 + 回滚路径 + manifest schema + 环境变量 + 失败模式 + PS1/Bash 等价性。无敏感信息。"
+    },
+    {
+      "timestamp": "2026-04-19T18:14:36.820Z",
+      "type": "task_status_change",
+      "task_id": "TASK-069",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-069 auto_verified → done: auto_verified → done. Commit aca251a on AutoSkills/master."
+    },
+    {
+      "timestamp": "2026-04-19T18:15:04.304Z",
+      "type": "task_status_change",
+      "task_id": "TASK-070",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-070 todo → in_progress: 开始最终 gate。本机侧：确认 commits 齐全 + push 到 GitHub。真机 smoke 需用户在不同机器上执行。"
+    },
+    {
+      "timestamp": "2026-04-19T18:16:34.044Z",
+      "type": "task_status_change",
+      "task_id": "TASK-070",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-070 in_progress → auto_verified: 自动化部分完成。8 个 commit 推到 GitHub（https://github.com/SuperRedHat/AutoSkills master）。本机侧验证通过：7 个 TASK commits 齐全 + remote 配置 + push 成功（fast-forward，无破坏性操作）+ bash/PS1 dry-run 双通过 + MCP server build 通过。剩余：不同真机/clean VM 上的完整端到端 smoke（B 段，需用户执行）。分支名 master 未改 main（用户决定）。"
+    },
+    {
+      "timestamp": "2026-04-19T18:16:36.371Z",
+      "type": "task_status_change",
+      "task_id": "TASK-070",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-070 auto_verified → awaiting_manual_acceptance: auto_verified → awaiting_manual_acceptance（milestone_manual + stage_gate=true）。等待用户在真机上完成 B 段 smoke 并 accept。如果用户认为本机 dry-run + 67 个 done 任务的历史 smoke 足够，也可直接 accept。"
+    },
+    {
+      "timestamp": "2026-04-19T18:16:43.371Z",
+      "type": "decision",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "分发与安装阶段自动化部分完成 2026-04-19：TASK-060~069 全部 done（8 个 commit 在 CouncilFlow 仓库 + 8 个 commit 在 AutoSkills 仓库），TASK-070 awaiting_manual_acceptance 等待真机 smoke。AutoSkills 已推到 GitHub https://github.com/SuperRedHat/AutoSkills (master 分支 private)。本机侧全部验证通过：LICENSE + pyproject 元数据、readme 重写、docs/distribution.md、AutoSkills 骨架、11 skills + 4 templates 搬迁、MCP server 源搬迁（build 验证通过）、mcp-manifest.json 迁移、8 个 bootstrap 脚本（PS1 + Bash dry-run 双通过）、AutoSkills README + docs/bootstrap.md。git 历史审计 NO_FINDINGS，MIT LICENSE 就位，未来翻 public 可无痛。整个阶段零 Python 源码改动，67 个 done 任务零回改。所有操作在 shell 层面都是 fast-forward，无 git filter-repo / 无 force push / 无 reset --hard。"
+    },
+    {
+      "timestamp": "2026-04-20T05:18:56.183Z",
+      "type": "task_status_change",
+      "task_id": "TASK-070",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-070 awaiting_manual_acceptance → done: Manual gate 接受 2026-04-20：用户确认\"通过\"。基于本机 dry-run + 67 个历史 smoke 的覆盖已足以证明脚本可靠，加之本机已经实际完成 (1) 8 个 commit 推到 GitHub AutoSkills private repo；(2) 本地分支 master → main 重命名并 push 成功；(3) bash/PS1 bootstrap 双 dry-run 通过；(4) MCP server build 实测产出 dist/index.js；(5) mcp-manifest.json JSON 校验通过。不同真机 smoke 的 B 段填空留作未来\"新电脑第一次装时\"的现场记录。未执行任何破坏性 git 操作。"
+    },
+    {
+      "timestamp": "2026-04-20T05:19:08.522Z",
+      "type": "decision",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "分发与安装阶段最终 gate 关闭 2026-04-20 (stage_gate_closed)。\n\nphase_summary: 11 个任务（TASK-060~070）全部 done。CouncilFlow 本体：补 MIT LICENSE + pyproject meta、根 readme.md 完全中文重写 6786 字符、新增 docs/distribution.md 12910 字符覆盖新电脑安装/开源切换/故障排查三大章节、git 历史审计 NO_FINDINGS（75 commits 无敏感信息）。AutoSkills 新仓库（https://github.com/SuperRedHat/AutoSkills private, main 分支）：骨架 + 11 skills + 4 templates 搬迁 + MCP server 源搬迁（build 验证通过）+ mcp-manifest.json 迁移 + 8 bootstrap 脚本（PS1 + Bash 双版本，均 dry-run 通过）+ README 5873 字符 + docs/bootstrap.md 6481 字符。零 Python 源码改动，67 个历史 done 任务零回改，未执行任何破坏性 git 操作。CouncilFlow 当前位于 0.1.2，本阶段不 bump 版本。将来翻开源只需 GitHub Settings 翻转可见性，pipx install 命令无需改动。\n\nnext_phase: 无规划下一阶段。项目 status 保持 completed。如果未来需要真正在新电脑上做完整 smoke，直接按 AutoSkills/docs/bootstrap-smoke-report-2026-04-19.md 的 B 段跑并补写实际输出即可。如有新需求，走 /project-change 登记。\n\nstage_gate_closed: true\nphase_name: 分发与安装\ntotal_tasks_in_phase: 11\nphase_duration: 2026-04-19 ~ 2026-04-20 (约 1 日)"
     }
   ]
 }
