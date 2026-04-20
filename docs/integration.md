@@ -634,6 +634,53 @@ Host workflows should treat `routing_no_match` the same as any other
 `council delegate` failure — report via
 `Workflow Failure Report Protocol` and stop.
 
+### Provider variants (0.1.4+)
+
+Both the Gemini and Claude adapter families accept a **variant** name on
+the `model` field, which the adapter translates to a `--model <variant>`
+flag on the underlying CLI subprocess. This is how per-role cost tuning
+(e.g. "tester to haiku, architect to opus") actually reaches the CLI.
+
+**Claude variants** (0.1.4+):
+
+| Config value | Normalized to | CLI receives |
+|---|---|---|
+| `claude` | `claude` | (no `--model` flag, CLI default) |
+| `haiku` | `claude-haiku` | `--model haiku` |
+| `sonnet` | `claude-sonnet` | `--model sonnet` |
+| `opus` | `claude-opus` | `--model opus` |
+| `claude-haiku` | `claude-haiku` | `--model haiku` |
+| `claude-sonnet` | `claude-sonnet` | `--model sonnet` |
+| `claude-opus` | `claude-opus` | `--model opus` |
+| `claude-sonnet-4-6` | `claude-sonnet-4-6` | `--model claude-sonnet-4-6` |
+| `claude-3-5-sonnet-20241022` | `claude-3-5-sonnet-20241022` | `--model claude-3-5-sonnet-20241022` |
+
+The **`claude-` prefix rule** in `resolve_adapter_model` accepts any
+non-empty suffix, so newly released Anthropic model names (e.g. a future
+`claude-opus-5` or `claude-sonnet-7-1-20270115`) work without a
+CouncilFlow patch. Short aliases (`haiku` / `sonnet` / `opus`) are in the
+`MODEL_ALIASES` table and normalize to the family-prefixed form to
+preserve variant info.
+
+**Gemini variants** (since 0.1.2, semantics sharpened in 0.1.4):
+
+| Config value | Normalized to | CLI receives |
+|---|---|---|
+| `gemini` | `gemini` | (no `--model` flag, CLI default) |
+| `gemini-1.5-flash` | `gemini-1.5-flash` | `--model gemini-1.5-flash` |
+| `gemini-2.5-pro` | `gemini-2.5-pro` | `--model gemini-2.5-pro` |
+| `gemini-cli` / `google-gemini` | `gemini` | (no `--model` flag, CLI-name alias) |
+
+Before 0.1.4, a config entry like `gemini-1.5-flash` could collapse to
+bare `gemini` via `MODEL_ALIASES`, losing the variant. 0.1.4 removes
+those variant-collapsing aliases so the Gemini path behaves consistently
+with the newly-added Claude path.
+
+**`ProviderResponse.model`** stays the canonical family name (`claude` /
+`gemini`) for both adapters so downstream dedup / speaker_model
+comparisons are stable. The specific variant is surfaced via
+`metadata.claude_variant` / `metadata.gemini_variant`.
+
 ### Fallback retry semantics
 
 When the primary adapter call fails with one of these kinds,
