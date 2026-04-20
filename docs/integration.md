@@ -681,6 +681,40 @@ with the newly-added Claude path.
 comparisons are stable. The specific variant is surfaced via
 `metadata.claude_variant` / `metadata.gemini_variant`.
 
+### Synthesizer artifact contract (0.1.5+)
+
+The three workflow skills that run a `synthesizer` stage
+(`project-design`, `project-plan`, `project-change`) delegate
+synthesizer to a sidecar sub-controller, but **the sidecar must not
+write host workflow state directly**. The guardrail backstop
+(`PROTECTED_WORKFLOW_PATHS = (".claude/state", ".council/state.json")`)
+snapshots those paths before the stage, compares after, and rolls
+any change back with `error_kind=guardrail_violation`. So:
+
+- **Sidecar synthesizer only produces markdown (plus JSON fragments
+  where appropriate) into
+  `.council/delegations/<id>/result.md`.** This is the same
+  artifact-first contract used by `implementer` since 0.1.0.
+- **Host controller reads `result.md` and drives the MCP writes** via
+  `save_architecture` / `save_prd` / `create_tasks` / `add_log`
+  **itself**, after user confirmation where the skill calls for it.
+- **`--allow-workflow-state-write` remains an opt-in flag** for
+  callers who genuinely need sidecar-driven host-state writes
+  (unusual; effectively a hard-red-line exemption).
+
+This contract is enforced at the **skill-protocol layer** (the
+`council delegate --role synthesizer` invocation explicitly instructs
+the sub-controller to produce only artifact) plus the **guardrail
+layer** (sidecar MCP writes to protected paths are rolled back).
+`tests/test_synthesizer_artifact_contract.py` pins the happy path as
+a regression test.
+
+Before 0.1.5, the three skills did not explicitly warn the sidecar to
+avoid `save_architecture` / `save_prd` / `create_tasks` — so any
+sub-controller that "helpfully" persisted its output via MCP triggered
+a `guardrail_violation`. 0.1.5 resolves the ambiguity in the skill
+documentation without changing the guardrail.
+
 ### Fallback retry semantics
 
 When the primary adapter call fails with one of these kinds,
@@ -688,7 +722,7 @@ When the primary adapter call fails with one of these kinds,
 fallback chain:
 
 - `adapter_missing`
-- `process_error`
+- `process_exit`
 - `idle_timeout`
 - `total_timeout`
 - `os_error`
@@ -697,6 +731,14 @@ Non-retryable kinds (`permission_blocked`, `environment_not_ready`,
 `verification_failed`, etc.) exit immediately — they reflect task
 state, not provider transient failure. Every fallback attempt is
 logged to `routing.json`.
+
+**0.1.5 note on `process_exit`:** between 0.1.3 and 0.1.4 this
+whitelist contained the string `process_error`, which no adapter
+actually emits — every CLI-subprocess non-zero exit surfaces as
+`process_exit`. The typo silently broke fallback for any subprocess
+failure across three releases. 0.1.5 fixes the spelling, so
+correctly-configured fallback chains start working as documented.
+If you noticed fallback "not kicking in" before 0.1.5, this is why.
 
 ### `--model` override precedence
 

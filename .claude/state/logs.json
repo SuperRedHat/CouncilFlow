@@ -3303,6 +3303,30 @@
       "from_status": "auto_verified",
       "to_status": "done",
       "message": "TASK-104 auto_verified → done"
+    },
+    {
+      "timestamp": "2026-04-20T13:30:48.069Z",
+      "type": "task_status_change",
+      "task_id": "TASK-105",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-105 todo → in_progress"
+    },
+    {
+      "timestamp": "2026-04-20T13:31:51.044Z",
+      "type": "task_status_change",
+      "task_id": "TASK-105",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-105 in_progress → auto_verified: docs/integration.md gained Synthesizer artifact contract (0.1.5+) section + Fallback 0.1.5 typo note. Both grep verification commands pass. Previous process_error occurrence only appears as historical reference in the 0.1.5 note."
+    },
+    {
+      "timestamp": "2026-04-20T13:31:54.171Z",
+      "type": "task_status_change",
+      "task_id": "TASK-105",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-105 auto_verified → done"
     }
   ]
 }
