@@ -146,7 +146,7 @@ def _parse_key_value_items(items: list[str] | None, *, option_name: str) -> dict
 _RETRYABLE_FALLBACK_KINDS: frozenset[str] = frozenset(
     {
         "adapter_missing",
-        "process_error",
+        "process_exit",
         "idle_timeout",
         "total_timeout",
         "os_error",

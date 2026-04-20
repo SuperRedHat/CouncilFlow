@@ -846,3 +846,70 @@ def test_delegate_with_claude_haiku_config_does_not_fail_load(
     data = payload["data"]
     target = data.get("target_model") or data.get("model")
     assert target in ("claude-haiku", "claude"), f"unexpected target: {target!r}"
+
+
+# ---------------------------------------------------------------------------
+# TASK-100 — Fallback retry whitelist regression
+# ---------------------------------------------------------------------------
+
+
+def test_fallback_whitelist_contains_process_exit_not_process_error() -> None:
+    """Regression: the retry whitelist must use ``process_exit`` (the kind
+    every adapter actually emits), not the legacy typo ``process_error``.
+
+    From 0.1.3 through 0.1.4 the whitelist contained ``process_error``,
+    silently breaking fallback on any subprocess failure. 0.1.5 fixes
+    the typo; this test nails the correct spelling down.
+    """
+
+    from councilflow.cli.delegate import _RETRYABLE_FALLBACK_KINDS
+
+    assert "process_exit" in _RETRYABLE_FALLBACK_KINDS
+    assert "process_error" not in _RETRYABLE_FALLBACK_KINDS
+
+
+def test_is_retryable_with_fallback_true_for_process_exit() -> None:
+    """A DelegationExecutionError with error_kind='process_exit' is
+    retryable, so the CLI-level fallback loop will advance to the next
+    model in the chain."""
+
+    from councilflow.cli.delegate import _is_retryable_with_fallback
+    from councilflow.controller.delegation_orchestrator import (
+        DelegationExecutionError,
+    )
+
+    exc = DelegationExecutionError(
+        "mock subprocess non-zero exit",
+        delegation_id="del_test",
+        handoff_path="test/handoff.yaml",
+        record_path="test/record.json",
+        error_kind="process_exit",
+    )
+    assert _is_retryable_with_fallback(exc) is True
+
+
+def test_is_retryable_with_fallback_false_for_guardrail_violation() -> None:
+    """Not-retryable kinds (guardrail, permission, recursive) must stay
+    un-retried so users see the actionable error immediately."""
+
+    from councilflow.cli.delegate import _is_retryable_with_fallback
+    from councilflow.controller.delegation_orchestrator import (
+        DelegationExecutionError,
+    )
+
+    for kind in (
+        "guardrail_violation",
+        "permission_blocked",
+        "recursive_workflow_violation",
+        "environment_not_ready",
+    ):
+        exc = DelegationExecutionError(
+            f"mock {kind}",
+            delegation_id="del_test",
+            handoff_path="test/handoff.yaml",
+            record_path="test/record.json",
+            error_kind=kind,
+        )
+        assert _is_retryable_with_fallback(exc) is False, (
+            f"{kind} must not be retryable via fallback"
+        )

@@ -4116,11 +4116,11 @@
         "fallback 在 process_exit 后真正跳到下一个模型"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T13:17:01.298Z",
-      "updated_at": "2026-04-20T13:17:01.298Z",
+      "updated_at": "2026-04-20T13:23:21.775Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "One-char typo fix in src/councilflow/cli/delegate.py:149 (process_error -> process_exit). +3 regression tests. 345 pytest pass (was 342), ruff clean."
     },
     {
       "id": "TASK-101",
