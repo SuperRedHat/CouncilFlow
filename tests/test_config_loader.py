@@ -8,13 +8,14 @@ from councilflow.config.loader import (
     load_config,
     load_default_config_text,
 )
+from councilflow.models.roles import RoleName
 
 
 def test_build_default_config_uses_packaged_template_defaults() -> None:
     config = build_default_config()
 
     assert config.output_language == "zh-CN"
-    assert config.roles.implementer == "claude"
+    assert config.roles.for_role(RoleName.IMPLEMENTER) == "claude"
     assert config.discussion.default_models == []
     assert config.discussion.min_rounds == 2
     assert config.discussion.max_rounds == 5
@@ -61,8 +62,8 @@ def test_load_config_normalizes_role_and_discussion_model_names(tmp_path: Path) 
     loaded = load_config(config_path)
 
     assert loaded.output_language == "en"
-    assert loaded.roles.implementer == "gemini"
-    assert loaded.roles.reviewer == "claude"
+    assert loaded.roles.for_role(RoleName.IMPLEMENTER) == "gemini"
+    assert loaded.roles.for_role(RoleName.REVIEWER) == "claude"
     assert loaded.discussion.default_models == ["gemini", "claude"]
     assert loaded.discussion.min_rounds == 3
     assert loaded.discussion.max_rounds == 7

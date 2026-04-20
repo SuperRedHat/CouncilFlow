@@ -24,7 +24,7 @@ def test_role_mapping_defaults_match_template_roles_section() -> None:
     mapping = RoleMapping.model_validate({})
 
     for role_name in RoleName:
-        assert getattr(mapping, role_name.value) == template_roles[role_name.value], (
+        assert mapping.for_role(role_name) == template_roles[role_name.value], (
             f"RoleMapping.{role_name.value} drifted from default-config.yaml"
         )
 
@@ -54,8 +54,8 @@ def test_partial_role_mapping_merges_template_defaults() -> None:
     template_roles = _template_roles()
     mapping = RoleMapping.model_validate({"planner": "codex"})
 
-    assert mapping.planner == "codex"
+    assert mapping.for_role(RoleName.PLANNER) == "codex"
     for role_name in RoleName:
         if role_name is RoleName.PLANNER:
             continue
-        assert getattr(mapping, role_name.value) == template_roles[role_name.value]
+        assert mapping.for_role(role_name) == template_roles[role_name.value]

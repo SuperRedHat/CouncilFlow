@@ -5,6 +5,7 @@ from pathlib import Path
 
 from councilflow.config.schema import CouncilConfig
 from councilflow.models.config import DiscussionSettings, RoleMapping
+from councilflow.models.roles import RoleName
 from councilflow.state.paths import build_council_paths
 from councilflow.state.snapshots import recover_latest_snapshot
 from councilflow.state.store import CouncilStateStore
@@ -40,7 +41,7 @@ def test_config_round_trip_uses_yaml_file(tmp_path: Path) -> None:
     loaded = store.load_config()
 
     assert loaded.output_language == "en"
-    assert loaded.roles.implementer == "gemini"
+    assert loaded.roles.for_role(RoleName.IMPLEMENTER) == "gemini"
     assert loaded.discussion.default_models == ["claude", "gemini"]
     assert loaded.discussion.max_rounds == 3
 
@@ -107,9 +108,9 @@ def test_project_local_configs_remain_isolated_between_projects(tmp_path: Path) 
     second_loaded = second_store.load_config()
 
     assert first_loaded.output_language == "en"
-    assert first_loaded.roles.implementer == "gemini"
+    assert first_loaded.roles.for_role(RoleName.IMPLEMENTER) == "gemini"
     assert first_loaded.discussion.default_models == ["gemini"]
     assert second_loaded.output_language == "zh-CN"
-    assert second_loaded.roles.implementer == "claude"
+    assert second_loaded.roles.for_role(RoleName.IMPLEMENTER) == "claude"
     assert second_loaded.discussion.default_models == []
     assert second_loaded.discussion.max_rounds == 5

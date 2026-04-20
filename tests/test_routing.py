@@ -18,7 +18,7 @@ def test_load_config_returns_defaults_when_file_is_missing(tmp_path: Path) -> No
     config = load_config(tmp_path / "missing-config.yaml")
 
     assert config == build_default_config()
-    assert config.roles.implementer == "claude"
+    assert config.roles.for_role(RoleName.IMPLEMENTER) == "claude"
 
 
 def test_load_config_validates_custom_role_mapping(tmp_path: Path) -> None:
@@ -46,8 +46,8 @@ def test_load_config_validates_custom_role_mapping(tmp_path: Path) -> None:
     config = load_config(config_path)
 
     assert config.output_language == "en"
-    assert config.roles.implementer == "claude"
-    assert config.roles.advisor == "gemini"
+    assert config.roles.for_role(RoleName.IMPLEMENTER) == "claude"
+    assert config.roles.for_role(RoleName.ADVISOR) == "gemini"
 
 
 def test_resolve_discuss_models_ignores_controller_and_duplicates() -> None:

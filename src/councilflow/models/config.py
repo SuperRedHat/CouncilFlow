@@ -14,19 +14,81 @@ from councilflow.models.roles import (
 )
 
 
-class RoleMapping(BaseModel):
-    """Role-to-model mapping backed by the packaged template as single source."""
+class RoleRoute(BaseModel):
+    """One candidate route entry inside a role's dynamic routing list.
+
+    A role can be configured as either a plain model name (shorthand,
+    equivalent to a single-entry list) or as an ordered list of routes
+    where the first whose ``when`` expression matches (``None`` always
+    matches) is selected. ``fallback`` specifies additional models to
+    attempt if the primary adapter call fails with a structured error.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
-    planner: str
-    architect: str
-    implementer: str
-    tester: str
-    reviewer: str
-    fixer: str
-    advisor: str
-    synthesizer: str
+    model: str
+    when: str | None = None
+    fallback: list[str] | None = None
+
+    @field_validator("model", mode="before")
+    @classmethod
+    def _normalize_primary_model(cls, value: Any) -> str:
+        if not isinstance(value, str):
+            raise TypeError("RoleRoute.model must be a string.")
+        if not value.strip():
+            raise ValueError("RoleRoute.model cannot be empty.")
+        return validate_model_name(value)
+
+    @field_validator("when", mode="before")
+    @classmethod
+    def _normalize_when(cls, value: Any) -> str | None:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise TypeError("RoleRoute.when must be a string expression or None.")
+        stripped = value.strip()
+        return stripped or None
+
+    @field_validator("fallback", mode="before")
+    @classmethod
+    def _normalize_fallback(cls, value: Any) -> list[str] | None:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            candidates = [value]
+        elif isinstance(value, list):
+            candidates = value
+        else:
+            raise TypeError("RoleRoute.fallback must be a string or list of strings.")
+        out: list[str] = []
+        for item in candidates:
+            if not isinstance(item, str):
+                raise TypeError("RoleRoute.fallback entries must be strings.")
+            if not item.strip():
+                raise ValueError("RoleRoute.fallback entries cannot be empty.")
+            out.append(validate_model_name(item))
+        return out or None
+
+
+class RoleMapping(BaseModel):
+    """Role-to-model mapping backed by the packaged template as single source.
+
+    Each role accepts either the shorthand string (single model) or an
+    ordered list of :class:`RoleRoute` entries for dynamic routing. The
+    shorthand is normalized to a single-entry list on load, so the
+    internal representation is always ``list[RoleRoute]``.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    planner: list[RoleRoute]
+    architect: list[RoleRoute]
+    implementer: list[RoleRoute]
+    tester: list[RoleRoute]
+    reviewer: list[RoleRoute]
+    fixer: list[RoleRoute]
+    advisor: list[RoleRoute]
+    synthesizer: list[RoleRoute]
 
     @model_validator(mode="before")
     @classmethod
@@ -42,21 +104,68 @@ class RoleMapping(BaseModel):
             return {**template, **value}
         return value
 
-    @field_validator("*", mode="before")
+    @field_validator(
+        "planner",
+        "architect",
+        "implementer",
+        "tester",
+        "reviewer",
+        "fixer",
+        "advisor",
+        "synthesizer",
+        mode="before",
+    )
     @classmethod
-    def normalize_models(cls, value: str) -> str:
-        """Normalize configured model names and reject unregistered adapters."""
+    def normalize_routes(cls, value: Any) -> list[dict[str, Any]]:
+        """Accept shorthand string or list of strings/dicts, normalize to dicts.
 
-        if not isinstance(value, str):
-            raise TypeError("Role mappings must be strings.")
-        if not value.strip():
-            raise ValueError("Role mappings cannot be empty.")
-        return validate_model_name(value)
+        Pydantic will then finalize each dict into a :class:`RoleRoute`
+        and run its field validators (including model-name normalization).
+        """
+
+        if value is None:
+            raise ValueError("Role mappings cannot be null.")
+        if isinstance(value, str):
+            if not value.strip():
+                raise ValueError("Role mappings cannot be empty.")
+            return [{"model": value}]
+        if isinstance(value, list):
+            if not value:
+                raise ValueError("Role mapping list cannot be empty.")
+            normalized: list[dict[str, Any]] = []
+            for item in value:
+                if isinstance(item, str):
+                    if not item.strip():
+                        raise ValueError("Role mapping list entries cannot be empty strings.")
+                    normalized.append({"model": item})
+                elif isinstance(item, dict):
+                    normalized.append(item)
+                elif isinstance(item, RoleRoute):
+                    normalized.append(item.model_dump())
+                else:
+                    raise TypeError(
+                        "Role mapping list entries must be str, dict, or RoleRoute."
+                    )
+            return normalized
+        raise TypeError("Role mappings must be a string or a list of routes.")
 
     def for_role(self, role: RoleName) -> str:
-        """Return the target model for a given role."""
+        """Return the primary model for a role (first route's ``model``).
 
-        return getattr(self, role.value)
+        Backward-compatible shortcut for callers that do not evaluate
+        dynamic routing. The role router uses :meth:`routes_for_role`
+        instead to access the full route list and ``when`` conditions.
+        """
+
+        routes = getattr(self, role.value)
+        if not routes:
+            raise ValueError(f"No routes configured for role {role.value}.")
+        return routes[0].model
+
+    def routes_for_role(self, role: RoleName) -> list[RoleRoute]:
+        """Return the full ordered list of routes for a role."""
+
+        return list(getattr(self, role.value))
 
 
 class DiscussionSettings(BaseModel):
