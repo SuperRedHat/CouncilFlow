@@ -3207,6 +3207,30 @@
       "from_status": "auto_verified",
       "to_status": "done",
       "message": "TASK-100 auto_verified → done"
+    },
+    {
+      "timestamp": "2026-04-20T13:23:35.485Z",
+      "type": "task_status_change",
+      "task_id": "TASK-101",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-101 todo → in_progress"
+    },
+    {
+      "timestamp": "2026-04-20T13:26:34.089Z",
+      "type": "task_status_change",
+      "task_id": "TASK-101",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-101 in_progress → auto_verified: 2 new tests in tests/test_synthesizer_artifact_contract.py: (1) happy path writes result.md + .claude/state/* untouched; (2) synthesizer MCP policy allows. 345 -> 347 pass, ruff clean."
+    },
+    {
+      "timestamp": "2026-04-20T13:26:36.734Z",
+      "type": "task_status_change",
+      "task_id": "TASK-101",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-101 auto_verified → done"
     }
   ]
 }

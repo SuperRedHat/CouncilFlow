@@ -4151,11 +4151,11 @@
         "测试覆盖不动 .claude/state 的 happy path"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T13:17:01.298Z",
-      "updated_at": "2026-04-20T13:17:01.298Z",
+      "updated_at": "2026-04-20T13:26:36.710Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "2 new tests in tests/test_synthesizer_artifact_contract.py: (1) happy path writes result.md + .claude/state/* untouched; (2) synthesizer MCP policy allows. 345 -> 347 pass, ruff clean."
     },
     {
       "id": "TASK-102",
