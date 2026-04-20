@@ -2999,6 +2999,14 @@
       "from_status": null,
       "to_status": null,
       "message": "Token 效率优化阶段最终 gate 关闭 2026-04-20 (stage_gate_closed)。\n\nphase_summary: 15 个任务 TASK-071 ~ TASK-085 全部 done。CouncilFlow bump 到 0.1.3。实际交付：\n- Part 1 (TASK-071~073): RFC 12176 字符 + 基线测量工具 + 实测基线报告（ceremony ratio 5.0%，证实 link folding 不值得做）\n- Part A 动态角色路由 (TASK-074~078): RoleRoute + RoleMapping 扩展 + when_eval 受限 AST 求值器 (51 安全测试) + role_router 引擎 + cli/delegate 接入 + 模板示例\n- Part B 语义收敛 (TASK-079~081): Discussion schema 扩展 + convergence_evaluator 三模式 (strict_count/semantic/hybrid) + orchestrator 接入\n- Part 4 收口 (TASK-082~085): council status --recent N 观测段 + AutoSkills 7 skills 文案更新 + integration.md 两大新章节 + 0.1.3 发布\n\n关键指标：\n- pytest 318/318（从 189 基线 +129 新测试）\n- ruff clean\n- 14 个 CouncilFlow commit + 1 个 AutoSkills commit\n- 现有 .council/config.yaml 零修改可用（向后兼容硬红线守住）\n- 78 + 15 = 93 个 done 任务，0 回改\n\n明确排除（放入 docs/workflow-optimizations-backlog.md 未来评估）：link folding、sidecar 分层、artifact schema 结构化、provider session 复用、turn merging、delta handoff。\n\nsmoke-report 落在 docs/token-opt-smoke-report-2026-04-20.md，含一个意外 bug 修复（routing.json 路径从 .council/runs/ 移到 .council/runs/routing/ 避免与 list_run_records glob 冲突）。\n\nnext_phase: 无规划下一阶段。CouncilFlow 0.1.3 正式发布，项目 status 保持 completed。未来如需激活 backlog 中的其他优化（首选 link folding 待基线数据更丰富后评估），走 /project-change 登记新范围。\n\nstage_gate_closed: true\nphase_name: 工作流 token 效率优化\ntotal_tasks_in_phase: 15\nphase_duration: 2026-04-20 单日完成"
+    },
+    {
+      "timestamp": "2026-04-20T11:51:38.233Z",
+      "type": "decision",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "/project-change 登记 2026-04-20：0.1.4 Claude variant 路由补丁。PRD §32 + 架构 §28 新增，6 个任务 (TASK-094~099) 创建。范围：补齐 0.1.3 Part A 动态路由里对 Claude family variant 的支持缺口 —— 0.1.3 的 whitelist 只认 codex/claude/gemini/gemini-variant/gpt-variant/o1-variant，不认 claude-variant，导致 claude-haiku 配置直接被拒。0.1.4 完全对标 Gemini variant 已落地的路径（GeminiCliAdapter 2026-04-17）：resolve_adapter_model 加 claude- 前缀，ClaudeCodeCliAdapter 接 model 参数传 --model flag，cli/delegate 路由 claude- 变体。MODEL_ALIASES 短名 haiku/sonnet/opus 调整为保留 variant（映射到 claude-haiku 等长名），现有 claude-3-5-sonnet → claude 这类吞 variant 条目改为保留。patch bump 0.1.3 → 0.1.4（非 minor，纯补漏）。95 个历史任务零回改，Skills 不需要改（SKILL.md 说明是 family-neutral 的）。6 tasks：1 roles.py，1 adapter，1 cli/delegate，1 docs，1 release-prep，1 final gate (milestone_manual+stage_gate=true)。阶段机走完 architect → planner → synthesizer 三段均 local_execution。"
     }
   ]
 }
