@@ -757,3 +757,92 @@ def test_delegate_model_flag_bypasses_router(monkeypatch, tmp_path: Path) -> Non
     # Router should NOT have written a log entry since we skipped it
     routing_log = tmp_path / ".council" / "runs" / "routing" / "routing.json"
     assert not routing_log.exists()
+
+
+# ---------------------------------------------------------------------------
+# TASK-096: Claude variant routing (0.1.4)
+# ---------------------------------------------------------------------------
+
+
+def test_get_provider_adapter_routes_claude_variant() -> None:
+    """claude-<variant> should construct a ClaudeCodeCliAdapter with --model flag."""
+    from councilflow.cli.delegate import get_provider_adapter
+    from councilflow.providers.claude_code_cli import ClaudeCodeCliAdapter
+
+    adapter = get_provider_adapter("claude-haiku")
+    assert isinstance(adapter, ClaudeCodeCliAdapter)
+    assert "--model" in adapter.command
+    assert "haiku" in adapter.command
+    assert adapter.claude_variant == "claude-haiku"
+
+
+def test_get_provider_adapter_shorthand_claude_still_works() -> None:
+    """Bare 'claude' continues to route without --model flag (0.1.3 behavior)."""
+    from councilflow.cli.delegate import get_provider_adapter
+    from councilflow.providers.claude_code_cli import ClaudeCodeCliAdapter
+
+    adapter = get_provider_adapter("claude")
+    assert isinstance(adapter, ClaudeCodeCliAdapter)
+    assert "--model" not in adapter.command
+    assert adapter.claude_variant is None
+
+
+def test_get_provider_adapter_short_alias_routes_through_claude_variant() -> None:
+    """Short name 'haiku' normalizes to 'claude-haiku' and routes variant path."""
+    from councilflow.cli.delegate import get_provider_adapter
+    from councilflow.providers.claude_code_cli import ClaudeCodeCliAdapter
+
+    adapter = get_provider_adapter("haiku")
+    assert isinstance(adapter, ClaudeCodeCliAdapter)
+    assert "--model" in adapter.command
+    assert "haiku" in adapter.command
+    assert adapter.claude_variant == "claude-haiku"
+
+
+def test_delegate_with_claude_haiku_config_does_not_fail_load(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    """0.1.3 rejected `implementer: claude-haiku` at config load; 0.1.4 accepts it."""
+    monkeypatch.setattr(
+        delegate_module,
+        "get_provider_adapter",
+        lambda *args, **kwargs: FakeSuccessAdapter(),
+    )
+
+    (tmp_path / ".council").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".council" / "config.yaml").write_text(
+        "\n".join(
+            [
+                "config_version: 1",
+                "output_language: en",
+                "roles:",
+                "  implementer: claude-haiku",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "delegate",
+            "--role",
+            "implementer",
+            "--objective",
+            "claude-haiku smoke",
+            "--task-summary",
+            "variant",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env={"CODEX_SHELL": "1"},
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    # target_model should expose the claude-haiku form routed through the adapter
+    data = payload["data"]
+    target = data.get("target_model") or data.get("model")
+    assert target in ("claude-haiku", "claude"), f"unexpected target: {target!r}"

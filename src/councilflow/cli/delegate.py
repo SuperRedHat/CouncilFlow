@@ -23,6 +23,7 @@ from councilflow.models.config import ProviderRuntimeSettings
 from councilflow.models.delegation import ExecutionGuardrails, ImportManifest
 from councilflow.models.roles import RoleName, normalize_model_name
 from councilflow.providers.base import ProviderAdapter
+from councilflow.providers.claude_code_cli import ClaudeCodeCliAdapter
 from councilflow.providers.gemini_cli import GeminiCliAdapter
 from councilflow.state.store import CouncilStateStore
 from councilflow.utils.lang import emit_console_text, emit_response, resolve_output_language
@@ -199,10 +200,18 @@ def get_provider_adapter(
 
     from councilflow.providers.registry import resolve_adapter
 
+    normalized = normalize_model_name(model)
+    # Claude variants (0.1.4+) — route to ClaudeCodeCliAdapter with the
+    # variant so it can inject `--model <variant>` into the CLI command.
+    # Excludes the CLI-name aliases (`claude-code`, `claudecode`, etc.)
+    # which already normalize to the bare family name "claude" and have no
+    # variant semantics.
+    if normalized.startswith("claude-") and normalized != "claude":
+        return ClaudeCodeCliAdapter(model=normalized, runtime=runtime)
     # Preserve the legacy gemini-<variant> routing: the registry's gemini
     # factory reads the raw model name, but for historical reasons the CLI
     # path always resolved specific variants through the default factory.
-    if normalize_model_name(model).startswith("gemini-") and model != "gemini-cli":
+    if normalized.startswith("gemini-") and model != "gemini-cli":
         return GeminiCliAdapter(model=model, runtime=runtime)
     return resolve_adapter(model, runtime=runtime)
 
