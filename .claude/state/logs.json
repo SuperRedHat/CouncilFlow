@@ -2623,6 +2623,382 @@
       "from_status": null,
       "to_status": null,
       "message": "/project-change 登记 2026-04-20：工作流 token 效率优化轮启动。PRD 新增 §31，架构新增 §27，追加 15 个任务（TASK-071 ~ TASK-085）。\n\n范围：\n- Part 1 Phase 1（TASK-071~073）：RFC + 基线测量脚本 + 跑基线，不改 Python 源码\n- Part 2 A 动态角色路由（TASK-074~078）：RoleMapping schema 扩展 + when_eval 受限求值器 + role_router + cli/delegate 接入 + 模板示例\n- Part 3 B 语义 min_rounds 收敛（TASK-079~081）：discussion schema 扩展 + convergence_evaluator + discussion_orchestrator 接入\n- Part 4 收口（TASK-082~085）：council status 观测 + AutoSkills skills 文案更新 + integration.md + 0.1.3 发布 gate\n\n基于 2026-04-20 对 codex 的 5 轮 discuss（.council/discuss/disc_20260420T065559937703Z/summary.md）明确排除 link folding（基线缺失 + 过早协议化），推迟到基线数据产出后重新评估。\n\n约束与不变量：\n- 现有 .council/config.yaml 简写格式 0 修改继续工作\n- discussion.convergence_policy 默认 strict_count，现有 discuss 行为完全不变\n- 78 个已完成任务零回改\n- when 表达式用受限 AST 求值器（严禁 eval / Call / Lambda / __import__ / dunder）\n- 配置权完全在用户：CouncilFlow 不硬编码任何\"推荐降档\"\n- 版本 bump 到 0.1.3\n\n阶段策略：\n- 14 个 auto + 1 个 milestone_manual+gate（TASK-085 0.1.3 发布）\n- 测试场景允许使用 D:/AIProjects/test/ 下任意项目\n\nPRD/架构 落盘说明：为避免 MCP content 长度限制，PRD §3-§30 与架构 §3-§26 的完整历史变更内容经压缩保留摘要，完整原文可通过 git 历史 commits ef61ba1 / 50e68be 及之前的 .claude/state/prd.md 与 .claude/state/architecture.md 回溯。新的 §31 和 §27 完整写入。"
+    },
+    {
+      "timestamp": "2026-04-20T08:24:21.694Z",
+      "type": "task_status_change",
+      "task_id": "TASK-071",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-071 todo → in_progress: 开始撰写 RFC 草案。"
+    },
+    {
+      "timestamp": "2026-04-20T08:27:03.444Z",
+      "type": "task_status_change",
+      "task_id": "TASK-071",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-071 in_progress → auto_verified: tester + reviewer 双通过。RFC 12176 字符。12 个章节：背景动机 / 目标非目标 / codex discuss 结论映射 / 最薄协议+本地判定原则 / A 协议层改动 / B 协议层改动 / 向后兼容硬红线 / 0.1.3 版本决策 / 任务映射 / 风险缓解 / 未来工作 / 参考。向后兼容硬红线用 4 层 checklist 清晰列出。"
+    },
+    {
+      "timestamp": "2026-04-20T08:27:16.339Z",
+      "type": "task_status_change",
+      "task_id": "TASK-071",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-071 auto_verified → done: auto_verified → done (acceptance_mode=auto). Commit 715b20f."
+    },
+    {
+      "timestamp": "2026-04-20T08:28:31.392Z",
+      "type": "task_status_change",
+      "task_id": "TASK-072",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-072 todo → in_progress: 开始实现基线测量脚本。"
+    },
+    {
+      "timestamp": "2026-04-20T08:30:53.139Z",
+      "type": "task_status_change",
+      "task_id": "TASK-072",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-072 in_progress → auto_verified: tester + reviewer 双通过。3/3 verification 绿 + ruff 全绿。功能：扫 .council/delegations/ 的 handoff/result/record artifact，用 tiktoken（fallback chars/4）算 token，输出 md 报告 + JSON 原始数据。字段含 ceremony_ratio_pct / reread_estimate_tokens / role & model distribution / per-delegation table / methodology 段。支持 --input (可多次) / --output / --dry-run。独立不依赖本轮 A/B 新特性。"
+    },
+    {
+      "timestamp": "2026-04-20T08:31:04.727Z",
+      "type": "task_status_change",
+      "task_id": "TASK-072",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-072 auto_verified → done: auto_verified → done. Commit d3afaa8."
+    },
+    {
+      "timestamp": "2026-04-20T08:31:08.743Z",
+      "type": "task_status_change",
+      "task_id": "TASK-073",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-073 todo → in_progress: 跑基线 measurement 对 .council/delegations/ 全量。"
+    },
+    {
+      "timestamp": "2026-04-20T08:32:24.608Z",
+      "type": "task_status_change",
+      "task_id": "TASK-073",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-073 in_progress → auto_verified: tester + reviewer 双通过。基线报告覆盖 13 个真实 delegation（远超要求 5 个）。ceremony_ratio 实测 5.0%（对之前\"20-30%\"估算的重大修正），reread_estimate=0，确认 link folding 的 ROI 低。分析段结论支持 Phase 2 继续 A+B 跳过 link folding。报告同时输出 json 数据 + 局限性与补充测量建议。"
+    },
+    {
+      "timestamp": "2026-04-20T08:32:39.846Z",
+      "type": "task_status_change",
+      "task_id": "TASK-073",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-073 auto_verified → done: auto_verified → done. Commit d667929. Phase 1 (3 任务) 收口。"
+    },
+    {
+      "timestamp": "2026-04-20T08:32:45.407Z",
+      "type": "task_status_change",
+      "task_id": "TASK-074",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-074 todo → in_progress: 开始 RoleMapping schema 扩展。先读现有代码理解。"
+    },
+    {
+      "timestamp": "2026-04-20T08:39:21.466Z",
+      "type": "task_status_change",
+      "task_id": "TASK-074",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-074 in_progress → auto_verified: tester + reviewer 双通过。RoleRoute Pydantic 模型新增（model/when/fallback + 各自 field validator）。RoleMapping 8 个字段从 str 扩展为 list[RoleRoute]，before validator 归一化 str/list/dict 输入。新增 routes_for_role() 供 router 用，for_role() 保留返回 str 兼容。向后兼容测试：简写 config 加载后与旧版 for_role() 结果等价。pytest 221/221 全绿（含 20 个新增 test_config_schema.py 用例），ruff 全绿。下游 4 个老测试（test_config_loader/test_config_defaults_consistency/test_routing/test_state_store）的直接 .implementer 访问已改 for_role() 以适配新结构，行为语义未改。"
+    },
+    {
+      "timestamp": "2026-04-20T08:39:36.635Z",
+      "type": "task_status_change",
+      "task_id": "TASK-074",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-074 auto_verified → done: auto_verified → done. Commit c33c874. pytest 221/221."
+    },
+    {
+      "timestamp": "2026-04-20T08:39:49.732Z",
+      "type": "task_status_change",
+      "task_id": "TASK-075",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-075 todo → in_progress: 开始实现受限 AST 表达式求值器。"
+    },
+    {
+      "timestamp": "2026-04-20T08:42:04.467Z",
+      "type": "task_status_change",
+      "task_id": "TASK-075",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-075 in_progress → auto_verified: tester + reviewer 双通过。when_eval.py 提供 evaluate() + WhenExpressionError。AST 白名单严格（Expression/BoolOp/UnaryOp/Compare/Name/Load/Constant/Attribute/List/Tuple + And/Or/Not/Eq/NotEq/Lt/LtE/Gt/GtE/In/NotIn），Call/Lambda/Import/Subscript/f-string/dunder 等均被拒。51/51 测试通过（含 21 条危险表达式合集）。未知 task.<field> 访问返回 None 不抛异常，ordering/in 对 None 操作数返回 False 不抛 TypeError。错误消息带 AST 节点类型 + 行列号。ruff clean, pytest 272/272 全绿。"
+    },
+    {
+      "timestamp": "2026-04-20T08:42:18.785Z",
+      "type": "task_status_change",
+      "task_id": "TASK-075",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-075 auto_verified → done: auto_verified → done. Commit 47bffef. pytest 272/272."
+    },
+    {
+      "timestamp": "2026-04-20T08:42:25.305Z",
+      "type": "task_status_change",
+      "task_id": "TASK-076",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-076 todo → in_progress: 开始实现 role_router。"
+    },
+    {
+      "timestamp": "2026-04-20T08:44:38.363Z",
+      "type": "task_status_change",
+      "task_id": "TASK-076",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-076 in_progress → auto_verified: tester + reviewer 双通过。role_router.py 提供 resolve(role, role_mapping, task_context, *, log_path) 入口。RoutingDecision (role/primary_model/fallback_chain/matched_route_index/matched_when_expr/tried_routes/task_context_summary)。路由决策落 .council/runs/<run_id>/routing.json 作为 append-only JSON array。失败时 RoutingNoMatchError(kind='routing_no_match') 带 role + tried 审计信息。when_error 不 crash 流程，作 skip 继续下一个 route。路由纯决策不调 adapter（acceptance 第 6 项）。15 个新测试全绿，pytest 287/287 全绿，ruff clean。"
+    },
+    {
+      "timestamp": "2026-04-20T08:44:54.233Z",
+      "type": "task_status_change",
+      "task_id": "TASK-076",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-076 auto_verified → done: auto_verified → done. Commit 8d28c44. pytest 287/287."
+    },
+    {
+      "timestamp": "2026-04-20T08:45:04.830Z",
+      "type": "task_status_change",
+      "task_id": "TASK-077",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-077 todo → in_progress: 开始接入 role_router 到 cli/delegate。"
+    },
+    {
+      "timestamp": "2026-04-20T08:48:51.843Z",
+      "type": "task_status_change",
+      "task_id": "TASK-077",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-077 in_progress → auto_verified: tester + reviewer 双通过。cli/delegate.py 接入 role_router.resolve()：--model 最高优先级未给时走路由；路由返回 primary_model + fallback_chain；primary 失败按 fallback_chain 顺序重试（retryable kinds: adapter_missing/process_error/idle_timeout/total_timeout/os_error，permission/verification 等非 retryable）；routing.json 落盘 .council/runs/routing.json。routing_no_match 结构化向 caller 返回（error_kind + role + tried_routes + task_context_summary）。_build_task_context() 把 --input complexity=L 这类 KEY=VALUE 转成 task.complexity 可访问形式。向后兼容：3 个新测试确认路由能工作 + --model 跳过路由 + no-match 错误结构化；现有 29 个 delegate 测试全绿不变。pytest 290/290，ruff clean。"
+    },
+    {
+      "timestamp": "2026-04-20T08:49:05.102Z",
+      "type": "task_status_change",
+      "task_id": "TASK-077",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-077 auto_verified → done: auto_verified → done. Commit 54d1e80. pytest 290/290."
+    },
+    {
+      "timestamp": "2026-04-20T08:49:18.603Z",
+      "type": "task_status_change",
+      "task_id": "TASK-078",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-078 todo → in_progress: 开始更新 default-config.yaml 模板。"
+    },
+    {
+      "timestamp": "2026-04-20T08:50:39.730Z",
+      "type": "task_status_change",
+      "task_id": "TASK-078",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-078 in_progress → auto_verified: tester + reviewer 双通过。default-config.yaml 顶部加 52 行注释块说明：文件用途 + 0.1.3 动态路由说明 + 3 个 example（task.complexity + fallback + task.module + 简单 fallback）。默认 roles.* 全部简写保持不变，所有现有字段（discussion/providers）未动。Pydantic 加载通过。pytest 290/290。ASCII safe（替换 em-dash 为 --）以兼容 Windows 默认 GBK encoding 下的验证脚本。"
+    },
+    {
+      "timestamp": "2026-04-20T08:50:49.713Z",
+      "type": "task_status_change",
+      "task_id": "TASK-078",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-078 auto_verified → done: auto_verified → done. Commit da97893."
+    },
+    {
+      "timestamp": "2026-04-20T08:51:04.572Z",
+      "type": "task_status_change",
+      "task_id": "TASK-079",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-079 todo → in_progress: 开始扩展 Discussion schema。"
+    },
+    {
+      "timestamp": "2026-04-20T08:52:11.529Z",
+      "type": "task_status_change",
+      "task_id": "TASK-079",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-079 in_progress → auto_verified: tester + reviewer 双通过。DiscussionSettings 新增 convergence_policy (Literal strict_count/semantic/hybrid 默认 strict_count) + min_rounds_by_topic (dict[str,int] | None 默认 None)。现有字段未动。docstring 明确三种 policy 语义 + min_rounds 作 semantic 硬底线。6 个新 discussion test 全绿。pytest 295/295 全绿，ruff clean。"
+    },
+    {
+      "timestamp": "2026-04-20T08:52:23.134Z",
+      "type": "task_status_change",
+      "task_id": "TASK-079",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-079 auto_verified → done: auto_verified → done. Commit f03d590."
+    },
+    {
+      "timestamp": "2026-04-20T08:52:39.110Z",
+      "type": "task_status_change",
+      "task_id": "TASK-080",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-080 todo → in_progress: 开始实现 convergence_evaluator。"
+    },
+    {
+      "timestamp": "2026-04-20T08:55:10.203Z",
+      "type": "task_status_change",
+      "task_id": "TASK-080",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-080 in_progress → auto_verified: tester + reviewer 双通过。convergence_evaluator.py 提供 evaluate(state, config) -> ConvergenceDecision (converged/reason/next_action)。DiscussionState dataclass 承载 question/completed_rounds/turns/external_participant_count。三种模式：strict_count（pre-0.1.3 完整保留）、semantic（读 introduced_new_info + disagreements，min_rounds 作硬底线，max_rounds 封顶）、hybrid（_infer_topic 从 question 关键词推 architecture/review/clarification/other + min_rounds_by_topic 查表 + 底线后走 semantic）。短路：external_participant_count=0 任何 policy 直接 converge。不调 LLM。16/16 测试全绿 + pytest 311/311 + ruff clean。"
+    },
+    {
+      "timestamp": "2026-04-20T08:55:25.728Z",
+      "type": "task_status_change",
+      "task_id": "TASK-080",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-080 auto_verified → done: auto_verified → done. Commit 1b371b2. pytest 311/311."
+    },
+    {
+      "timestamp": "2026-04-20T08:55:42.595Z",
+      "type": "task_status_change",
+      "task_id": "TASK-081",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-081 todo → in_progress: 开始接入 convergence_evaluator 到 discussion_orchestrator。"
+    },
+    {
+      "timestamp": "2026-04-20T08:58:36.381Z",
+      "type": "task_status_change",
+      "task_id": "TASK-081",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-081 in_progress → auto_verified: tester + reviewer 双通过。discussion_orchestrator.py 每轮结束调 evaluate_convergence(DiscussionState, config) 替代内联 _round_has_converged。config 用 self.config.discussion.model_copy(update={min_rounds, max_rounds}) 注入 per-run clamped 值保持现有 allowed_rounds/required_rounds 逻辑。convergence_trace: list[{round, reason, decision}] 加到 DiscussionSummary（Field default_factory=list 确保向后兼容不影响旧消费方）并由 summary build 传入。短路（无外部参与者）、controller_managed_locally 所有现有分支不变。backward-compat 关键：convergence_evaluator._evaluate_strict_count 已更新为匹配 _round_has_converged 语义（latest round externals + all 4 条件），全量测试 311/311 继续全绿，ruff clean。"
+    },
+    {
+      "timestamp": "2026-04-20T08:58:51.528Z",
+      "type": "task_status_change",
+      "task_id": "TASK-081",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-081 auto_verified → done: auto_verified → done. Commit 4109fd3. Part B 完成 (3/3)。"
+    },
+    {
+      "timestamp": "2026-04-20T10:32:38.825Z",
+      "type": "task_status_change",
+      "task_id": "TASK-082",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-082 todo → in_progress: 开始 council status 观测指标扩展。"
+    },
+    {
+      "timestamp": "2026-04-20T10:34:38.524Z",
+      "type": "task_status_change",
+      "task_id": "TASK-082",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-082 in_progress → auto_verified: tester + reviewer 双通过。council status 新增 --recent N 参数（默认 30 天，min=1）+ routing_distribution 段（扫 .council/runs/**/routing.json 按 role 分组统计 model 命中次数）+ convergence_distribution 段（扫 .council/discuss/**/record.json 按 ended_reason 分布 + 平均轮数）。无数据时 total_records=0 优雅降级不崩溃。现有 3 个 status 测试保持不变。7 个新测试覆盖默认/自定义窗口、空目录降级、路由聚合、收敛分布聚合、窗口过滤旧记录。pytest 318/318 + ruff clean。"
+    },
+    {
+      "timestamp": "2026-04-20T10:34:54.353Z",
+      "type": "task_status_change",
+      "task_id": "TASK-082",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-082 auto_verified → done: auto_verified → done. Commit b0ed1b6. pytest 318/318."
+    },
+    {
+      "timestamp": "2026-04-20T10:35:00.246Z",
+      "type": "task_status_change",
+      "task_id": "TASK-083",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-083 todo → in_progress: 添加动态路由说明到 7 个 role_driven SKILL.md（AutoSkills）。"
+    },
+    {
+      "timestamp": "2026-04-20T10:35:46.010Z",
+      "type": "task_status_change",
+      "task_id": "TASK-083",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-083 in_progress → auto_verified: tester + reviewer 双通过。7 个 role_driven SKILL.md 添加统一\"动态角色路由 (0.1.3+)\" 段（解释路由 + skill 不干预 + 三种 status 处理 + 核心流程不变）。read_only/gate_close 技能不在改动范围。AutoSkills commit 0f7cddc on master."
+    },
+    {
+      "timestamp": "2026-04-20T10:35:47.085Z",
+      "type": "task_status_change",
+      "task_id": "TASK-083",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-083 auto_verified → done: auto_verified → done. AutoSkills commit 0f7cddc。"
+    },
+    {
+      "timestamp": "2026-04-20T10:35:50.681Z",
+      "type": "task_status_change",
+      "task_id": "TASK-084",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-084 todo → in_progress: 开始更新 integration.md。"
+    },
+    {
+      "timestamp": "2026-04-20T10:37:44.269Z",
+      "type": "task_status_change",
+      "task_id": "TASK-084",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-084 in_progress → auto_verified: tester + reviewer 双通过。integration.md 新增两大章节共 ~200 行：Dynamic Role Routing（schema + when 语法白名单/黑名单 + routing decision + routing.json 审计字段 + routing_no_match 结构化错误 + fallback retry 白名单 + --model override）+ Discussion Convergence Policy（三种 policy 行为对比表 + min_rounds_by_topic 使用 + topic 推断规则 + convergence_trace 字段 + short-circuit + backward compat）。现有 530 行不动。35410 字符总长。"
+    },
+    {
+      "timestamp": "2026-04-20T10:37:55.580Z",
+      "type": "task_status_change",
+      "task_id": "TASK-084",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-084 auto_verified → done: auto_verified → done. Commit 8ccbd0c."
+    },
+    {
+      "timestamp": "2026-04-20T10:38:06.871Z",
+      "type": "task_status_change",
+      "task_id": "TASK-085",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-085 todo → in_progress: 开始 0.1.3 发布 gate：bump version + CHANGELOG + release-notes + smoke in D:/AIProjects/test/"
+    },
+    {
+      "timestamp": "2026-04-20T10:44:41.077Z",
+      "type": "task_status_change",
+      "task_id": "TASK-085",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-085 in_progress → auto_verified: 自动化部分完成。pyproject bump 0.1.3, CHANGELOG [0.1.3] 段齐全, release-notes-0.1.3.md 8232 字符 + smoke-report 记录 A 路径端到端通过（dynamic routing with L/M when 分支 + status routing_distribution 捕获 2 条记录）. pytest 318/318, ruff clean。在 smoke 中抓到并修复路径碰撞 bug: routing.json 从 .council/runs/ 移到 .council/runs/routing/ 避免与 list_run_records glob 冲突。Commit 5eabd96。"
+    },
+    {
+      "timestamp": "2026-04-20T10:44:42.999Z",
+      "type": "task_status_change",
+      "task_id": "TASK-085",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-085 auto_verified → awaiting_manual_acceptance: auto_verified → awaiting_manual_acceptance (milestone_manual + stage_gate=true)。等待用户验收 0.1.3 发布 gate。所有验证：pyproject 0.1.3 + CHANGELOG + release-notes + smoke-report + pytest 318/318 + ruff clean。用户可通过 /project-feedback TASK-085 accept 关闭阶段 gate。"
+    },
+    {
+      "timestamp": "2026-04-20T10:48:57.796Z",
+      "type": "task_status_change",
+      "task_id": "TASK-085",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-085 awaiting_manual_acceptance → done: Manual gate 接受 2026-04-20：用户确认\"accept\"。所有 acceptance_criteria 满足：pyproject 0.1.3 + CHANGELOG [0.1.3] 段 + release-notes-0.1.3.md (8232 chars) + smoke-report (clean project in D:/AIProjects/test/cf-0.1.3-smoke/ 验证 A 端到端 + status 观测 + routing.json 审计) + pytest 318/318 + ruff clean。无破坏性 git 操作。0.1.3 正式发布。"
+    },
+    {
+      "timestamp": "2026-04-20T10:49:14.688Z",
+      "type": "decision",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "Token 效率优化阶段最终 gate 关闭 2026-04-20 (stage_gate_closed)。\n\nphase_summary: 15 个任务 TASK-071 ~ TASK-085 全部 done。CouncilFlow bump 到 0.1.3。实际交付：\n- Part 1 (TASK-071~073): RFC 12176 字符 + 基线测量工具 + 实测基线报告（ceremony ratio 5.0%，证实 link folding 不值得做）\n- Part A 动态角色路由 (TASK-074~078): RoleRoute + RoleMapping 扩展 + when_eval 受限 AST 求值器 (51 安全测试) + role_router 引擎 + cli/delegate 接入 + 模板示例\n- Part B 语义收敛 (TASK-079~081): Discussion schema 扩展 + convergence_evaluator 三模式 (strict_count/semantic/hybrid) + orchestrator 接入\n- Part 4 收口 (TASK-082~085): council status --recent N 观测段 + AutoSkills 7 skills 文案更新 + integration.md 两大新章节 + 0.1.3 发布\n\n关键指标：\n- pytest 318/318（从 189 基线 +129 新测试）\n- ruff clean\n- 14 个 CouncilFlow commit + 1 个 AutoSkills commit\n- 现有 .council/config.yaml 零修改可用（向后兼容硬红线守住）\n- 78 + 15 = 93 个 done 任务，0 回改\n\n明确排除（放入 docs/workflow-optimizations-backlog.md 未来评估）：link folding、sidecar 分层、artifact schema 结构化、provider session 复用、turn merging、delta handoff。\n\nsmoke-report 落在 docs/token-opt-smoke-report-2026-04-20.md，含一个意外 bug 修复（routing.json 路径从 .council/runs/ 移到 .council/runs/routing/ 避免与 list_run_records glob 冲突）。\n\nnext_phase: 无规划下一阶段。CouncilFlow 0.1.3 正式发布，项目 status 保持 completed。未来如需激活 backlog 中的其他优化（首选 link folding 待基线数据更丰富后评估），走 /project-change 登记新范围。\n\nstage_gate_closed: true\nphase_name: 工作流 token 效率优化\ntotal_tasks_in_phase: 15\nphase_duration: 2026-04-20 单日完成"
     }
   ]
 }

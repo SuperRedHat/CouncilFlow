@@ -3220,11 +3220,11 @@
         "版本决策（0.1.3）与理由清晰"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T08:21:58.168Z",
-      "updated_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:27:16.309Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done (acceptance_mode=auto). Commit 715b20f."
     },
     {
       "id": "TASK-072",
@@ -3261,11 +3261,11 @@
         "错误处理：目录不存在 / 空目录 / 损坏 artifact 均有明确错误信息"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T08:21:58.168Z",
-      "updated_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:31:04.698Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit d3afaa8."
     },
     {
       "id": "TASK-073",
@@ -3299,11 +3299,11 @@
         "结论可为 Phase 2 决策提供参考（比如给出 ceremony token 占比的具体数字）"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T08:21:58.168Z",
-      "updated_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:32:39.824Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit d667929. Phase 1 (3 任务) 收口。"
     },
     {
       "id": "TASK-074",
@@ -3341,11 +3341,11 @@
         "导出类型可被其他模块 import"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T08:21:58.168Z",
-      "updated_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:39:36.613Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit c33c874. pytest 221/221."
     },
     {
       "id": "TASK-075",
@@ -3385,11 +3385,11 @@
         "错误消息带表达式位置 + 违规节点类型"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T08:21:58.168Z",
-      "updated_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:42:18.760Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit 47bffef. pytest 272/272."
     },
     {
       "id": "TASK-076",
@@ -3429,11 +3429,11 @@
         "路由决策独立于 provider 启动，仅返回决策不调 adapter"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T08:21:58.168Z",
-      "updated_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:44:54.206Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit 8d28c44. pytest 287/287."
     },
     {
       "id": "TASK-077",
@@ -3473,11 +3473,11 @@
         "向后兼容 smoke：现有全简写 config 跑出的 status/model/adapter 与旧版一致"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T08:21:58.168Z",
-      "updated_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:49:05.081Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit 54d1e80. pytest 290/290."
     },
     {
       "id": "TASK-078",
@@ -3513,11 +3513,11 @@
         "templates/default-config.yaml 的其他现有字段（discussion 等）不动"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T08:21:58.168Z",
-      "updated_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:50:49.692Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit da97893."
     },
     {
       "id": "TASK-079",
@@ -3552,11 +3552,11 @@
         "semantic 模式下 min_rounds 的硬底线语义写入 docstring 或注释"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T08:21:58.168Z",
-      "updated_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:52:23.112Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit f03d590."
     },
     {
       "id": "TASK-080",
@@ -3597,11 +3597,11 @@
         "semantic 模式下 min_rounds 作硬底线（即使 introduced_new_info=false 也要满足 min_rounds）"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T08:21:58.168Z",
-      "updated_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:55:25.709Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit 1b371b2. pytest 311/311."
     },
     {
       "id": "TASK-081",
@@ -3641,11 +3641,11 @@
         "向后兼容 smoke：跑一次当前项目的 discuss（claude+codex strict_count），产出等价于旧版"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T08:21:58.168Z",
-      "updated_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:58:51.508Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit 4109fd3. Part B 完成 (3/3)。"
     },
     {
       "id": "TASK-082",
@@ -3686,11 +3686,11 @@
         "ruff + pytest 全绿"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T08:21:58.168Z",
-      "updated_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T10:34:54.331Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit b0ed1b6. pytest 318/318."
     },
     {
       "id": "TASK-083",
@@ -3730,11 +3730,11 @@
         "read_only / gate_close skills（status / resume / feedback）不在改动范围内"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T08:21:58.168Z",
-      "updated_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T10:35:47.066Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. AutoSkills commit 0f7cddc。"
     },
     {
       "id": "TASK-084",
@@ -3769,11 +3769,11 @@
         "现有章节未被删除或语义改变（特别是 workflow failure report protocol / sidecar isolation）"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T08:21:58.168Z",
-      "updated_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T10:37:55.558Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit 8ccbd0c."
     },
     {
       "id": "TASK-085",
@@ -3834,11 +3834,11 @@
         "无 git filter-repo、无 force push、无 reset --hard"
       ],
       "stage_gate": true,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T08:21:58.168Z",
-      "updated_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T10:48:57.777Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "Manual gate 接受 2026-04-20：用户确认\"accept\"。所有 acceptance_criteria 满足：pyproject 0.1.3 + CHANGELOG [0.1.3] 段 + release-notes-0.1.3.md (8232 chars) + smoke-report (clean project in D:/AIProjects/test/cf-0.1.3-smoke/ 验证 A 端到端 + status 观测 + routing.json 审计) + pytest 318/318 + ruff clean。无破坏性 git 操作。0.1.3 正式发布。"
     }
   ]
 }
