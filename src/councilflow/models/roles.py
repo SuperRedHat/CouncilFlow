@@ -75,27 +75,38 @@ class _DeprecatedDefaultRoleModels(dict[RoleName, str]):
 DEFAULT_ROLE_MODELS: dict[RoleName, str] = _DeprecatedDefaultRoleModels()
 
 MODEL_ALIASES: dict[str, str] = {
+    # Controller CLI aliases → family name (the CLI itself, no variant info).
+    # These are for dedup semantics in discuss / delegate when the user writes
+    # the CLI's marketing name instead of the bare family name.
     "claude-code": ControllerName.CLAUDE.value,
     "claudecode": ControllerName.CLAUDE.value,
     "claude code": ControllerName.CLAUDE.value,
-    "claude-3-5-sonnet": ControllerName.CLAUDE.value,
     "gemini-cli": ControllerName.GEMINI.value,
     "gemini cli": ControllerName.GEMINI.value,
-    "gemini-pro": ControllerName.GEMINI.value,
-    "gemini-flash": ControllerName.GEMINI.value,
-    "gemini-1.5": ControllerName.GEMINI.value,
-    "gemini-2.0": ControllerName.GEMINI.value,
-    "gemini-1.5-pro": ControllerName.GEMINI.value,
-    "gemini-1.5-flash": ControllerName.GEMINI.value,
-    "gemini-2.0-flash": ControllerName.GEMINI.value,
     "google-gemini": ControllerName.GEMINI.value,
     "google gemini": ControllerName.GEMINI.value,
     "google": ControllerName.GEMINI.value,
+    # Short variant names → family-variant form (preserve the variant).
+    # A user writing `tester: haiku` gets routed to `claude-haiku` which in
+    # turn flows through the adapter's `--model haiku` flag. Mapping these
+    # to bare `claude` would lose the variant — which is exactly the 0.1.3
+    # gap TASK-094 closes.
+    "haiku": "claude-haiku",
+    "sonnet": "claude-sonnet",
+    "opus": "claude-opus",
 }
 
 
 def normalize_model_name(value: str) -> str:
-    """Normalize model names for routing and discuss comparisons."""
+    """Normalize model names for routing and discuss comparisons.
+
+    Aliases that preserve variant info (like ``haiku → claude-haiku``) map to
+    the canonical ``family-variant`` form so downstream layers
+    (``resolve_adapter_model``, ``ClaudeCodeCliAdapter``, etc.) see a
+    consistent name. Aliases that are just "this CLI marketing name equals
+    this family" (like ``claude-code → claude``) collapse to the bare
+    family name.
+    """
 
     normalized = value.strip().lower()
     return MODEL_ALIASES.get(normalized, normalized)
@@ -112,14 +123,28 @@ _REGISTERED_ADAPTER_MODELS: frozenset[str] = frozenset(
 
 
 def resolve_adapter_model(value: str) -> str | None:
-    """Return the adapter-ready model name, or None when no adapter is known."""
+    """Return the adapter-ready model name, or None when no adapter is known.
+
+    Family-variant names (``family-<variant>``) are accepted generically via
+    a prefix rule so that new provider variants released by upstream CLIs
+    (e.g. a hypothetical ``claude-sonnet-5``) work without a CouncilFlow
+    patch. The adapter layer decides how to pass ``<variant>`` through to
+    the target CLI (typically a ``--model <variant>`` flag).
+    """
 
     normalized = normalize_model_name(value)
     if normalized in _REGISTERED_ADAPTER_MODELS:
         return normalized
-    # Accept specific Gemini variants (gemini-1.5-flash etc.) that still route to
-    # the Gemini adapter family even if they are not in MODEL_ALIASES yet.
-    if normalized.startswith("gemini-"):
+    # Accept specific Claude variants (claude-haiku, claude-sonnet, claude-opus,
+    # claude-3-5-sonnet, claude-sonnet-4-6, etc.). The Claude adapter passes
+    # the variant through as `--model <variant>` to Claude Code CLI, which
+    # resolves the exact model internally. We do not gate on specific known
+    # Anthropic model versions because those change outside CouncilFlow's
+    # release cadence.
+    if normalized.startswith("claude-") and normalized != "claude-":
+        return normalized
+    # Accept specific Gemini variants (gemini-1.5-flash, gemini-2.5-pro, ...).
+    if normalized.startswith("gemini-") and normalized != "gemini-":
         return normalized
     # Accept specific OpenAI variants (gpt-4o, gpt-4o-mini, o1-preview, ...).
     if normalized.startswith("gpt-") or normalized.startswith("o1-"):

@@ -49,7 +49,10 @@ def test_resolve_adapter_model_accepts_registered_families() -> None:
     assert resolve_adapter_model("codex") == "codex"
     assert resolve_adapter_model("claude") == "claude"
     assert resolve_adapter_model("gemini") == "gemini"
-    assert resolve_adapter_model("gemini-1.5-flash") == "gemini"
+    # Variant-preserving resolution (0.1.4+): specific Gemini variants
+    # flow through the adapter as `--model <variant>` instead of being
+    # collapsed to the bare family name.
+    assert resolve_adapter_model("gemini-1.5-flash") == "gemini-1.5-flash"
     assert resolve_adapter_model("gemini-2.5-pro") == "gemini-2.5-pro"
 
 
@@ -59,10 +62,38 @@ def test_resolve_adapter_model_accepts_gpt_family_after_openai_adapter() -> None
     assert resolve_adapter_model("o1-preview") == "o1-preview"
 
 
+def test_resolve_adapter_model_accepts_claude_variants() -> None:
+    """0.1.4 closes the Claude variant gap — mirror of the Gemini path."""
+    # Short variant names alias to the family-variant canonical form
+    assert resolve_adapter_model("haiku") == "claude-haiku"
+    assert resolve_adapter_model("sonnet") == "claude-sonnet"
+    assert resolve_adapter_model("opus") == "claude-opus"
+    # Family-variant form passes through unchanged
+    assert resolve_adapter_model("claude-haiku") == "claude-haiku"
+    assert resolve_adapter_model("claude-sonnet") == "claude-sonnet"
+    assert resolve_adapter_model("claude-opus") == "claude-opus"
+    # Versioned long names also pass (generic prefix rule, no version table)
+    assert resolve_adapter_model("claude-3-5-sonnet") == "claude-3-5-sonnet"
+    assert resolve_adapter_model("claude-3-5-haiku") == "claude-3-5-haiku"
+    assert resolve_adapter_model("claude-sonnet-4-6") == "claude-sonnet-4-6"
+
+
+def test_resolve_adapter_model_preserves_controller_cli_aliases() -> None:
+    """CLI-name aliases still collapse to the bare family name (no variant)."""
+    assert resolve_adapter_model("claude-code") == "claude"
+    assert resolve_adapter_model("claudecode") == "claude"
+    assert resolve_adapter_model("Claude Code") == "claude"
+    assert resolve_adapter_model("gemini-cli") == "gemini"
+    assert resolve_adapter_model("google-gemini") == "gemini"
+
+
 def test_resolve_adapter_model_rejects_unknown_names() -> None:
     assert resolve_adapter_model("clood") is None
     assert resolve_adapter_model("mistral") is None
     assert resolve_adapter_model("llama-3") is None
+    # Empty-variant suffix is not accepted (defensive)
+    assert resolve_adapter_model("claude-") is None
+    assert resolve_adapter_model("gemini-") is None
 
 
 def test_validate_model_name_raises_actionable_value_error() -> None:

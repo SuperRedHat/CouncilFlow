@@ -62,9 +62,12 @@ def test_load_config_normalizes_role_and_discussion_model_names(tmp_path: Path) 
     loaded = load_config(config_path)
 
     assert loaded.output_language == "en"
-    assert loaded.roles.for_role(RoleName.IMPLEMENTER) == "gemini"
+    # 0.1.4 preserves Gemini variant instead of collapsing to bare "gemini"
+    assert loaded.roles.for_role(RoleName.IMPLEMENTER) == "gemini-1.5-flash"
     assert loaded.roles.for_role(RoleName.REVIEWER) == "claude"
-    assert loaded.discussion.default_models == ["gemini", "claude"]
+    # discussion.default_models dedup: "Gemini CLI" → "gemini" (controller alias),
+    # "gemini-1.5-flash" preserved as variant, "Claude Code" → "claude".
+    assert loaded.discussion.default_models == ["gemini", "gemini-1.5-flash", "claude"]
     assert loaded.discussion.min_rounds == 3
     assert loaded.discussion.max_rounds == 7
 
