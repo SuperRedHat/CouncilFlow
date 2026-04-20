@@ -4,6 +4,107 @@ All notable changes to CouncilFlow are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] — 2026-04-20
+
+Patch release closing the Claude variant gap left by 0.1.3's Part A
+(Dynamic Role Routing). Before 0.1.4, dynamic routes like
+`tester: claude-haiku` were rejected at config load because the
+`resolve_adapter_model` whitelist only accepted `claude` / `codex` /
+`gemini` / `gemini-<variant>` / `gpt-<variant>` / `o1-<variant>`. This
+made the primary cost-saving path promised by 0.1.3 (per-role cheap
+Claude sub-models) unusable with Claude Code CLI as the controller.
+0.1.4 mirrors the Gemini variant pattern to Claude and fixes a latent
+0.1.3 bug where Gemini variants were being collapsed back to the
+family name.
+
+### Added
+
+- **Claude variant routing**: `resolve_adapter_model` now accepts
+  `claude-<variant>` (e.g. `claude-haiku`, `claude-sonnet`,
+  `claude-opus`, `claude-3-5-sonnet-20241022`, `claude-haiku-4-5`) the
+  same way `gemini-<variant>` already works. Short aliases `haiku` /
+  `sonnet` / `opus` normalize to `claude-haiku` / `claude-sonnet` /
+  `claude-opus`. Empty suffix `claude-` is rejected.
+- **`ClaudeCodeCliAdapter` variant support**: new `model: str | None`
+  constructor parameter mirroring `GeminiCliAdapter`. When set,
+  injects `--model <cli_arg>` before the `-p` flag. Short aliases
+  (`claude-haiku` → `haiku`) are translated to the Claude Code CLI's
+  expected short form; versioned names (`claude-3-5-sonnet-20241022`)
+  are passed through verbatim. `model_name` stays canonical `"claude"`
+  for logging and run-record aggregation; the original variant is
+  surfaced in `ProviderResponse.metadata.claude_variant`.
+- **`cli/delegate.py` Claude variant route**: `get_provider_adapter`
+  now routes `claude-<variant>` (where variant != empty) through
+  `ClaudeCodeCliAdapter(model=...)` before falling back to
+  `resolve_adapter`, matching the existing Gemini variant branch.
+- **Docs**: `docs/integration.md` Dynamic Role Routing section gained a
+  **Provider variants (0.1.4+)** subsection documenting the Claude and
+  Gemini config-value → normalized → CLI-received mapping tables.
+
+### Fixed
+
+- **0.1.3 default-config Example 1's `claude-haiku` now actually
+  works.** The 0.1.3 `src/councilflow/templates/default-config.yaml`
+  commented example showed `tester: claude-haiku` but that value would
+  have been rejected at config load. 0.1.4 makes the example functional
+  without changing the template.
+- **Gemini variant collapse bug closed.** In 0.1.2 / 0.1.3,
+  `MODEL_ALIASES` had entries like `gemini-1.5-flash → gemini` that
+  normalized variants back to the family name, defeating the purpose
+  of `GeminiCliAdapter`'s `--model` flag. The aliases map is now
+  cleaned up so variants are preserved end-to-end from config load to
+  the CLI subprocess. Backward compatibility preserved: the short
+  alias `gemini-cli → gemini` (controller identifier) stays mapped as
+  before.
+
+### Backward compatibility guarantees
+
+- Shorthand `roles.<role>: claude` / `: gemini` / `: codex` / `: gpt`
+  behavior is unchanged from 0.1.3.
+- Existing `.council/config.yaml` files load without any change.
+- All 93 previously-done tasks (78 at 0.1.2 + 15 at 0.1.3) required
+  zero code rework.
+- `council delegate` JSON response shape for success paths is
+  identical.
+- `--model` CLI flag override still takes highest priority.
+- Claude Code CLI without a variant still runs exactly the same
+  command (`claude -p --verbose --output-format stream-json`), no
+  `--model` flag injected.
+
+### Tests
+
+- 342 pytest cases (was 318 at 0.1.3): +24 new tests, including a
+  new `tests/test_claude_adapter.py` (11 cases covering
+  `_variant_to_cli_model_arg`, constructor behavior, command
+  ordering, and metadata), plus variant-preservation updates across
+  `tests/test_alias_normalization.py`, `tests/test_config_loader.py`,
+  and 4 new Claude-variant routing cases in `tests/test_cli_delegate.py`.
+- `ruff check src/ tests/`: clean.
+
+### Operator note
+
+No upgrade actions required. `pipx upgrade councilflow` picks up 0.1.4.
+To route a role to a cheap Claude variant, edit your project's
+`.council/config.yaml`:
+
+```yaml
+roles:
+  tester: claude-haiku   # or: claude-sonnet, claude-opus, etc.
+```
+
+or use a dynamic route:
+
+```yaml
+roles:
+  implementer:
+    - model: claude-haiku
+      when: context.token_count < 4000
+    - model: claude-sonnet
+      fallback: true
+```
+
+See `docs/release-notes-0.1.4.md` for the full write-up.
+
 ## [0.1.3] — 2026-04-20
 
 Minor release landing the "workflow token efficiency" optimization phase
@@ -334,6 +435,8 @@ giving up local-first guardrails.
   defined for POSIX symlinks but Linux / macOS coverage is exercised through
   unit tests only, not a packaged smoke run.
 
+[0.1.4]: https://github.com/SuperRedHat/CouncilFlow/releases/tag/v0.1.4
+[0.1.3]: https://github.com/SuperRedHat/CouncilFlow/releases/tag/v0.1.3
 [0.1.2]: https://github.com/SuperRedHat/CouncilFlow/releases/tag/v0.1.2
 [0.1.1]: https://github.com/SuperRedHat/CouncilFlow/releases/tag/v0.1.1
 [0.1.0]: https://github.com/SuperRedHat/CouncilFlow/releases/tag/v0.1.0

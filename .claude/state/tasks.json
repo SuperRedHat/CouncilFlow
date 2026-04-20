@@ -3874,11 +3874,11 @@
         "Gemini/GPT variant 测试仍全绿"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T11:52:56.559Z",
-      "updated_at": "2026-04-20T11:52:56.559Z",
+      "updated_at": "2026-04-20T12:01:59.513Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit 9a2182c. pytest 320/320."
     },
     {
       "id": "TASK-095",
@@ -3917,11 +3917,11 @@
         "测试覆盖无/有/空 variant 边界"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T11:52:56.559Z",
-      "updated_at": "2026-04-20T11:52:56.559Z",
+      "updated_at": "2026-04-20T12:05:19.171Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit 7f8aacb. pytest 338/338."
     },
     {
       "id": "TASK-096",
@@ -3956,11 +3956,11 @@
         "现有 delegate 测试全绿"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T11:52:56.559Z",
-      "updated_at": "2026-04-20T11:52:56.559Z",
+      "updated_at": "2026-04-20T12:07:09.749Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit 3c2abfe. pytest 342/342. 核心 3 个代码任务完成。"
     },
     {
       "id": "TASK-097",
@@ -3990,11 +3990,11 @@
         "Gemini/OpenAI 说明未被删/改"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-20T11:52:56.559Z",
-      "updated_at": "2026-04-20T11:52:56.559Z",
+      "updated_at": "2026-04-20T12:07:57.424Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "auto_verified → done. Commit 002e458."
     },
     {
       "id": "TASK-098",
@@ -4032,11 +4032,11 @@
         "release-notes 标注零协议/零 schema 变动"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "in_progress",
       "created_at": "2026-04-20T11:52:56.559Z",
-      "updated_at": "2026-04-20T11:52:56.559Z",
+      "updated_at": "2026-04-20T12:08:01.731Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "pyproject bump + CHANGELOG + release-notes"
     },
     {
       "id": "TASK-099",

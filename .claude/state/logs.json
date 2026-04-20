@@ -3007,6 +3007,110 @@
       "from_status": null,
       "to_status": null,
       "message": "/project-change 登记 2026-04-20：0.1.4 Claude variant 路由补丁。PRD §32 + 架构 §28 新增，6 个任务 (TASK-094~099) 创建。范围：补齐 0.1.3 Part A 动态路由里对 Claude family variant 的支持缺口 —— 0.1.3 的 whitelist 只认 codex/claude/gemini/gemini-variant/gpt-variant/o1-variant，不认 claude-variant，导致 claude-haiku 配置直接被拒。0.1.4 完全对标 Gemini variant 已落地的路径（GeminiCliAdapter 2026-04-17）：resolve_adapter_model 加 claude- 前缀，ClaudeCodeCliAdapter 接 model 参数传 --model flag，cli/delegate 路由 claude- 变体。MODEL_ALIASES 短名 haiku/sonnet/opus 调整为保留 variant（映射到 claude-haiku 等长名），现有 claude-3-5-sonnet → claude 这类吞 variant 条目改为保留。patch bump 0.1.3 → 0.1.4（非 minor，纯补漏）。95 个历史任务零回改，Skills 不需要改（SKILL.md 说明是 family-neutral 的）。6 tasks：1 roles.py，1 adapter，1 cli/delegate，1 docs，1 release-prep，1 final gate (milestone_manual+stage_gate=true)。阶段机走完 architect → planner → synthesizer 三段均 local_execution。"
+    },
+    {
+      "timestamp": "2026-04-20T11:58:13.282Z",
+      "type": "task_status_change",
+      "task_id": "TASK-094",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-094 todo → in_progress: 开始 roles.py 白名单 + 别名扩展支持 claude variant"
+    },
+    {
+      "timestamp": "2026-04-20T12:01:39.681Z",
+      "type": "task_status_change",
+      "task_id": "TASK-094",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-094 in_progress → auto_verified: tester + reviewer 双通过。resolve_adapter_model 加 claude- 前缀分支 + 防空 variant（claude-/gemini-）。MODEL_ALIASES 清理：移除所有吞 variant 的 gemini-1.5-flash/gemini-1.5-pro/gemini-2.0-flash/gemini-pro/gemini-flash/gemini-1.5/gemini-2.0/claude-3-5-sonnet，保留 CLI 别名 claude-code/claudecode/claude code/gemini-cli/gemini cli/google-gemini/google gemini/google，新增 haiku/sonnet/opus 短名映射到 claude-haiku/claude-sonnet/claude-opus。11 个 alias tests 全绿（补 3 个新 test），pytest 320/320，ruff clean。顺带修复 0.1.3 的 gemini variant 吞并 bug。"
+    },
+    {
+      "timestamp": "2026-04-20T12:01:59.539Z",
+      "type": "task_status_change",
+      "task_id": "TASK-094",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-094 auto_verified → done: auto_verified → done. Commit 9a2182c. pytest 320/320."
+    },
+    {
+      "timestamp": "2026-04-20T12:02:03.917Z",
+      "type": "task_status_change",
+      "task_id": "TASK-095",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-095 todo → in_progress: 开始 ClaudeCodeCliAdapter variant 支持"
+    },
+    {
+      "timestamp": "2026-04-20T12:04:59.162Z",
+      "type": "task_status_change",
+      "task_id": "TASK-095",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-095 in_progress → auto_verified: tester + reviewer 双通过。ClaudeCodeCliAdapter __init__ 新增 model 参数 + claude_variant 实例属性。model_name 保持 class attr 'claude'。新增 _variant_to_cli_model_arg helper：claude-haiku/sonnet/opus 剥掉 claude- 前缀传 CLI 短别名（CLI-native），claude-sonnet-4-6 等全名/版本化形式透传不动。--model flag 在 -p 前插入（与 Gemini 一致位置）。metadata.claude_variant 保留原始 variant 字符串。18 个新测试 pass，pytest 338/338 全绿，ruff clean。向后兼容：model=None/空字符串/'claude' 都等价于 0.1.3 行为（无 --model flag）。"
+    },
+    {
+      "timestamp": "2026-04-20T12:05:19.191Z",
+      "type": "task_status_change",
+      "task_id": "TASK-095",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-095 auto_verified → done: auto_verified → done. Commit 7f8aacb. pytest 338/338."
+    },
+    {
+      "timestamp": "2026-04-20T12:05:25.042Z",
+      "type": "task_status_change",
+      "task_id": "TASK-096",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-096 todo → in_progress: 开始 cli/delegate 路由 claude variant"
+    },
+    {
+      "timestamp": "2026-04-20T12:06:55.263Z",
+      "type": "task_status_change",
+      "task_id": "TASK-096",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-096 in_progress → auto_verified: tester + reviewer 双通过。cli/delegate.py::get_provider_adapter 新增 claude-variant 分支紧邻 gemini-variant 分支：normalize_model_name(model).startswith('claude-') and normalized != 'claude' 时构造 ClaudeCodeCliAdapter(model=normalized)。ImportError 顺带修（加 ClaudeCodeCliAdapter import）。4 个新测试：claude-haiku / claude 简写 / 短名 haiku / 端到端 delegate。现有 32 个 delegate 测试 + 3 个路由集成测试 + 1 个 recursive workflow 测试全部保持绿。pytest 342/342 全绿，ruff clean。"
+    },
+    {
+      "timestamp": "2026-04-20T12:07:09.771Z",
+      "type": "task_status_change",
+      "task_id": "TASK-096",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-096 auto_verified → done: auto_verified → done. Commit 3c2abfe. pytest 342/342. 核心 3 个代码任务完成。"
+    },
+    {
+      "timestamp": "2026-04-20T12:07:13.612Z",
+      "type": "task_status_change",
+      "task_id": "TASK-097",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-097 todo → in_progress: docs/integration.md 添加 Claude variant 段"
+    },
+    {
+      "timestamp": "2026-04-20T12:07:47.831Z",
+      "type": "task_status_change",
+      "task_id": "TASK-097",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-097 in_progress → auto_verified: integration.md 新增 \"Provider variants (0.1.4+)\" 段，含 Claude + Gemini 两张表（config value / normalized / CLI receives），解释 claude- 前缀规则 + MODEL_ALIASES 短名 + 0.1.4 修复 Gemini variant 坍缩 bug 的说明。37651 chars. 现有 Dynamic Role Routing / Fallback retry / Convergence Policy 章节保留不动。"
+    },
+    {
+      "timestamp": "2026-04-20T12:07:57.448Z",
+      "type": "task_status_change",
+      "task_id": "TASK-097",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-097 auto_verified → done: auto_verified → done. Commit 002e458."
+    },
+    {
+      "timestamp": "2026-04-20T12:08:01.755Z",
+      "type": "task_status_change",
+      "task_id": "TASK-098",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-098 todo → in_progress: pyproject bump + CHANGELOG + release-notes"
     }
   ]
 }
