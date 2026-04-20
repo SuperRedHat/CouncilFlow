@@ -4082,11 +4082,11 @@
         "无 git filter-repo/force push/reset --hard"
       ],
       "stage_gate": true,
-      "status": "in_progress",
+      "status": "done",
       "created_at": "2026-04-20T11:52:56.559Z",
-      "updated_at": "2026-04-20T12:14:29.299Z",
+      "updated_at": "2026-04-20T13:10:53.966Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "User approved via 'go' on 2026-04-20 after reviewing smoke report, CHANGELOG [0.1.4], release-notes-0.1.4.md. All 4 verification commands green, 10/10+4/4+4/4+2/2 smoke pass counts documented."
     }
   ]
 }
