@@ -81,3 +81,164 @@ def test_status_reports_gemini_controller(tmp_path: Path) -> None:
     assert result.exit_code == 0
     assert payload["error"] is None
     assert payload["data"]["current_controller"] == "gemini"
+
+
+# ---------------------------------------------------------------------------
+# TASK-082: routing + convergence distribution segments
+# ---------------------------------------------------------------------------
+
+
+def test_status_includes_recent_window_days_default(tmp_path: Path) -> None:
+    result = runner.invoke(
+        app,
+        ["status", "--project-root", str(tmp_path)],
+        env={"CODEX_SHELL": "1"},
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["data"]["recent_window_days"] == 30
+
+
+def test_status_custom_recent_window(tmp_path: Path) -> None:
+    result = runner.invoke(
+        app,
+        ["status", "--project-root", str(tmp_path), "--recent", "7"],
+        env={"CODEX_SHELL": "1"},
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["data"]["recent_window_days"] == 7
+
+
+def test_status_empty_runs_dir_no_crash(tmp_path: Path) -> None:
+    """No .council/runs/ dir → routing_distribution degrades to total=0."""
+    result = runner.invoke(
+        app,
+        ["status", "--project-root", str(tmp_path)],
+        env={"CODEX_SHELL": "1"},
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    routing = payload["data"]["routing_distribution"]
+    assert routing["total_records"] == 0
+    assert routing["roles"] == {}
+
+
+def test_status_empty_discuss_dir_no_crash(tmp_path: Path) -> None:
+    result = runner.invoke(
+        app,
+        ["status", "--project-root", str(tmp_path)],
+        env={"CODEX_SHELL": "1"},
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    convergence = payload["data"]["convergence_distribution"]
+    assert convergence["total_records"] == 0
+    assert convergence["ended_reason_distribution"] == {}
+
+
+def test_status_aggregates_routing_json_entries(tmp_path: Path) -> None:
+    """Routing records are summarized by role → model counts."""
+    runs_dir = tmp_path / ".council" / "runs" / "run_001"
+    runs_dir.mkdir(parents=True)
+    (runs_dir / "routing.json").write_text(
+        json.dumps(
+            [
+                {
+                    "timestamp": "2026-04-20T00:00:00+00:00",
+                    "role": "implementer",
+                    "primary_model": "claude",
+                },
+                {
+                    "timestamp": "2026-04-20T01:00:00+00:00",
+                    "role": "implementer",
+                    "primary_model": "gemini",
+                },
+                {
+                    "timestamp": "2026-04-20T02:00:00+00:00",
+                    "role": "implementer",
+                    "primary_model": "claude",
+                },
+                {
+                    "timestamp": "2026-04-20T03:00:00+00:00",
+                    "role": "tester",
+                    "primary_model": "claude-haiku",
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        ["status", "--project-root", str(tmp_path), "--recent", "365"],
+        env={"CODEX_SHELL": "1"},
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    routing = payload["data"]["routing_distribution"]
+    assert routing["total_records"] == 4
+    assert routing["roles"]["implementer"] == {"claude": 2, "gemini": 1}
+    assert routing["roles"]["tester"] == {"claude-haiku": 1}
+
+
+def test_status_aggregates_discussion_ended_reasons(tmp_path: Path) -> None:
+    """Discussion record.json files are summarized by ended_reason."""
+    for i, reason in enumerate(("converged", "converged", "max_rounds_reached")):
+        dir_ = tmp_path / ".council" / "discuss" / f"disc_{i:03d}"
+        dir_.mkdir(parents=True)
+        (dir_ / "record.json").write_text(
+            json.dumps(
+                {
+                    "id": f"disc_{i:03d}",
+                    "created_at": "2026-04-20T00:00:00+00:00",
+                    "completed_rounds": 2 + i,
+                    "ended_reason": reason,
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    result = runner.invoke(
+        app,
+        ["status", "--project-root", str(tmp_path), "--recent", "365"],
+        env={"CODEX_SHELL": "1"},
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    convergence = payload["data"]["convergence_distribution"]
+    assert convergence["total_records"] == 3
+    assert convergence["ended_reason_distribution"] == {
+        "converged": 2,
+        "max_rounds_reached": 1,
+    }
+    # (2 + 3 + 4) / 3 = 3.0
+    assert convergence["average_rounds_completed"] == 3.0
+
+
+def test_status_recent_window_excludes_old_records(tmp_path: Path) -> None:
+    """Records older than the cutoff are filtered out."""
+    runs_dir = tmp_path / ".council" / "runs" / "run_old"
+    runs_dir.mkdir(parents=True)
+    (runs_dir / "routing.json").write_text(
+        json.dumps(
+            [
+                {
+                    "timestamp": "2020-01-01T00:00:00+00:00",  # very old
+                    "role": "implementer",
+                    "primary_model": "claude",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        ["status", "--project-root", str(tmp_path), "--recent", "7"],
+        env={"CODEX_SHELL": "1"},
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    routing = payload["data"]["routing_distribution"]
+    assert routing["total_records"] == 0
