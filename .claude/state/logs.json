@@ -3351,6 +3351,22 @@
       "from_status": "auto_verified",
       "to_status": "awaiting_manual_acceptance",
       "message": "TASK-106 auto_verified → awaiting_manual_acceptance: milestone_manual + stage_gate=true. User can /project-feedback TASK-106 accept after reviewing CHANGELOG, release-notes, and smoke report."
+    },
+    {
+      "timestamp": "2026-04-20T16:28:44.494Z",
+      "type": "task_status_change",
+      "task_id": "TASK-106",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-106 awaiting_manual_acceptance → done: User accepted 2026-04-20 after cnchess end-to-end integration test validated 0.1.5: fixer loop fired on real semantic bug (TASK-004 楚河汉界), shell timeout 2h protocol triggered 5 times with zero false positives, synthesizer zero guardrail_violation across 6 tasks. cnchess game effect confirmed good."
+    },
+    {
+      "timestamp": "2026-04-20T16:28:53.481Z",
+      "type": "milestone_gate",
+      "task_id": "TASK-106",
+      "from_status": null,
+      "to_status": null,
+      "message": "0.1.5 milestone accepted by SuperRedHat on 2026-04-20. stage_gate_closed=true, phase_summary='0.1.5 Synthesizer artifact-first + fallback typo patch: 7 tasks (TASK-100~106), 8 commits on main (1 code fix, 1 new test file, 3 skill updates, 1 docs update, 1 release bundle, 1 state commit). Validated by cnchess 6-task MVP integration run: fixer loop fired on legitimate semantic bug, shell timeout protocol worked 5x without false positive, synthesizer zero guardrail_violation across all 6 tasks.', next_phase='completed (0.1.5 shipped)'."
     }
   ]
 }

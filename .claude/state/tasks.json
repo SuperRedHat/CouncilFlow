@@ -4348,11 +4348,11 @@
         "无破坏性 git"
       ],
       "stage_gate": true,
-      "status": "awaiting_manual_acceptance",
+      "status": "done",
       "created_at": "2026-04-20T13:17:01.298Z",
-      "updated_at": "2026-04-20T13:36:30.529Z",
+      "updated_at": "2026-04-20T16:28:44.474Z",
       "commit_hash": "",
-      "notes": "milestone_manual + stage_gate=true. User can /project-feedback TASK-106 accept after reviewing CHANGELOG, release-notes, and smoke report."
+      "notes": "User accepted 2026-04-20 after cnchess end-to-end integration test validated 0.1.5: fixer loop fired on real semantic bug (TASK-004 楚河汉界), shell timeout 2h protocol triggered 5 times with zero false positives, synthesizer zero guardrail_violation across 6 tasks. cnchess game effect confirmed good."
     }
   ]
 }
