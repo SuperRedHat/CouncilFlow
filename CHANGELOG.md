@@ -4,6 +4,88 @@ All notable changes to CouncilFlow are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] — 2026-04-20
+
+Minor release landing the "workflow token efficiency" optimization phase
+(15 tasks, TASK-071 through TASK-085). Introduces **Dynamic Role Routing**
+and **Semantic Convergence** as opt-in capabilities on top of the existing
+`.council/config.yaml` schema. Fully backward compatible: existing
+shorthand configs load unchanged, discussion defaults keep pre-0.1.3
+behavior.
+
+### Added
+
+- **Dynamic Role Routing** (Part A): `RoleRoute` Pydantic model with
+  `model` / `when` (restricted-AST expression) / `fallback` fields.
+  `RoleMapping.<role>` accepts either the shorthand string or a list
+  of routes. `councilflow.controller.role_router.resolve()` picks the
+  first-matching route; `councilflow.config.when_eval` evaluates `when`
+  in a sandboxed AST walker. Routing decisions logged to
+  `.council/runs/<run_id>/routing.json`. `cli/delegate.py` consumes the
+  router and auto-retries on retryable `error_kind` via the fallback
+  chain. New structured error: `error.kind="routing_no_match"`.
+- **Semantic Convergence** (Part B): `DiscussionSettings.convergence_policy`
+  (`strict_count` / `semantic` / `hybrid`, default `strict_count`) +
+  `min_rounds_by_topic`. `convergence_evaluator.evaluate()` is the
+  single decision function; never calls an LLM.
+  `DiscussionOrchestrator` now routes convergence through the
+  evaluator. `DiscussionSummary.convergence_trace` captures per-round
+  decisions.
+- **Observability**: `council status --recent N` gains
+  `routing_distribution` and `convergence_distribution` segments.
+  `scripts/measure_ceremony_tokens.py` standalone baseline tool.
+- **Docs**: `docs/rfc-workflow-token-optimization.md`,
+  `docs/workflow-optimizations-backlog.md`,
+  `docs/integration.md` new sections, `docs/release-notes-0.1.3.md`,
+  `docs/ceremony-baseline-2026-04-20.md`. Template
+  `default-config.yaml` comment block shows 3 routing examples.
+  AutoSkills repo: 7 role_driven skills note the routing semantics.
+
+### Deferred (explicitly not in 0.1.3)
+
+- **Link folding** (same-model chain token deduplication) — codex
+  review on 2026-04-20 found unresolved generation-consistency issues
+  and the baseline measurement showed ceremony tokens are only 5.0%
+  of total in the sampled project. Design kept in RFC; implementation
+  deferred pending more data.
+- Sidecar tiered isolation, artifact schema unification, provider
+  session reuse, discussion turn merging — all in
+  `docs/workflow-optimizations-backlog.md`.
+
+### Changed
+
+- `convergence_evaluator._evaluate_strict_count` semantics align
+  byte-for-byte with the legacy `_round_has_converged` — verified by
+  full regression.
+
+### Backward compatibility guarantees
+
+- Shorthand `roles.<role>: <model>` works identically to 0.1.2.
+- `discussion.convergence_policy` defaults to `strict_count`.
+- `council delegate` JSON shape for success paths unchanged.
+- `--model` CLI flag retains highest-priority override behavior.
+- Pre-existing 78 done tasks required zero code rework.
+
+### Tests
+
+- 318+ pytest (was 189 at 0.1.2): +129 new tests across
+  `test_config_schema.py`, `test_when_eval.py`, `test_role_router.py`,
+  `test_convergence_evaluator.py`, routing integration in
+  `test_cli_delegate.py`, routing / convergence distribution in
+  `test_cli_status.py`, etc.
+- `ruff check src/ tests/`: clean.
+
+### Operator note
+
+No upgrade actions required. `pipx upgrade councilflow` picks up 0.1.3.
+To opt into dynamic routing, see
+`src/councilflow/templates/default-config.yaml` examples or
+`docs/integration.md → Dynamic Role Routing`. To opt into semantic
+convergence, add `convergence_policy: semantic` (or `hybrid`) to your
+project's `discussion` config block.
+
+See `docs/release-notes-0.1.3.md` for the full write-up.
+
 ## [0.1.2] — 2026-04-19
 
 Patch release that fixes the second half of the TASK-007A incident. With

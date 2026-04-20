@@ -647,7 +647,7 @@ def test_delegate_uses_router_when_no_model_override(
     assert data.get("target_model") == "gemini" or data.get("model") == "gemini"
 
     # Audit log written
-    routing_log = tmp_path / ".council" / "runs" / "routing.json"
+    routing_log = tmp_path / ".council" / "runs" / "routing" / "routing.json"
     assert routing_log.is_file()
     records = json.loads(routing_log.read_text(encoding="utf-8"))
     assert any(
@@ -755,5 +755,5 @@ def test_delegate_model_flag_bypasses_router(monkeypatch, tmp_path: Path) -> Non
     assert data.get("target_model") == "claude" or data.get("model") == "claude"
 
     # Router should NOT have written a log entry since we skipped it
-    routing_log = tmp_path / ".council" / "runs" / "routing.json"
+    routing_log = tmp_path / ".council" / "runs" / "routing" / "routing.json"
     assert not routing_log.exists()

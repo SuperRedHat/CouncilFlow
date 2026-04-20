@@ -251,7 +251,7 @@ def delegate(
             task_summary=task_summary,
             structured_inputs_raw=stage_input,
         )
-        routing_log_path = project_root / ".council" / "runs" / "routing.json"
+        routing_log_path = project_root / ".council" / "runs" / "routing" / "routing.json"
         try:
             routing_decision = resolve_route(
                 role,
