@@ -20,40 +20,48 @@
 
 ## 32. 变更记录（2026-04-20，0.1.4 Claude Variant 路由补丁）
 
-0.1.3 发布后验证中发现：`resolve_adapter_model` 的白名单只支持 `codex` / `claude` / `gemini-<variant>` / `gpt-<variant>` / `o1-<variant>`，**遗漏 `claude-<variant>`**。结果是用户配置 `tester: claude-haiku` 会在 config 加载时被 `validate_model_name` 直接拒掉。这使得 PRD §31.2 宣传的"按角色下沉便宜 Claude 子型号省 $"对 Claude 主控用户**实际上不 work**，而 Claude 是最常见主控。
+0.1.3 发布后验证中发现：`resolve_adapter_model` 的白名单只支持 `codex` / `claude` / `gemini-<variant>` / `gpt-<variant>` / `o1-<variant>`，**遗漏 `claude-<variant>`**。结果是用户配置 `tester: claude-haiku` 会在 config 加载时被 `validate_model_name` 直接拒掉。0.1.4 补齐 Claude 家族的 variant 路径，完全对标 Gemini 已有实现。93+6 → 99 tasks done，版本 0.1.4 发布。
 
-**这个缺口也埋在 0.1.3 的 `default-config.yaml` 注释 Example 1 里**：该示例就写了 `claude-haiku`，用户照抄会直接报错。
+## 33. 变更记录（2026-04-20，0.1.5 Synthesizer artifact-first + Fallback typo 补丁）
 
-### 32.1 产品要求
+0.1.4 发布后的 cnchess 测试项目暴露两个 0.1.3 已埋下的结构/编码缺陷，0.1.4 没发现也没修：
 
-1. **Claude variant 路由必须真实生效**：`claude-haiku` / `claude-sonnet` / `claude-opus` / `claude-3-5-haiku` / `claude-3-5-sonnet` / `claude-4-5-sonnet` 等 variant 名必须：
-   - 通过 `validate_model_name` 白名单
-   - 在 `cli/delegate.py::get_provider_adapter` 被路由到 `ClaudeCodeCliAdapter(model=<variant>)`
-   - adapter 在调 Claude Code CLI 时透传 `--model <variant>` flag
+### 33.1 问题 1：Synthesizer 和 protected-paths 契约不对齐
 
-2. **对标 Gemini variant 已有实现**：Claude 路径完全 mirror Gemini 的 `gemini-<variant>` 路径（2026-04-17 已落地）：
-   - `GeminiCliAdapter.model_name` 固定 `"gemini"`，`gemini_variant` 进 metadata → Claude adapter 同构：`model_name="claude"`，新增 `claude_variant` 进 metadata
-   - Gemini adapter 构造 `--model <variant>` flag → Claude adapter 同构
+cnchess 跑 project-design 时，delegated sidecar synthesizer 调 MCP `save_architecture`，MCP 写入落点 `.claude/state/architecture.md` 正好被 `PROTECTED_WORKFLOW_PATHS` 守护，导致 orchestrator 回滚并报 `guardrail_violation`。
 
-3. **短名别名必须保留 variant 信息**：`haiku` / `sonnet` / `opus` 映射到 `claude-haiku` / `claude-sonnet` / `claude-opus`（保留 variant），**不是**映射到 `claude`（丢失 variant）。现有 `claude-3-5-sonnet → claude` 这类会吞掉 variant 的 MODEL_ALIASES 条目需要改为保留 variant。
+根因是跨层契约矛盾：
+- MCP policy 层说"synthesizer 允许用 MCP"
+- Protected paths 层说"没人可以动 `.claude/state`"
+- 两个层都对，但 synthesizer 用了 MCP → 被正确但无用地回滚
 
+### 33.2 问题 2：Fallback chain 字符串 typo
+
+`src/councilflow/cli/delegate.py:149` 的 `_RETRYABLE_FALLBACK_KINDS` 白名单写的是 `"process_error"`，但所有 adapter（base/claude/gemini/codex/openai）实际发的都是 `"process_exit"`。**typo 导致从 0.1.3 上线起，任何 fallback 都不会在子进程失败时触发。** 这是 PRD §31.2 "按角色下沉省 $" 承诺的隐含破损——用户正确配了 fallback 也没用。
+
+### 33.3 产品要求（0.1.5）
+
+1. **Fallback 在 `process_exit` 时必须真 retry**（字符串修正）
+2. **Synthesizer 契约对齐到 implementer 的 artifact-first 模式**：
+   - sidecar synthesizer 只写 `.council/delegations/<id>/result.md`（既有约定）
+   - host 主控读取 artifact 后负责调 MCP `save_architecture` / `save_prd` / `create_tasks` / `add_log`
+   - `--allow-workflow-state-write` 保持 opt-in 不变默认；protected-paths 硬红线保留
+3. **Skill 协议同步**：project-design / project-plan / project-change 三个 skill（AutoSkills + ~/.workflow-core/skills 两仓 × 三 controller = 9 个副本组合）的 synthesizer 阶段协议更新
 4. **向后兼容硬红线**：
-   - `claude` 简写语义完全不变（不加 `--model` flag，由 Claude Code CLI 自己选 default model）
-   - 0.1.3 现有所有配置零修改继续工作
-   - Gemini / OpenAI variant 路径 0 改动
-   - 93 个历史 done 任务零回改
+   - 0.1.4 现有所有配置零修改继续工作
+   - 99 个历史 done 任务零回改
+   - Guardrail 默认行为不变
+5. **发布策略**：0.1.4 → 0.1.5 **patch bump**。理由：无新协议 / 无新 CLI 参数 / 无新 schema，纯 bug fix + 文档层契约修正
 
-5. **安全**：Claude variant 名字必须通过白名单（`claude-` 前缀 + 别名表）；不接受任意字符串如 `claude-evil`
+### 33.4 明确不涉及（0.1.5）
 
-6. **发布策略**：0.1.3 → 0.1.4 **patch bump**（非 minor）。理由：没有新协议 / 新 CLI 参数 / 新配置字段，只是补齐 0.1.3 已公开 feature 的实现缺口。
+- Model 可达性 ping / preflight（显式跳过；failure-then-fallback 已经够用，尤其在修 typo 之后）
+- `error_kind=model_unavailable` 新分类（backlog；0.1.5 只修 typo 已经解决 90% 问题）
+- Synthesizer 的职责范围（仍是综合多 artifact 产出最终稿，只是落盘方式变）
+- 任何 role 的路由优先级 / when 表达式语义
 
-### 32.2 明确不涉及
-- Claude Code CLI 本身的 model 别名语义：我们只透传 `--model <name>`，Anthropic CLI 自己解析
-- 任何 workflow / 阶段机 / discuss 协议变动
-- Skills 的 SKILL.md 内容（当前"动态角色路由 0.1.3+"说明是通用的，不需要改 AutoSkills）
-- 新的 CLI 命令 / 新的 config schema 字段
+### 33.5 阶段 gate
 
-### 32.3 阶段 gate
-仅 1 个最终 milestone gate（TASK-099）：在 `D:/AIProjects/test/cf-0.1.4-smoke/` clean 项目下跑 `council delegate --model claude-haiku` 和动态路由 claude 变体的端到端测试，确认 `--model haiku` 到达 Claude CLI 子进程。完整 pytest + ruff 全绿。
+TASK-106 milestone_manual + stage_gate=true：cf-0.1.5-smoke clean 项目跑 project-design 的 synthesizer 阶段**不再** `guardrail_violation`；fake-adapter 测试证实 fallback 在 `process_exit` 时真 retry。
 
-本节补齐 §31.2 的 feature，并 supersede 0.1.3 "claude 无 variant 支持"的隐含限制。
+本节 supersede §31.2 里 fallback 链描述的"fallback 在子进程失败时会 retry"这个隐含承诺——0.1.5 之前该承诺因 typo 并未兑现。

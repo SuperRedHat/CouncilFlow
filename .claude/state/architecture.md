@@ -8,53 +8,71 @@
 
 ## 28. 变更记录（2026-04-20，0.1.4 Claude Variant 路由补丁）
 
-本次架构变更**不新增模块**，**不改协议**。只在 3 个现有模块做最小补齐，完全对标 Gemini variant 已落地的路径。
+本次架构变更**不新增模块**，**不改协议**。只在 3 个现有模块做最小补齐。详见 CHANGELOG [0.1.4] 和 docs/release-notes-0.1.4.md。
 
-### 28.1 改动面
+## 29. 变更记录（2026-04-20，0.1.5 Synthesizer artifact-first + Fallback typo 补丁）
 
-| 模块 | 改动 | 依据 |
+本次架构变更**不新增模块**，**不改协议**。纯 bug fix + 文档层契约修正。
+
+### 29.1 改动面
+
+| 模块 | 改动 | 原因 |
 |---|---|---|
-| `src/councilflow/models/roles.py` | `resolve_adapter_model` 新增 `claude-` 前缀分支；`MODEL_ALIASES` 调整让 `haiku/sonnet/opus/claude-3-5-*` 等短名映射到保留 variant 的长名（`claude-haiku/claude-sonnet/claude-opus`）而非吞掉 variant 的 `claude` | 同 §25.2 model name 归一化层；对标 `gemini-` / `gpt-` / `o1-` 前缀 |
-| `src/councilflow/providers/claude_code_cli.py` | `ClaudeCodeCliAdapter.__init__` 加 `model: str \| None = None`；构造 command 时在 `-p` 前插入 `["--model", variant]`；`ProviderResponse.metadata.claude_variant` 带 variant | 严格对标 `GeminiCliAdapter` §14.2 第 38-57 行 |
-| `src/councilflow/cli/delegate.py::get_provider_adapter` | 现有 gemini-variant 特例分支旁新增 claude-variant 特例：`claude-<variant>` 且 `<variant>` 非空非 `claude` 时 → `ClaudeCodeCliAdapter(model=<variant>)` | 参考现有 line ~200 gemini 特例 |
+| `src/councilflow/cli/delegate.py:149` | `_RETRYABLE_FALLBACK_KINDS` 里的 `"process_error"` → `"process_exit"` | 字符串 typo；所有 adapter 实际发 `"process_exit"`，typo 让 fallback 从未触发过 |
+| `tests/test_cli_delegate.py` | 新增 `test_fallback_retries_on_process_exit` 回归 | 未来任何人改这个白名单字符串都会撞到测试 |
+| `tests/test_synthesizer_artifact_contract.py`（新增） | 新增 e2e 回归：synthesizer 只写 `.council/delegations/<id>/result.md` 时不触发 `guardrail_violation` | 把新契约钉死 |
 
-### 28.2 保持不变
+### 29.2 Skill 协议改动（非代码）
 
+`project-design` / `project-plan` / `project-change` 三个 skill 的 synthesizer 阶段协议对齐到 implementer 的 artifact-first 模式：
+
+| Skill | 旧协议（0.1.4 及以前） | 新协议（0.1.5+） |
+|---|---|---|
+| project-design | synthesizer sidecar 直接调 `save_architecture` → 触发 guardrail | synthesizer sidecar 只写 result.md；host 主控读后调 `save_architecture` |
+| project-plan | synthesizer sidecar 试图调 `save_prd` + `create_tasks` → 触发 guardrail | synthesizer sidecar 只写 result.md；host 主控读后调 `save_prd` + `create_tasks` |
+| project-change | synthesizer sidecar 试图调多个 MCP → 触发 guardrail | synthesizer sidecar 只写 result.md；host 主控读后调 `save_architecture` / `save_prd` / `create_tasks` / `add_log` |
+
+位置：AutoSkills (`D:/project/AutoSkills/skills/{claude,codex,gemini}/`) + ~/.workflow-core/skills (`~/.workflow-core/skills/{claude,codex,gemini}/`) 两仓同步。
+
+### 29.3 保持不变
+
+- `PROTECTED_WORKFLOW_PATHS` 默认仍 `(".claude/state", ".council/state.json")`
+- `allow_workflow_state_write` 默认仍 `false`
+- MCP access policy for roles：`architect`/`planner`/`synthesizer` 保留 MCP（不变），`implementer`/`tester`/`reviewer`/`fixer`/`advisor` worktree-local empty config（不变）
 - `RoleMapping` / `RoleRoute` / `role_router` / `convergence_evaluator` / `when_eval` — 零改动
-- `Discussion` schema + convergence 三模式 — 零改动
-- Provider adapter registry / 其他 providers — 零改动
-- 所有 workflow skills / 阶段机 / discuss 协议 — 零改动
+- Claude / Gemini / OpenAI variant 路由 — 零改动
+- 0.1.4 adapter 契约 — 零改动
 
-### 28.3 adapter 契约对齐
+### 29.4 契约对齐
 
-Claude adapter 对齐 Gemini adapter 的双字段模式：
+新契约：**synthesizer 的 host-state 写入必须由 host 主控负责，不由 sidecar 直接做**。
 
-| Property | Gemini | Claude (0.1.4+) |
-|---|---|---|
-| `model_name`（家族归一） | `"gemini"` | `"claude"` |
-| variant 存储 | `metadata.gemini_variant` | `metadata.claude_variant` |
-| CLI flag 传递 | `--model <gemini_variant>` | `--model <claude_variant>` |
-| 简写行为（无 variant） | `model_name=gemini`，不加 `--model` | `model_name=claude`，不加 `--model`（完全等价于 0.1.3） |
+对齐到：
+- implementer：sidecar 写 `.council/delegations/<id>/result.md` → host 读 → host 基于结果自主决策（是否 commit、是否 update_task_status）
 
-这保证 §29.6 的 `ProviderResponse.model` 归一化契约（对外只暴露家族名，不暴露具体 variant 版本号）对 Claude 家族同样生效。
+这个模式已经在 project-next 的 implementer/tester/reviewer/fixer 流程里正常工作了 0.1.0 起的所有版本。synthesizer 的偏离是 project-design / project-plan / project-change 三个 skill 隐含假设了"synthesizer 能直写 host state"，而从来没被验证过（因为测试用例中 synthesizer 总是 local_execution，不走 sidecar）。
 
-### 28.4 版本策略
+### 29.5 版本策略
 
-- **0.1.4**：patch bump（non-breaking，纯补漏）
-- SemVer 理由：没有新协议 / 新命令 / 新字段；完全向后兼容；存在的目的是把 0.1.3 宣传的 Dynamic Role Routing feature 对 Claude 家族真正补齐
-- CHANGELOG 标注为 `Added` + `Fixed` 双项：Added Claude variant routing，Fixed 0.1.3 default-config Example 1 的 claude-haiku 现在真能 work
+**patch bump**（0.1.4 → 0.1.5）。理由：
+- 无新协议、无新 CLI 参数、无新配置 schema
+- 纯 bug fix + 文档层契约修正
+- 向后兼容：0.1.4 配置不需要任何改动
 
-### 28.5 风险与缓解
+CHANGELOG 双项：
+- **Fixed**: fallback retry typo（`process_error` → `process_exit`）——从 0.1.3 起即存在，0.1.5 首次修复
+- **Changed**: synthesizer skill 协议对齐 implementer artifact-first 模式
 
-1. **Claude Code CLI 对 `--model` 的真实别名接受度**：透传机制下完全取决于 Anthropic CLI；smoke 阶段用 `claude --model haiku -p test` 单独验证
-2. **MODEL_ALIASES 吞 variant 的历史条目**：现有 `claude-3-5-sonnet → claude` 这类条目需要改为 `claude-3-5-sonnet → claude-sonnet` 保留 variant；测试覆盖现有 alias 测试全绿
-3. **Fallback 链行为**：variant 在 fallback 链里的行为已由 0.1.3 机制覆盖，`[claude-haiku, claude, gemini]` 这类混合链路合法
+### 29.6 风险与缓解
 
-### 28.6 测试策略
+1. **Skill 协议改动需要用户更新本地 skills**：本地 `~/.workflow-core/skills` 改过的用户需要 `sync-skills.ps1` 重新同步；发布时在 release-notes 明确提示
+2. **Fallback typo 修复可能暴露此前被隐藏的 retry 问题**：某些 adapter 的 `process_exit` 之前不触发 retry，现在会了；如果 retry 逻辑本身有 bug，会显现。新增 TASK-100 回归测试对冲
+3. **Synthesizer 契约改动不是强制性的**：用户可以选择继续用旧 skill 协议（虽然会触发 guardrail_violation），或升级到新协议。不是破坏性变更
 
-- `tests/test_alias_normalization.py`: 补 claude variant 通过 validate + 短名别名映射正确
-- `tests/test_claude_adapter.py`（新增）或 test_providers.py: 构造带 model 的 adapter，断言 `--model` 在 command 中
-- `tests/test_cli_delegate.py`: 动态路由到 `claude-haiku` 全链路成功
-- 回归：现有 318 tests 保持全绿
+### 29.7 测试策略
 
-本节不 supersede 任何前序架构，纯粹补齐 §27.1 `role_router` 下游的 adapter 侧能力缺口。
+- `tests/test_cli_delegate.py`: 补 process_exit → fallback 真 retry（TASK-100）
+- `tests/test_synthesizer_artifact_contract.py`（新增）: synthesizer 不动 `.claude/state` 时 orchestrator 正常返回（TASK-101）
+- 回归：现有 342 tests 保持全绿，新增 ≥ 2 tests → 344+
+
+本节不 supersede 任何前序架构，纯粹补齐 §27 `_RETRYABLE_FALLBACK_KINDS` 的 typo，并把 synthesizer 在三个 skill 的协议钉死到 artifact-first。

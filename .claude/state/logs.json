@@ -3175,6 +3175,14 @@
       "from_status": null,
       "to_status": null,
       "message": "0.1.4 milestone accepted by SuperRedHat on 2026-04-20. stage_gate_closed=true, phase_summary='0.1.4 Claude variant routing patch: 6 tasks (TASK-094~099), 6 commits on main, closes 0.1.3 Part A gap where claude-haiku / claude-sonnet config values were rejected at config load; now route end-to-end through ClaudeCodeCliAdapter with --model flag injection, and Gemini variant collapse bug also fixed. 342 pytest + ruff clean + clean-project smoke confirm.', next_phase='0.1.5 synthesizer artifact-first contract + fallback chain classification fix (per cnchess test exposed structural issue)'."
+    },
+    {
+      "timestamp": "2026-04-20T13:18:43.756Z",
+      "type": "phase_change",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "0.1.5 project-change 完成。architect -> planner -> synthesizer 三阶段全部 local_execution。新增 7 tasks (TASK-100~106)，其中 TASK-106 是 milestone_manual + stage_gate=true 发布门。核心发现：src/councilflow/cli/delegate.py:149 的 _RETRYABLE_FALLBACK_KINDS 里 'process_error' 是 typo（所有 adapter 实际发 'process_exit'），导致 fallback 从 0.1.3 起从未触发过——这解释了 cnchess fallback_attempted=false 即使用户配了 fallback list 也不会用到。结构性修法：synthesizer sidecar 只写 .council/delegations/<id>/result.md，host 主控读后调 MCP 落盘，对齐 implementer 已有的 artifact-first 契约。Skills 两仓（AutoSkills + ~/.workflow-core/skills）× 三 controller × 三个 project-* skill 同步更新。PRD §33 + architecture §29 已落盘。项目 status 从 completed 迁回 in_progress。"
     }
   ]
 }

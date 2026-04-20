@@ -4087,6 +4087,272 @@
       "updated_at": "2026-04-20T13:10:53.966Z",
       "commit_hash": "",
       "notes": "User approved via 'go' on 2026-04-20 after reviewing smoke report, CHANGELOG [0.1.4], release-notes-0.1.4.md. All 4 verification commands green, 10/10+4/4+4/4+2/2 smoke pass counts documented."
+    },
+    {
+      "id": "TASK-100",
+      "title": "Fallback retry whitelist typo fix (process_error -> process_exit)",
+      "description": "_RETRYABLE_FALLBACK_KINDS 里的 'process_error' 改为 'process_exit'。所有 adapter 发的都是 process_exit，typo 导致 fallback 永远不触发。新增回归测试：primary 抛 process_exit + fallback=[ok_adapter] 时应该跑到 fallback。",
+      "dependencies": [],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "_RETRYABLE_FALLBACK_KINDS 包含 'process_exit' 不含 'process_error'",
+        "新增 test_fallback_retries_on_process_exit 通过",
+        "现有测试全部保持绿色 (342+)"
+      ],
+      "files": [
+        "src/councilflow/cli/delegate.py",
+        "tests/test_cli_delegate.py"
+      ],
+      "module": "councilflow/cli",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "pytest tests/test_cli_delegate.py -q",
+        "ruff check src/councilflow/cli/delegate.py tests/test_cli_delegate.py"
+      ],
+      "review_checklist": [
+        "process_error 字符串在 src/ 和 tests/ 下不再出现",
+        "fallback 在 process_exit 后真正跳到下一个模型"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T13:17:01.298Z",
+      "updated_at": "2026-04-20T13:17:01.298Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-101",
+      "title": "Synthesizer artifact-first e2e 回归测试",
+      "description": "新增 e2e 测试：synthesizer 角色 delegation 只写 .council/delegations/<id>/result.md，不写 .claude/state/*，orchestrator 不报 guardrail_violation。契约回归测试，确保未来 skill 协议改动不反弹。",
+      "dependencies": [
+        "TASK-100"
+      ],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "新测试跑 synthesizer delegation（fake adapter 写 .council/delegations/<id>/result.md）",
+        "断言: status != failed, error_kind != guardrail_violation, result.md 存在",
+        "断言: .claude/state/* 未被 sidecar 修改"
+      ],
+      "files": [
+        "tests/test_synthesizer_artifact_contract.py"
+      ],
+      "module": "councilflow/controller",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "pytest tests/ -k synthesizer -q",
+        "ruff check src/ tests/"
+      ],
+      "review_checklist": [
+        "测试真的跑的是 synthesizer role",
+        "测试覆盖不动 .claude/state 的 happy path"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T13:17:01.298Z",
+      "updated_at": "2026-04-20T13:17:01.298Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-102",
+      "title": "project-design skill 协议更新（两仓同步）",
+      "description": "改 project-design skill 的 synthesizer 阶段协议：sidecar synthesizer 只写 .council/delegations/<id>/result.md；host 主控读 result.md → 组织架构稿 → 调 MCP save_architecture。明确不依赖 sidecar 直写 host state。AutoSkills + ~/.workflow-core/skills 两仓 6 个文件同步。",
+      "dependencies": [
+        "TASK-101"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "两仓 6 个文件（三 controller × 两仓）同步修改",
+        "协议段落明确区分 sidecar 产物 vs host 落盘",
+        "保留现有失败上报协议与阶段机"
+      ],
+      "files": [
+        "D:/project/AutoSkills/skills/claude/project-design.md",
+        "D:/project/AutoSkills/skills/codex/project-design.md",
+        "D:/project/AutoSkills/skills/gemini/project-design.md"
+      ],
+      "module": "councilflow/workflow",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "docs",
+      "verification_commands": [
+        "diff -q \"D:/project/AutoSkills/skills/claude/project-design.md\" \"$HOME/.workflow-core/skills/claude/project-design.md\""
+      ],
+      "review_checklist": [
+        "三个 controller 的副本一致",
+        "没有残留旧协议 synthesizer 直接调 save_architecture"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T13:17:01.298Z",
+      "updated_at": "2026-04-20T13:17:01.298Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-103",
+      "title": "project-plan skill 协议更新（两仓同步）",
+      "description": "改 project-plan skill 的 synthesizer 阶段：sidecar 只产 artifact，host 读后调 save_prd + create_tasks。AutoSkills + ~/.workflow-core/skills 两仓 6 个文件同步。",
+      "dependencies": [
+        "TASK-102"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "6 文件同步修改",
+        "协议明确 host 在读完 synthesizer result 后负责 save_prd + create_tasks"
+      ],
+      "files": [
+        "D:/project/AutoSkills/skills/claude/project-plan.md",
+        "D:/project/AutoSkills/skills/codex/project-plan.md",
+        "D:/project/AutoSkills/skills/gemini/project-plan.md"
+      ],
+      "module": "councilflow/workflow",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "docs",
+      "verification_commands": [
+        "diff -q \"D:/project/AutoSkills/skills/claude/project-plan.md\" \"$HOME/.workflow-core/skills/claude/project-plan.md\""
+      ],
+      "review_checklist": [
+        "三 controller 副本一致",
+        "任务字段写入仍由 host 负责"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T13:17:01.298Z",
+      "updated_at": "2026-04-20T13:17:01.298Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-104",
+      "title": "project-change skill 协议更新（两仓同步）",
+      "description": "改 project-change skill 的 synthesizer 阶段：sidecar 只产 artifact，host 读后调 save_architecture / save_prd / create_tasks / add_log。AutoSkills + ~/.workflow-core/skills 两仓 6 个文件同步。",
+      "dependencies": [
+        "TASK-103"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "6 文件同步修改",
+        "synthesizer 产物语义清晰（综合 architect + planner 的 markdown）",
+        "host 负责落盘"
+      ],
+      "files": [
+        "D:/project/AutoSkills/skills/claude/project-change.md",
+        "D:/project/AutoSkills/skills/codex/project-change.md",
+        "D:/project/AutoSkills/skills/gemini/project-change.md"
+      ],
+      "module": "councilflow/workflow",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "docs",
+      "verification_commands": [
+        "diff -q \"D:/project/AutoSkills/skills/claude/project-change.md\" \"$HOME/.workflow-core/skills/claude/project-change.md\""
+      ],
+      "review_checklist": [
+        "三 controller 副本一致",
+        "不引入 synthesizer 自己写 state 路径"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T13:17:01.298Z",
+      "updated_at": "2026-04-20T13:17:01.298Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-105",
+      "title": "docs/integration.md 补 Synthesizer artifact contract + Fallback 澄清",
+      "description": "integration.md 新增 Synthesizer artifact contract (0.1.5+) 小节，说明三个 skill 的新协议；Fallback chain 现有小节补一句 process_exit 在 0.1.5 起真正触发 retry（修 typo）。",
+      "dependencies": [
+        "TASK-104"
+      ],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "新增小节 Synthesizer artifact contract (0.1.5+)",
+        "Fallback chain 小节补 0.1.5 typo fix 条目",
+        "不 supersede 0.1.4 相关文档"
+      ],
+      "files": [
+        "docs/integration.md"
+      ],
+      "module": "councilflow/docs",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "docs",
+      "verification_commands": [
+        "grep -q \"Synthesizer artifact contract\" docs/integration.md",
+        "grep -q \"process_exit\" docs/integration.md"
+      ],
+      "review_checklist": [
+        "章节定位准确（在 Dynamic Role Routing 之后，不在之前）",
+        "示例代码真的跑得通"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T13:17:01.298Z",
+      "updated_at": "2026-04-20T13:17:01.298Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-106",
+      "title": "0.1.5 release gate",
+      "description": "pyproject 0.1.4->0.1.5，CHANGELOG [0.1.5] 含 Fixed (fallback typo) + Changed (synthesizer skill 协议)，release notes，clean 项目 smoke 在 D:/AIProjects/test/cf-0.1.5-smoke/ 验证 synthesizer 不再 guardrail_violation + fallback 在 process_exit 时真触发，无破坏性 git。",
+      "dependencies": [
+        "TASK-100",
+        "TASK-101",
+        "TASK-102",
+        "TASK-103",
+        "TASK-104",
+        "TASK-105"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "完整 pytest 全绿 (344+)",
+        "ruff clean",
+        "pyproject 0.1.5",
+        "CHANGELOG [0.1.5] 含 Fixed / Changed",
+        "release-notes-0.1.5.md 存在",
+        "cf-0.1.5-smoke synthesizer 不触发 guardrail",
+        "smoke 证据包含 fallback process_exit 真 retry",
+        "无破坏性 git"
+      ],
+      "files": [
+        "pyproject.toml",
+        "CHANGELOG.md",
+        "docs/release-notes-0.1.5.md",
+        "docs/synthesizer-artifact-smoke-report-2026-04-20.md"
+      ],
+      "module": "councilflow/release",
+      "needs_manual_review": true,
+      "acceptance_mode": "milestone_manual",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "pytest tests/ -q",
+        "ruff check src/ tests/",
+        "python -c \"import tomllib; assert tomllib.load(open('pyproject.toml','rb'))['project']['version'] == '0.1.5'\"",
+        "test -f docs/release-notes-0.1.5.md",
+        "test -f docs/synthesizer-artifact-smoke-report-2026-04-20.md"
+      ],
+      "review_checklist": [
+        "全 pytest 绿",
+        "全 ruff clean",
+        "smoke 在独立项目跑",
+        "fallback process_exit 真 retry（smoke 有证据）",
+        "synthesizer in cf-0.1.5-smoke 不触发 guardrail（smoke 有证据）",
+        "无破坏性 git"
+      ],
+      "stage_gate": true,
+      "status": "todo",
+      "created_at": "2026-04-20T13:17:01.298Z",
+      "updated_at": "2026-04-20T13:17:01.298Z",
+      "commit_hash": "",
+      "notes": ""
     }
   ]
 }
