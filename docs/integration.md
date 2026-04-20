@@ -528,3 +528,203 @@ any of `project-init`, `project-plan`, `project-next`, `project-review`,
    synthesis, task-state updates, and commit decisions.
 
 This keeps the integration deterministic, inspectable, and portable across Codex, Claude Code, and Gemini CLI.
+
+---
+
+## Dynamic Role Routing (0.1.3+)
+
+CouncilFlow 0.1.3 extends `.council/config.yaml`'s `roles.*` fields so
+that each role can be configured either as the shorthand model string
+(pre-0.1.3 behavior) or as an ordered list of `RoleRoute` entries for
+dynamic routing. The first entry whose `when` expression evaluates
+true (or has no `when`) is chosen; the entry's `fallback` list is the
+ordered set of models to try if the primary adapter call fails with a
+structured error.
+
+### Schema
+
+```yaml
+roles:
+  # Shorthand form (equivalent to a single-entry list)
+  architect: codex
+
+  # Dynamic routing form: ordered list of RoleRoute entries
+  implementer:
+    - model: claude
+      when: "task.complexity in ['L']"
+    - model: claude-haiku
+      when: "task.complexity in ['S', 'M']"
+      fallback: [claude, gemini]
+    - model: gemini            # final default match
+```
+
+Field contract on `RoleRoute`:
+
+| Field | Type | Required | Meaning |
+|---|---|---|---|
+| `model` | `str` | yes | Target model name; validated against the known-model whitelist at config load. |
+| `when` | `str \| null` | no | Restricted-AST expression. `null` or missing means "always match". |
+| `fallback` | `str \| list[str] \| null` | no | Additional models to attempt if the primary adapter fails with a retryable kind. |
+
+### `when` expression grammar
+
+Evaluated by `councilflow.config.when_eval.evaluate()` in a sandboxed
+AST walker. Allowed constructs:
+
+- **Literals**: `str`, `int`, `float`, `bool`, `None`, list/tuple literals
+- **Variables**: bare names bound in the evaluation context (`task`, `controller`, ...)
+- **Attribute access**: one level deep only, e.g. `task.complexity`, `task.module`
+- **Operators**: `==`, `!=`, `<`, `<=`, `>`, `>=`, `in`, `not in`, `and`, `or`, `not`
+
+Rejected (raises `WhenExpressionError`):
+
+- Any call: `f()`, `__import__(...)`, `eval(...)`, `subprocess.run(...)`, `getattr(task, "x")`
+- `Lambda`, `FunctionDef`, `ClassDef`, `Import`, `Assign`
+- `Subscript` outside list/tuple literals: `task["x"]`
+- Attribute chains deeper than one level: `task.meta.owner`
+- Any name starting with underscore: `task._private`, `task.__class__`, `task.__dict__`
+- Comprehensions / generators / f-strings / walrus / ternary / starred
+
+Missing context fields resolve to `None` (no exception). Ordering and
+membership operators with `None` operands return `False` rather than
+crashing.
+
+### Routing decision and audit trail
+
+`councilflow.controller.role_router.resolve()` returns a
+`RoutingDecision` with `primary_model`, `fallback_chain`,
+`matched_route_index`, `matched_when_expr`, and a
+`tried_routes` list for full audit.
+
+Every decision (successful match or no-match) is appended to
+`<project_root>/.council/runs/<run_id>/routing.json` as a JSON array
+of records. Each record contains:
+
+- `timestamp` (UTC ISO)
+- `role`
+- `primary_model` (or `null` for no-match)
+- `fallback_chain`
+- `matched_route_index`
+- `matched_when_expr`
+- `tried_routes`: list of `{index, model, when, matched, reason, error}`
+- `task_context_summary`
+- `error_kind` (only on no-match)
+
+### `routing_no_match` error contract
+
+When no route matches and `--model` was not supplied, `council delegate`
+exits with code 1 and emits a structured error:
+
+```json
+{
+  "data": null,
+  "error": {
+    "status": "error",
+    "error_kind": "routing_no_match",
+    "role": "implementer",
+    "model": null,
+    "tried_routes": [...],
+    "task_context_summary": {...},
+    "message": "No RoleRoute matched for role `implementer` ..."
+  }
+}
+```
+
+Host workflows should treat `routing_no_match` the same as any other
+`council delegate` failure — report via
+`Workflow Failure Report Protocol` and stop.
+
+### Fallback retry semantics
+
+When the primary adapter call fails with one of these kinds,
+`cli/delegate.py` automatically retries on the next model in the
+fallback chain:
+
+- `adapter_missing`
+- `process_error`
+- `idle_timeout`
+- `total_timeout`
+- `os_error`
+
+Non-retryable kinds (`permission_blocked`, `environment_not_ready`,
+`verification_failed`, etc.) exit immediately — they reflect task
+state, not provider transient failure. Every fallback attempt is
+logged to `routing.json`.
+
+### `--model` override precedence
+
+The `--model <name>` CLI flag takes the **highest** priority and
+bypasses routing entirely. This preserves the legacy CLI behavior for
+ad-hoc one-off invocations.
+
+---
+
+## Discussion Convergence Policy (0.1.3+)
+
+`DiscussionSettings.convergence_policy` controls when the orchestrator
+decides a multi-model discussion has converged. Evaluation happens in
+`councilflow.controller.convergence_evaluator.evaluate()` and is a
+pure function over already-computed `DiscussionTurn` fields — it
+never calls an LLM.
+
+### Three policies
+
+| Policy | Behavior |
+|---|---|
+| `strict_count` (default) | Pre-0.1.3 behavior preserved. Converge when `completed_rounds >= min_rounds` AND every external turn in the latest round has `supports_current_direction=True`, `introduced_new_info=False`, no disagreements, no open questions. `max_rounds` caps. |
+| `semantic` | Converge when the latest round's external turns show `introduced_new_info=False` AND no new disagreements beyond prior externals. `min_rounds` still acts as a hard floor — the first round cannot short-circuit even if externally agreed. `max_rounds` caps. |
+| `hybrid` | Infer a coarse topic from the question text (`architecture` / `review` / `clarification` / `other`). Floor = `max(min_rounds, min_rounds_by_topic.get(topic, min_rounds))`. After the floor, apply `semantic` semantics. |
+
+### `min_rounds_by_topic` usage
+
+```yaml
+discussion:
+  convergence_policy: hybrid
+  min_rounds: 1
+  min_rounds_by_topic:
+    architecture: 2
+    review: 1
+    clarification: 1
+```
+
+Topic inference is a cheap keyword match (no LLM):
+
+- `architecture` matches questions containing `architect`, `design`, `structure`, `schema`, `topology`
+- `review` matches `review`, `critique`, `feedback`, `audit`
+- `clarification` matches `what is`, `how does`, `how do`, `clarif`, `explain`, `definition`, `meaning`
+- Anything else falls under `other`
+
+### `convergence_trace` artifact field
+
+`DiscussionSummary.convergence_trace` is a list of per-round decision
+records written alongside the existing discussion summary artifact:
+
+```json
+"convergence_trace": [
+  {"round": 1, "reason": "min_rounds_not_met", "decision": "continue"},
+  {"round": 2, "reason": "no_new_info",        "decision": "converge"}
+]
+```
+
+The `reason` field is machine-readable and stable across the three
+policies — it is the `ConvergenceDecision.reason` returned by the
+evaluator. Values include `min_rounds_not_met`, `max_rounds`,
+`awaiting_external_turn`, `external_agreed`, `no_new_info`,
+`new_info_or_disagreements_present`, `external_not_yet_converged`,
+`no_external_participants`, and
+`topic_min_rounds_not_met:<topic>:<floor>` (hybrid only).
+
+### Short-circuit guarantee (all policies)
+
+If the discussion has zero external (non-controller) participants —
+typically because `discuss --models` was de-duped against the current
+controller — the evaluator converges immediately with
+`reason="no_external_participants"`, regardless of policy. This
+preserves the pre-0.1.3 short-circuit behavior for trivial discussions.
+
+### Backward compatibility
+
+When `.council/config.yaml` has no `convergence_policy` field, Pydantic
+defaults to `"strict_count"`. In that mode, the evaluator's output
+matches the legacy `_round_has_converged` check byte-for-byte —
+confirmed by full regression across 311+ tests.
