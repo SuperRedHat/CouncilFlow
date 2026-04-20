@@ -1,7 +1,7 @@
 {
   "name": "CouncilFlow",
   "created_at": "2026-04-16T06:05:18.182Z",
-  "updated_at": "2026-04-20T10:48:57.796Z",
+  "updated_at": "2026-04-20T11:52:56.580Z",
   "status": "completed",
   "tech_stack": [
     "Python 3.13",
@@ -14,10 +14,10 @@
     "Gemini CLI"
   ],
   "progress": {
-    "total": 93,
+    "total": 99,
     "done": 93,
     "in_progress": 0,
     "awaiting_acceptance": 0,
-    "todo": 0
+    "todo": 6
   }
 }

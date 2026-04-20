@@ -3839,6 +3839,254 @@
       "updated_at": "2026-04-20T10:48:57.777Z",
       "commit_hash": "",
       "notes": "Manual gate 接受 2026-04-20：用户确认\"accept\"。所有 acceptance_criteria 满足：pyproject 0.1.3 + CHANGELOG [0.1.3] 段 + release-notes-0.1.3.md (8232 chars) + smoke-report (clean project in D:/AIProjects/test/cf-0.1.3-smoke/ 验证 A 端到端 + status 观测 + routing.json 审计) + pytest 318/318 + ruff clean。无破坏性 git 操作。0.1.3 正式发布。"
+    },
+    {
+      "id": "TASK-094",
+      "title": "roles.py 白名单 + 别名扩展支持 claude variant",
+      "description": "resolve_adapter_model 新增 claude- 前缀分支，MODEL_ALIASES 调整让短名 haiku/sonnet/opus 映射到 claude-haiku/claude-sonnet/claude-opus 保留 variant；现有吞 variant 的条目改为保留。扩展 test_alias_normalization.py 覆盖。",
+      "dependencies": [],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "validate_model_name claude-haiku/sonnet/opus 通过",
+        "短名 haiku/sonnet/opus 经 normalize 保留 variant 不退化到 claude",
+        "现有 alias 测试全绿",
+        "pytest + ruff 全绿"
+      ],
+      "files": [
+        "src/councilflow/models/roles.py",
+        "tests/test_alias_normalization.py"
+      ],
+      "module": "councilflow/models",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "pytest tests/test_alias_normalization.py -v",
+        "python -c \"from councilflow.models.roles import validate_model_name; assert validate_model_name('claude-haiku') == 'claude-haiku'; assert validate_model_name('claude-sonnet') == 'claude-sonnet'; print('OK')\"",
+        "ruff check src/councilflow/models/roles.py tests/test_alias_normalization.py"
+      ],
+      "review_checklist": [
+        "resolve_adapter_model 加 claude- 前缀分支（同 gemini-/gpt-/o1-）",
+        "MODEL_ALIASES 短名保留 variant",
+        "claude-code/claudecode 这类确实归一到 claude 的 controller 别名保留",
+        "claude-3-5-sonnet 等带版本号全名保留或映射到保留 variant 的长名",
+        "未知 claude- 后缀不会被意外归一",
+        "Gemini/GPT variant 测试仍全绿"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T11:52:56.559Z",
+      "updated_at": "2026-04-20T11:52:56.559Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-095",
+      "title": "ClaudeCodeCliAdapter 支持 variant 参数",
+      "description": "__init__ 加 model: str | None = None；有 variant 时 command 在 -p 前插入 --model variant；model_name 保持 'claude'；metadata.claude_variant 带 variant。严格对标 GeminiCliAdapter。",
+      "dependencies": [
+        "TASK-094"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "ClaudeCodeCliAdapter(model='haiku') command 含 --model haiku",
+        "ClaudeCodeCliAdapter() 行为等价于 0.1.3（无 --model）",
+        "model_name 永远 'claude'",
+        "metadata.claude_variant 正确",
+        "pytest -k claude 全绿 + ruff clean"
+      ],
+      "files": [
+        "src/councilflow/providers/claude_code_cli.py",
+        "tests/test_claude_adapter.py"
+      ],
+      "module": "councilflow/providers",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "pytest tests/ -k claude -v",
+        "python -c \"from councilflow.providers.claude_code_cli import ClaudeCodeCliAdapter; a=ClaudeCodeCliAdapter(model='haiku'); assert '--model' in a.command and 'haiku' in a.command; b=ClaudeCodeCliAdapter(); assert '--model' not in b.command; print('OK')\"",
+        "ruff check src/councilflow/providers/claude_code_cli.py tests/test_claude_adapter.py"
+      ],
+      "review_checklist": [
+        "__init__ 新增 model: str | None = None",
+        "command 在 -p 前插入 --model variant（和 Gemini 一致位置）",
+        "model_name 固定 'claude'",
+        "metadata.claude_variant 对称 gemini_variant",
+        "model=None 完全等价于 0.1.3",
+        "测试覆盖无/有/空 variant 边界"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T11:52:56.559Z",
+      "updated_at": "2026-04-20T11:52:56.559Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-096",
+      "title": "cli/delegate.py 路由 Claude variant",
+      "description": "get_provider_adapter 在现有 gemini-variant 分支旁新增 claude-variant 分支：claude-<variant> 且 variant 非空非 claude 时 ClaudeCodeCliAdapter(model=variant)。",
+      "dependencies": [
+        "TASK-095"
+      ],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "get_provider_adapter('claude-haiku', ...) 返回 ClaudeCodeCliAdapter 无报错",
+        "claude 简写/其他 family 行为不变",
+        "新测试 claude-haiku 路由成功",
+        "pytest + ruff 全绿"
+      ],
+      "files": [
+        "src/councilflow/cli/delegate.py",
+        "tests/test_cli_delegate.py"
+      ],
+      "module": "councilflow/cli",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "pytest tests/test_cli_delegate.py -v",
+        "ruff check src/councilflow/cli/delegate.py tests/test_cli_delegate.py"
+      ],
+      "review_checklist": [
+        "分支位置与 gemini 特例相邻",
+        "claude 简写不走变体分支",
+        "静态简写 + 动态路由两种配置都测",
+        "现有 delegate 测试全绿"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T11:52:56.559Z",
+      "updated_at": "2026-04-20T11:52:56.559Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-097",
+      "title": "docs/integration.md 补充 Claude variant 说明",
+      "description": "Dynamic Role Routing 章节新增 Claude variant 支持规格：列出支持名（claude, claude-haiku, claude-sonnet, claude-opus, 以及带版本号的 claude-3-5-*/claude-4-5-* 等通过前缀规则放行）+ 短名别名（haiku/sonnet/opus）+ 透传机制（--model flag）。",
+      "dependencies": [
+        "TASK-096"
+      ],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "含 'claude-haiku' 或 'Claude variant' 关键字",
+        "保留现有 Gemini/OpenAI variant 说明"
+      ],
+      "files": [
+        "docs/integration.md"
+      ],
+      "module": "councilflow/docs",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "docs",
+      "verification_commands": [
+        "python -c \"c=open('docs/integration.md',encoding='utf-8').read(); assert 'claude-haiku' in c or 'Claude variant' in c or 'Claude variants' in c; assert 'gemini-1.5-flash' in c; print('OK')\""
+      ],
+      "review_checklist": [
+        "新增 Claude variant 说明段/表",
+        "透传机制明确",
+        "Gemini/OpenAI 说明未被删/改"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T11:52:56.559Z",
+      "updated_at": "2026-04-20T11:52:56.559Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-098",
+      "title": "CHANGELOG + release-notes + pyproject bump 到 0.1.4",
+      "description": "pyproject 0.1.3→0.1.4 patch bump。CHANGELOG [0.1.4] Added + Fixed。docs/release-notes-0.1.4.md 1000-2500 字符短版。",
+      "dependencies": [
+        "TASK-094",
+        "TASK-095",
+        "TASK-096",
+        "TASK-097"
+      ],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "pyproject version = 0.1.4",
+        "CHANGELOG 含 [0.1.4]",
+        "release-notes > 1000 字符"
+      ],
+      "files": [
+        "pyproject.toml",
+        "CHANGELOG.md",
+        "docs/release-notes-0.1.4.md"
+      ],
+      "module": "councilflow/release",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "docs",
+      "verification_commands": [
+        "python -c \"import tomllib; assert tomllib.load(open('pyproject.toml','rb'))['project']['version'] == '0.1.4'\"",
+        "python -c \"c=open('CHANGELOG.md',encoding='utf-8').read(); assert '[0.1.4]' in c\"",
+        "python -c \"c=open('docs/release-notes-0.1.4.md',encoding='utf-8').read(); assert len(c) > 1000\""
+      ],
+      "review_checklist": [
+        "patch bump（非 minor）",
+        "CHANGELOG Added + Fixed 并列",
+        "release-notes 标注零协议/零 schema 变动"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T11:52:56.559Z",
+      "updated_at": "2026-04-20T11:52:56.559Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-099",
+      "title": "0.1.4 发布 gate",
+      "description": "完整 pytest + ruff 全绿。D:/AIProjects/test/cf-0.1.4-smoke/ clean 项目 smoke：council delegate --model claude-haiku 验证 adapter 接受；动态路由 claude-haiku 验证 metadata.claude_variant。产出 docs/claude-variant-smoke-report-2026-04-20.md。无破坏性 git。",
+      "dependencies": [
+        "TASK-094",
+        "TASK-095",
+        "TASK-096",
+        "TASK-097",
+        "TASK-098"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "完整 pytest 全绿",
+        "ruff clean",
+        "pyproject 0.1.4",
+        "smoke 验证 --model claude-haiku",
+        "动态路由 smoke",
+        "smoke report 齐全",
+        "无破坏性 git"
+      ],
+      "files": [
+        "docs/claude-variant-smoke-report-2026-04-20.md"
+      ],
+      "module": "councilflow/release",
+      "needs_manual_review": true,
+      "acceptance_mode": "milestone_manual",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "pytest tests/ -q",
+        "ruff check src/ tests/",
+        "python -c \"import tomllib; assert tomllib.load(open('pyproject.toml','rb'))['project']['version'] == '0.1.4'\"",
+        "test -f docs/claude-variant-smoke-report-2026-04-20.md"
+      ],
+      "review_checklist": [
+        "完整 pytest 全绿",
+        "完整 ruff clean",
+        "smoke 在 cf-0.1.4-smoke/ 独立项目跑",
+        "命令构造含 --model haiku",
+        "routing.json metadata 含 claude_variant",
+        "smoke-report 完整",
+        "无 git filter-repo/force push/reset --hard"
+      ],
+      "stage_gate": true,
+      "status": "todo",
+      "created_at": "2026-04-20T11:52:56.559Z",
+      "updated_at": "2026-04-20T11:52:56.559Z",
+      "commit_hash": "",
+      "notes": ""
     }
   ]
 }
