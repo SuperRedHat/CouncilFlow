@@ -57,273 +57,50 @@
 ### 6.1 主控
 **当前会话所在的 AI，就是当前主控。**
 
-例如：
-- 如果当前在 `Codex` 中执行工作流，那么 `Codex` 是当前主控
-- 如果当前在 `Claude Code` 中执行工作流，那么 `Claude Code` 是当前主控
-- 如果当前在 `Gemini CLI` 中执行工作流，那么 `Gemini CLI` 是当前主控
-
 规则：
 1. 默认由当前主控直接执行当前步骤。
 2. 只有在需要别的模型参与时，才调用 `CouncilFlow`。
 3. `CouncilFlow` 不替代主控，只增强主控。
 
 ### 6.2 角色
-系统定义角色，但**不绑定具体模型**。
-用户可以按项目、阶段或单次流程自由配置角色对应的模型。
+系统定义角色，但**不绑定具体模型**。用户可以按项目、阶段或单次流程自由配置角色对应的模型。
 
-V1 的最小完整角色集合为：
-
-- `planner`
-- `architect`
-- `implementer`
-- `tester`
-- `reviewer`
-- `fixer`
-- `advisor`
-- `synthesizer`
-
-角色含义：
-- `planner`：任务拆解与执行顺序规划
-- `architect`：架构设计、边界与技术路线判断
-- `implementer`：代码实现
-- `tester`：测试设计、执行与失败分析
-- `reviewer`：代码评审与风险识别
-- `fixer`：基于评审或测试结果修复问题
-- `advisor`：给建议，不直接承担主要执行责任
-- `synthesizer`：收敛讨论结果并输出最终结论
+V1 的最小完整角色集合为：`planner` / `architect` / `implementer` / `tester` / `reviewer` / `fixer` / `advisor` / `synthesizer`。
 
 ### 6.3 讨论
-讨论有两种使用方式：
-
-1. **独立讨论**
-   - 通过 `project-discuss`
-   - 不绑定某个具体步骤
-   - 适合架构讨论、路线选择、问题排查
-
-2. **嵌入式讨论**
-   - 通过 `discuss` 参数嵌入到其它 `project-*` skill 中
-   - 例如：`project-design discuss claude`
-   - 含义：当前主控在执行 `project-design` 前，先和 `claude` 讨论，再由主控收敛并继续当前流程
+讨论有两种使用方式：**独立讨论**（`project-discuss`）和**嵌入式讨论**（其它 `project-*` skill 的 `discuss` 参数）。
 
 ## 7. 主工作流与产品命令层
 
 ### 7.1 开发工作流入口
-V1 中，用户的主要入口仍然是现有 `project-*` 工作流，而不是手动输入大量 `council` 命令。
-
-主要入口包括：
-- `project-init`
-- `project-design`
-- `project-plan`
-- `project-next`
-- `project-review`
-- `project-ask`
-- `project-change`
-- `project-status`
-- `project-resume`
-- 新增：`project-discuss`
+主要入口：`project-init` / `project-design` / `project-plan` / `project-next` / `project-review` / `project-ask` / `project-change` / `project-status` / `project-resume` / `project-discuss`。
 
 ### 7.2 产品内部命令层
-`CouncilFlow` 自身提供一组英文 CLI 命令，供主控调用，也允许高级用户直接使用。
-
-建议命令集：
-- `council discuss`
-- `council delegate`
-- `council synthesize`
-- `council status`
-
-其中：
-- `council discuss`：发起多模型讨论
-- `council delegate`：把某个角色任务交给非主控模型执行
-- `council synthesize`：汇总多个模型输出为可继续使用的结果
-- `council status`：查看当前 sidecar 运行状态和最近结果
-
-这些命令默认应被视为：
-- **主控内部调用的底层命令**
-- 而不是普通用户日常主入口
+`council discuss` / `council delegate` / `council synthesize` / `council status`。
 
 ## 8. discuss 参数与讨论协议
 
-### 8.1 discuss 参数适用范围
-以下技能应支持 `discuss` 参数：
-- `project-init`
-- `project-design`
-- `project-plan`
-- `project-next`
-- `project-review`
-- `project-ask`
-- `project-change`
+### 8.1 适用范围
+`project-init` / `project-design` / `project-plan` / `project-next` / `project-review` / `project-ask` / `project-change` 均支持 `discuss` 参数。
 
-示例：
-- `project-design discuss claude`
-- `project-plan discuss claude,gpt`
-- `project-next discuss gemini`
-
-### 8.2 discuss 触发规则
-1. 默认不启动多模型讨论。
-2. 只有显式写了 `discuss <model>` 或 `discuss <model1,model2>` 才启动。
-3. 如果没有指定额外模型，则按当前主控单模型执行。
-4. 如果指定了额外模型，则在当前步骤前触发讨论，由主控收敛结果并继续该步骤。
-
-### 8.3 与当前主控相同模型的讨论
-如果用户指定的讨论模型与当前主控相同，则系统应给出明确提醒，而不是静默继续。
-
-例如：
-- 当前主控为 `codex`
-- 用户输入：`project-design discuss codex`
-
-预期行为：
-- 不启动跨模型讨论
-- 提示用户：
-  - 当前指定模型与主控相同
-  - 如果希望进行多模型讨论，请指定不同模型
-
-如果输入：
-- `project-design discuss codex,claude`
-
-预期行为：
-- 自动忽略与主控重复的 `codex`
-- 只让 `claude` 参与
-- 可选提示：已忽略与当前主控相同的模型
-
-### 8.4 参与者规则
-一次 discuss 至少包含：
-- 当前主控
-- 一个或多个额外模型
-- 可选的人类用户输入
-
-### 8.5 讨论轮次规则
-1. 当显式指定了额外模型时，启动多轮讨论。
-2. 当讨论场景是“主控 + 1 个额外模型”时：
-   - 最多允许 **5 轮**讨论。
-3. 这不是强制跑满 5 轮，而是：
-   - **最多 5 轮**
-   - **满足收敛条件即可提前结束**
-4. 不做无限轮讨论。
-
-### 8.6 提前结束规则
-如果在某一轮后，额外模型已经明确表示：
-- 同意当前方案
-- 没有新的实质性补充
-- 没有新的异议或风险
-
-那么主控模型可以直接结束讨论，不需要继续跑满剩余轮次。
-
-主控判断收敛时至少参考以下信号：
-- 对方模型明确表达认可或无新增意见
-- 当前轮只是在重复已有观点
-- 用户没有插入新的约束或反驳
-
-### 8.7 讨论流程
-建议固定为：
-
-1. **主控 framing**
-   - 当前主控先整理问题、上下文、目标、约束
-2. **外部模型首轮意见**
-   - 每个额外模型独立给出意见
-3. **可选交叉回应**
-   - 如果有多个模型，允许它们基于彼此摘要再回应一轮或多轮
-4. **用户插话**
-   - 用户可以在任意轮后补充约束、反驳、缩小范围
-5. **最终综合**
-   - 由当前主控输出最终结论
-
-### 8.8 输出格式
-每次 discuss 最终至少输出：
-- `question`
-- `participants`
-- `key_options`
-- `agreements`
-- `disagreements`
-- `recommended_decision`
-- `open_questions`
-- `next_step`
-
-### 8.9 sidecar 触发规则
-- 如果 discuss 后没有额外模型剩余，则不调用 `CouncilFlow`
-- 如果当前步骤目标角色绑定的是当前主控，也不调用 `CouncilFlow`
-- `CouncilFlow` 只在“真的有非主控模型参与”时才激活
+### 8.2-8.9
+- 默认不启动多模型讨论；只有显式 `discuss <model>` 才启动
+- 与主控相同模型自动忽略或提醒
+- 当主控 + 1 个额外模型时，最多 5 轮，可提前结束
+- 流程：主控 framing → 外部模型首轮 → 可选交叉回应 → 用户插话 → 最终综合
+- 输出字段：`question` / `participants` / `key_options` / `agreements` / `disagreements` / `recommended_decision` / `open_questions` / `next_step`
+- 去重后无额外模型不调用 sidecar
 
 ## 9. 角色执行规则
-
-### 9.1 默认执行规则
-1. 默认由当前主控执行步骤。
-2. 如果该步骤目标角色绑定的模型就是当前主控，则直接原生执行。
-3. 只有当目标角色绑定的是非主控模型时，才调用 `CouncilFlow`。
-
-示例：
-- 当前主控是 `Codex`
-- `implementer=codex`
-  - 直接由 `Codex` 原生执行
-- `implementer=claude`
-  - 通过 `CouncilFlow` 委派给 `Claude`
-
-### 9.2 默认角色映射（建议）
-系统必须支持自由覆盖，但默认推荐如下：
-
-- `planner = codex`
-- `architect = codex`
-- `implementer = claude`
-- `tester = claude`
-- `reviewer = codex`
-- `fixer = codex`
-- `advisor = gpt`
-- `synthesizer = codex`
-
-说明：
-- `synthesizer` 作为角色概念保留
-- 但在 `discuss` 流程中，最终结论默认由**当前主控**输出，而不是额外调用独立模型
+1. 默认由当前主控执行步骤
+2. 角色映射到主控则直接原生执行
+3. 只有映射到非主控模型时才调用 `CouncilFlow`
 
 ## 10. 命名与语言规则
-
-### 10.1 命令与参数语言
-以下内容统一使用英文：
-- CLI 命令
-- role 名称
-- 参数名称
-- 配置键名
-- skill 名称
-
-示例：
-- `planner`
-- `architect`
-- `implementer`
-- `discuss`
-- `output_language`
-- `project-discuss`
-
-### 10.2 skill 命名规则
-`project-*` 继续保留英文命名，不新增中文 skill 名。
-
-正式技能集合建议为：
-- `project-init`
-- `project-design`
-- `project-plan`
-- `project-next`
-- `project-review`
-- `project-ask`
-- `project-change`
-- `project-status`
-- `project-resume`
-- `project-discuss`
-
-### 10.3 输出语言规则
-系统默认输出语言为用户配置语言，初始默认值为：
-- `zh-CN`
-
-支持至少：
-- `zh-CN`
-- `en`
-
-要求：
-- 命令和参数始终使用英文
-- 最终输出、解释、总结按指定语言返回
-- 原始模型回答可保留原文
-- `synthesizer` 或主控输出的最终综合结论按目标输出语言生成
+CLI 命令、role 名称、参数名、配置键名、skill 名称统一英文；输出默认中文（`zh-CN`），可切换。
 
 ## 11. 本地状态与文件结构
-V1 使用本地文件作为权威状态，不使用数据库。
-
-建议目录：
+V1 使用本地文件作为权威状态。建议目录：
 ```text
 .council/
 ├─ config.yaml
@@ -336,431 +113,115 @@ V1 使用本地文件作为权威状态，不使用数据库。
 └─ artifacts/
 ```
 
-职责：
-- `config.yaml`：角色映射、语言设置、默认讨论策略
-- `state.json`：当前流程状态、最近运行结果
-- `plans/`：规划产物
-- `discuss/`：讨论记录和综合结论
-- `delegations/`：委派任务包与结果
-- `runs/`：运行日志
-- `transcripts/`：完整交互记录
-- `artifacts/`：导出的结构化产物
-
 ## 12. 技术方向
-V1 技术选型建议为：
+主语言 Python；CLI 交互；YAML/JSON/Markdown 状态存储；优先接官方 CLI，API 作为 advisor 路径。
 
-- 主语言：`Python`
-- 交互方式：`CLI`
-- 状态存储：`YAML / JSON / Markdown`
-- 外部模型接入：
-  - 优先接官方 CLI
-  - API 作为顾问类补充路径
-- 默认不依赖常驻后端
-
-选择 Python 的理由：
-- 适合快速实现 CLI
-- 易于调用外部 CLI 工具
-- 易于处理本地文件状态
-- 足以支撑“薄 sidecar”而无需引入服务端复杂度
-
-## 13. 核心功能列表
-
-### Must Have
-1. 支持在 `Codex`、`Claude Code` 和 `Gemini CLI` 下工作
-2. 当前主控自动识别
-3. 支持 `project-discuss`
-4. 支持其它 `project-*` skill 使用 `discuss` 参数
-5. 支持角色到模型的配置映射
-6. 当角色映射到主控时直接原生执行
-7. 当角色映射到非主控模型时调用 `CouncilFlow`
-8. 支持多模型讨论和最终综合
-9. 支持用户在讨论中插入意见
-10. 支持本地状态恢复
-11. 支持配置输出语言
-
-### Should Have
-1. 支持多个模型列表参与 discuss
-2. 支持自动忽略与当前主控重复的模型
-3. 支持把讨论结果沉淀为结构化文件供后续 skill 使用
-4. 支持对实现、测试、评审、修复的最小委派链路
-5. 支持高级用户直接调用 `council *` 命令
-
-### Could Have
-1. 更细的多轮讨论控制
-2. 更丰富的讨论模式（advisor / debate / facilitated）
-3. 更强的导出格式
-4. 简单 TUI 展示
+## 13. 核心功能列表（Must / Should / Could Have）
+详见历史版本。
 
 ## 14. 非功能性要求
-- **简单**：不引入不必要的系统组件
-- **稳定**：默认流程尽可能少依赖额外桥接
-- **透明**：每一步是否调用了外部模型必须可见
-- **可恢复**：中断后能从本地状态继续
-- **可配置**：角色映射和输出语言可改
-- **三主控兼容**：同一套工具必须同时适配 Codex、Claude Code 与 Gemini CLI
-- **低干扰**：当所有角色都映射到当前主控时，不应触发 sidecar
+简单、稳定、透明、可恢复、可配置、三主控兼容、低干扰。
 
 ## 15. 验收标准
-V1 完成时，至少满足：
-
-1. 在 `Codex` 中可以将其作为主控工作流使用
-2. 在 `Claude Code` 中也可以将其作为主控工作流使用
-3. 在 `Gemini CLI` 中也可以将其作为主控工作流使用
-4. `project-discuss` 可以发起多模型讨论并得到最终综合结果
-5. `project-design discuss claude` 这类嵌入式讨论可以工作
-6. 如果用户指定 `discuss` 的模型与当前主控相同，系统会给出正确提醒
-7. 当某角色映射到当前主控时，系统不会绕路调用 `CouncilFlow`
-8. 当某角色映射到非主控模型时，系统能通过 `CouncilFlow` 发起委派
-9. 所有关键状态都能从本地 `.council/` 恢复
-10. 默认输出可为中文，且支持切换输出语言
-11. 整个系统不依赖数据库、Web UI 或常驻后端
-12. `.workflow-core` 的共享 `project-*` skill 源可稳定同步到 `Codex`、`Claude Code` 与 `Gemini CLI`
+V1 完成时，三主控均可使用；discuss / delegate / project-discuss 工作正常；状态可从 `.council/` 恢复；共享 skills 同步覆盖三端。
 
 ## 16. 约束与假设
-1. 当前项目继续使用现有 `project-*` 作为开发工作流
-2. `CouncilFlow` 是新产品本体，不再沿用旧产品方向
-3. 第一版正式主控支持：
-   - `Codex`
-   - `Claude Code`
-   - `Gemini CLI`
-   - `GPT` 继续作为可选讨论参与者或补充角色
-4. 第一版不追求复杂平台能力，只追求多模型协作主路径稳定
-5. 只有在非主控模型真正参与时，才启用 sidecar
+继续使用 `project-*` 作工作流；`CouncilFlow` 不沿用旧产品方向；主控支持 Codex / Claude Code / Gemini CLI；不追求平台能力，只追求协作主路径稳定。
 
 ## 17. 结论
-`CouncilFlow` 的最终定位不是“另一个 AI 平台”，而是：
+`CouncilFlow` 的最终定位不是"另一个 AI 平台"，而是一个服务于三主控的、主控感知的、多模型协作 sidecar CLI。
 
-> 一个服务于 `Codex`、`Claude Code` 与 `Gemini CLI` 的、主控感知的、多模型协作 sidecar CLI。
+## 18-30. 历史变更记录
 
-## 18. 变更记录（2026-04-16）
-本次变更正式将 `Gemini CLI` 从“可选讨论参与者或补充角色”提升为**产品级主控**支持范围，并要求 `.workflow-core` 的共享 `project-*` skill 源同步覆盖 `Codex`、`Claude Code` 和 `Gemini CLI`。
+§18-§30 的历史变更记录内容过长，**详见 git 历史中的先前版本**（commits `ef61ba1` 及之前）。主要内容摘要：
+- §18 (2026-04-16): Gemini CLI 从可选讨论角色提升为产品级主控
+- §19 (2026-04-16): 全局安装与备份
+- §20 (2026-04-17): 共享 discuss 工作流补齐
+- §21 (2026-04-17): Claude commands 包装层
+- §22 (2026-04-17): 自动角色分发与项目级默认配置
+- §23 (2026-04-17): discuss 协议升级（initial_position + min_rounds 引入）
+- §24 (2026-04-17): workflow 强制路由硬约束
+- §25 (2026-04-17): provider 活跃度监控与流式执行
+- §26 (2026-04-17): 全技能自动化阶段机与全链路硬约束
+- §27 (2026-04-18): reviewer 闭环与 tester 预检强化
+- §28 (2026-04-18): sidecar isolation 与非递归委派
+- §29 (2026-04-18): code-review 综合修复批次（34 条修复清单）
+- §30 (2026-04-19): 分发与安装（AutoSkills 独立仓库 + bootstrap + LICENSE + readme 重写）
 
-阶段策略：
-1. 允许先完成 `Codex-first` 稳定性硬化，避免 `TASK-008` 在 Claude 配额重置前成为唯一阻塞点。
-2. `Gemini CLI` 的主控接入与共享 skill 扩展可以和当前 `Claude Code` release-gate 并行推进。
-3. 等 `Claude Code` 配额恢复后，再执行三主控最终 gate 与共享 skill 全量同步验收。
+## 31. 变更记录（2026-04-20，工作流 token 效率优化轮）
 
-本节覆盖并 supersede 文中所有“仅支持 Codex 与 Claude Code 作为主控”的旧表述。
+本次变更基于对 codex 的 5 轮 discuss（记录：`.council/discuss/disc_20260420T065559937703Z/summary.md`）与对工作流 token 成本的深度分析，启动一轮**面向 token 效率**的优化迭代。目标是在**不牺牲交付质量与审计可回放性**的前提下，给用户更丰富的模型搭配能力与更智能的讨论收敛策略。
 
-## 19. 变更记录（2026-04-16，全局安装与备份）
-本次变更将 `CouncilFlow` 的交付范围从“仓库内完成并可手动同步”扩展为“可安全安装到三端全局环境”。
+明确排除：**link folding（同模型链路折叠）** — 尽管 2026-04-19 曾讨论过这个优化，但基于 codex 的反馈（缺少基线数据 / generation 一致性缺失 / 过早协议化），决定本轮不做，留给基线数据产出后再评估。
 
-新增产品要求：
-1. 在覆盖任意全局 `project-*` skill 或 MCP 配置之前，必须先生成可恢复备份。
-2. 备份范围至少包括：
-   - `C:\Users\David Zhai\.workflow-core\skills\project-*`
-   - `C:\Users\David Zhai\.codex\skills\project-*`
-   - `C:\Users\David Zhai\.claude\skills\project-*`
-   - `C:\Users\David Zhai\.gemini\skills\project-*`
-   - `C:\Users\David Zhai\.codex\config.toml`
-   - `Claude Code` 的用户级 MCP 配置来源
-   - `C:\Users\David Zhai\.gemini\settings.json`
-3. 必须提供一键化安装入口，把 `.workflow-core` 中当前确认版 `project-*` skills 安装到 `Codex`、`Claude Code` 与 `Gemini CLI` 的全局目录，而不是依赖手工复制。
-4. 必须为当前共享 workflow 所需的 MCP 提供统一安装与校验机制；现阶段至少覆盖 `project-manager`，并优先使用各模型官方 CLI 完成注册。
-5. 必须提供可读的安装与回滚说明，使用户在新机器、重装或回退时可以复用同一套流程。
-6. `.workflow-core\skills\project-*` 继续作为共享 skill 的唯一源，三端目标目录不再允许长期手工分叉维护。
+### 31.1 Phase 1：RFC + 基线测量（不改 Python 源码）
 
-阶段策略：
-1. 先备份，再覆盖。
-2. 先完成自动化安装与校验，再进行真实会话 smoke。
-3. 任一安装步骤失败时，必须保留完整快照并停止后续覆盖。
-
-## 20. 变更记录（2026-04-17，共享 discuss 工作流补齐）
-本次变更聚焦 `.workflow-core` 共享 `project-*` skills 与 `CouncilFlow` discuss 能力之间尚未闭环的缺口，目标是让共享 workflow 真正达到 PRD 中承诺的讨论能力覆盖范围。
+**动机**：在任何代码改动前，先建立"当前 token 成本实际分布"的硬数据。防止基于估算（如"40-60% 节省"）做出错误的优化决策。
 
 新增产品要求：
-1. 共享 skill 源必须新增独立的 `project-discuss`，作为不绑定具体开发阶段的正式讨论入口。
-2. `project-init`、`project-ask`、`project-next` 必须补齐对显式 `discuss <model>` 或 `discuss <model1,model2>` 的说明与调用约定，不再只由 `project-design`、`project-plan`、`project-change`、`project-review` 零散支持。
-3. 所有共享 skill 在引用 discuss 产物时，必须遵循 `CouncilFlow` 的真实 artifact 契约：
-   - 优先使用 `council discuss` 返回的 `data.summary_path`
-   - 或读取 `.council/discuss/<discussion_id>/summary.md`
-   - 不再引用不存在的 `.council/discuss/latest/summary.md`
-4. 共享 skill 文案必须明确说明 discuss 为显式可选能力，而不是默认总会触发的隐藏步骤。
-5. 本次变更完成后，`.workflow-core\skills\project-*` 中的共享定义应再次成为 `Codex`、`Claude Code` 与 `Gemini CLI` 的一致真源，不允许三端继续长期存在 discuss 相关文案漂移。
+1. 必须撰写一份 RFC 草案 `docs/rfc-workflow-token-optimization.md`，定义本轮优化目标、非目标、codex discuss 的关键结论、以及"最薄协议 + controller 本地判定"这一指导原则
+2. 必须实现独立可运行的基线测量工具 `scripts/measure_ceremony_tokens.py`，分析 `.council/delegations/` 下的 artifact 产出 token 使用报告
+3. 必须对当前仓库跑一次真实基线，产出 `docs/ceremony-baseline-<date>.md`，作为 Phase 2 决策依据
+4. Phase 1 不引入任何 Python 源码改动；所有交付物都是 docs 或 standalone script
 
-范围说明：
-1. 本次变更只补齐共享 workflow 层，不扩展新的产品 CLI 命令，也不改变 `CouncilFlow` 本体的 provider 行为。
-2. 本次变更完成后，需要重新同步共享 skills 到 `C:\Users\David Zhai\.codex\skills`、`C:\Users\David Zhai\.claude\skills` 与 `C:\Users\David Zhai\.gemini\skills`。
+### 31.2 Phase 2（A）：动态角色路由
 
-## 21. 变更记录（2026-04-17，Claude commands 包装层）
-本次变更聚焦 `Claude Code` 的 slash 命令展示兼容性。在不改变共享 workflow 真相源的前提下，为 `Claude Code` 增加一层**可生成、可回滚、可重新安装**的 commands 包装层。
+**动机**：当前 `.council/config.yaml` 的 `roles.<role>: <model>` 是静态单选，无法表达"tester 用便宜模型 / architect 用强模型 / fallback 链 / 按 task 复杂度动态路由"这些真实需求。限制了用户在质量与成本之间做精细权衡的能力。
 
 新增产品要求：
-1. `.workflow-core\skills\project-*` 继续作为共享 workflow 的唯一真相源，不允许把业务规则复制到第二套 Claude 专用文档中长期手工维护。
-2. `Claude Code` 允许新增一层派生产物：`C:\Users\David Zhai\.claude\commands\project-*.md`，仅用于 slash 命令描述展示和入口适配。
-3. 这层 commands 包装文件必须由共享源自动生成，而不是手工散落维护；其内容应明确引用对应的 `C:\Users\David Zhai\.claude\skills\project-*\SKILL.md`。
-4. `Codex` 与 `Gemini CLI` 的现有 skill 安装方式不应因此改变；本次变更不得要求另外为它们引入额外包装层。
-5. 全局备份、恢复、安装和同步流程必须把 `Claude Code` commands 包装层视为受管产物，保证新机器安装、重复安装和回滚都能恢复到一致状态。
-6. 本次变更完成后，`Claude Code` 中的 `project-*` slash 入口描述不应再退回显示 YAML frontmatter 第一行，例如 `--- (user)`。
+1. **扩展 `RoleMapping` schema**：每个角色的 value 允许是 `str`（简写兼容）或 `list[RoleRoute]`（动态路由）
+2. **`RoleRoute` 模型**：`model: str`（目标模型），`when: str | None`（受限表达式），`fallback: str | list[str] | None`（失败降级链）
+3. **向后兼容硬红线**：现有所有简写格式的 `.council/config.yaml` 必须 0 修改继续生效；`roles.implementer: claude` 等价于 `[{model: claude}]`
+4. **安全红线**：`when` 表达式必须用**受限 AST 求值器**，严禁任意 `eval()`、函数调用、属性链深度超过 1 层、import；仅支持 `==`/`!=`/`in`/`not in`/`and`/`or`/`not`/基本比较 + `task.<field>` 一层访问
+5. **路由引擎**：`src/councilflow/controller/role_router.py` 按配置顺序尝试 `when` 条件，首个命中即返回；所有路由决策日志落 `.council/runs/<run_id>/routing.json` 作审计
+6. **fallback 语义**：primary adapter 调用失败时按 `fallback_chain` 顺序重试；仅在"adapter 无法启动 / 返回 process_error"等结构化失败时触发，不在"质量不满意"等主观场景降档
+7. **配置权在用户**：**禁止**硬编码任何"推荐降档"规则；`templates/default-config.yaml` 保持简写默认（全主控），在注释里以 example 形式展示动态路由用法，但**不**默认启用
+8. **新增错误类**：`RoutingNoMatchError`（`kind="routing_no_match"`）带 role + task_context 摘要，可结构化向 caller 上报
 
-范围说明：
-1. 本次变更不改变 `CouncilFlow` 本体命令语义，只处理共享 workflow 在 `Claude Code` 上的入口适配。
-2. 本次变更优先保证“单一真相源 + 自动派生 + 可打包安装”，而不是追求三端物理文件格式完全一致。
+### 31.3 Phase 3（B）：语义 min_rounds 收敛
 
-修复说明（2026-04-17）：
-在真实安装后发现 `Claude Code` 会同时暴露 `.claude\skills\project-*` 与 `.claude\commands\project-*.md`，造成 slash 列表重复和说明错乱。自本次修复起：
-1. `Claude Code` 的 `project-*` 运行时入口只保留受管的 `commands` 包装层；
-2. `.workflow-core\skills\project-*` 仍是唯一真相源；
-3. `Codex` 与 `Gemini CLI` 继续使用各自 `skills` 目录，不受该修复影响。
-
-更正说明（2026-04-17）：
-在重新核对 Anthropic 官方当前文档后，确认 `skills` 仍然是 `Claude Code` 推荐的正式路径，`commands` 只是兼容机制。因此上一轮“只保留 commands”的修复方向被撤销，新的交付要求改为：
-1. `Claude Code` 恢复为使用 `.claude\skills\project-*\SKILL.md` 作为正式 `project-*` 入口；
-2. 已生成的 `.claude\commands\project-*.md` 只视为需要清理的 legacy wrapper，不再作为安装目标；
-3. `.workflow-core\skills\project-*` 继续作为三端共享真相源；
-4. 为降低 Claude 对 frontmatter 的解析异常风险，共享 `project-*` skills 的 `description` 将统一为更稳定的单行写法。
-
-## 22. 变更记录（2026-04-17，自动角色分发与项目级默认配置）
-本次变更聚焦 `config.yaml` 的产品语义修正，目标是把它从“可选路由提示”升级为“项目级自动分发策略”。用户在每个项目目录中的 `.council/config.yaml` 应真正决定角色执行去向和默认讨论参与者，而不是只在手工输入 `--model` 时才偶尔生效。
+**动机**：当前 `discussion.min_rounds=2` 是硬轮数（PRD §23 引入，防首轮橡皮图章）。但它对"外部首轮就给出明确且论据充分的反馈"和"外部首轮确实无新信息"两类场景都强制再跑一轮，产生无价值 token 消耗。
 
 新增产品要求：
-1. **项目级配置成为自动分发真源**：当当前机器已安装并可调用 `CouncilFlow` 时，`project-*` 工作流在进入实现、评审、修复、架构等角色步骤前，必须优先读取当前项目 `.council/config.yaml` 的映射结果，而不是默认让主控先亲自执行。
-2. **本地执行从“默认行为”改为“路由结果或降级结果”**：
-   - 如果某角色映射到当前主控，则本地执行；
-   - 如果某角色映射到非主控模型，则自动委派；
-   - 如果当前环境没有安装或无法调用 `CouncilFlow`，才允许退回到“主控直接执行”的降级路径。
-3. **讨论默认模型进入项目配置**：为满足用户“即使只写 `/project-discuss` 或 `project-init discuss` 也能自动选模型”的需求，项目配置需要新增一组讨论策略字段，用来承担用户所说的 “discuss 角色” 职责。`project-discuss` 与嵌入式 `discuss` 在未显式给出模型列表时，必须优先使用该项目级默认配置。
-4. **`config.yaml` 必须项目本地化**：每个开发项目目录下都应有自己的 `.council/config.yaml`，允许不同项目维护不同的角色分工与讨论策略。
-5. **缺失配置时自动补齐**：如果用户在某个项目目录下首次调用 `CouncilFlow` 或依赖它的 `project-*` 工作流，但项目中还没有 `.council/config.yaml`，系统应从 `CouncilFlow` 安装目录内置的默认模板复制一份到项目目录，再继续运行，而不是静默回退到硬编码默认值。
-6. **共享 workflow 需要自动遵循配置**：`.workflow-core` 中的 `project-init`、`project-design`、`project-plan`、`project-next`、`project-review`、`project-change`、`project-discuss` 等共享 skills，在 `CouncilFlow` 可用时必须优先采用自动角色分发与默认讨论配置，不再把“主控亲自执行”写成默认主路径。
+1. **扩展 `Discussion` schema**：新增 `convergence_policy: "strict_count" | "semantic" | "hybrid"`（默认 `strict_count` 保证向后兼容）与 `min_rounds_by_topic: dict[str, int] | None`
+2. **`strict_count` 模式**：保留现行所有逻辑不变（默认模式，任何现有 config 行为不变）
+3. **`semantic` 模式**：使用已有的 `DiscussionTurn.introduced_new_info` 字段（不额外调 LLM），连续 N 轮（默认 N=1）`introduced_new_info=false && no_new_disagreements` 才算收敛；`min_rounds` 保留作硬底线
+4. **`hybrid` 模式**：从 question 关键词推断 topic（`architecture` / `review` / `clarification` / `other`），查 `min_rounds_by_topic` 取刚性底线（如 architecture=2，clarification=1），底线内走 strict_count，底线后切 semantic
+5. **新增 `ConvergenceDecision` 类**：`converged: bool`、`reason: str`、`next_action`；orchestrator 每轮结束调 evaluator 而不是内联判断
+6. **Discussion summary artifact 新增字段**：`convergence_trace: list[{round, reason, decision}]`，提供完整的收敛决策回放
+7. **保留现行不变**：无外部参与者时的 short-circuit、`--controller-position` 本地立场入口、外部模型围绕 `initial_position` 评论的协议
 
-范围说明：
-1. 本次变更不仅涉及 `CouncilFlow` Python 本体，还涉及 `.workflow-core` 中的共享 `project-*` skills、集成文档和默认配置模板。
-2. 为避免把“执行角色”和“讨论参与者”混成同一语义层，本次设计优先把讨论默认策略建模为项目级 discussion 配置，而不是简单复用现有 execution role 字段。
-3. 本次变更完成后，当前文档中所有“默认由当前主控直接执行步骤”的旧表述，均应理解为已被本节 supersede；新语义应为“默认先按项目配置路由，只有工具缺失或显式路由到主控时才本地执行”。
-
-## 23. 变更记录（2026-04-17，discuss 协议升级）
-本次变更聚焦 `discuss` 机制本身的讨论质量，目标是把当前更偏“外部咨询 + 主控收敛”的流程升级为更完整的“主控立场 -> 外部评论 -> 主控回应 -> 多轮收敛”协议。
+### 31.4 观测 + 文档 + 发布
 
 新增产品要求：
-1. **主控先给出 `initial_position`**：一旦进入正式 discuss，当前主控必须先基于问题、上下文、约束和当前判断输出一版明确的初始立场，而不是直接把一个裸问题抛给外部模型。
-2. **外部模型评论主控立场**：额外参与模型的首轮输出应围绕主控的 `initial_position` 展开，至少对其进行支持、补充、质疑、指出风险或提出替代方案，而不是像独立顾问一样各自从零起草完整方案。
-3. **下一轮把外部意见回灌给主控**：多轮 discuss 时，主控下一轮必须显式看到上一轮外部模型对 `initial_position` 的评论摘要，再决定是坚持、修正、收缩还是扩展自己的立场。
-4. **增加 `min_rounds`**：在存在额外讨论参与者时，讨论协议必须支持最小轮次控制，避免“第一轮外部模型简单表示同意”就直接提前收敛。只有达到 `min_rounds` 之后，系统才允许走正常的提前收敛判断。
-5. **保留 `max_rounds` 但不再与提前结束混淆**：`max_rounds` 继续承担上限保护，而 `min_rounds` 用来保证至少完成一轮“主控回应外部意见”的闭环；两者同时生效。
-6. **结构化产物升级**：discussion 的机器可读产物和 summary 需要显式包含：
-   - `initial_position`
-   - 每轮外部反馈摘要
-   - 主控在后续轮次中的回应或修正
-   - `min_rounds`
-   - 最终是在达到何种条件后结束
-7. **无额外参与者时不强行套新协议**：如果 discuss 去重后没有非主控模型参与，仍按现有 warning / short-circuit 行为返回，不为了满足 `min_rounds` 而伪造跨模型回合。
+1. **观测增强**：`council status --recent N` 输出新增"路由命中分布"（每个 role 命中了哪些 model 几次）+"讨论收敛分布"（平均轮数 + 按收敛原因分布）
+2. **共享 skills 文案轻量更新**：在 AutoSkills 的 11 个 `project-*/SKILL.md` 中添加一小段说明"路由结果以 `council delegate` 返回为准，skill 不干预"，但核心业务逻辑不变
+3. **`docs/integration.md` 新增章节**："Dynamic Role Routing"（schema + when 语法 + fallback 语义）+"Discussion Convergence Policy"（三种模式行为对比 + convergence_trace artifact 字段）
+4. **版本 bump 到 0.1.3**；CHANGELOG 和 release-notes 明确列出：schema 扩展 + 向后兼容保证 + 明确不做的事（link folding 推迟）及理由
 
-范围说明：
-1. 本次变更同时涉及 `CouncilFlow` 本体的 discussion 模型、prompt 协议、orchestrator、CLI 输出、配置 schema，以及与之对应的测试与文档。
-2. 本次变更不要求把 discuss 变成无限辩论系统；目标是保证最小闭环质量，而不是追求过度复杂的 debate 框架。
-3. 本节覆盖并 supersede 文中所有“外部模型首轮同意即可直接结束”的旧理解；新的产品语义应为：**只要存在额外参与者，至少完成一次主控回应外部意见的闭环后，才允许进入收敛判断。**
+### 31.5 阶段 gate
 
-## 24. 变更记录（2026-04-17，workflow 强制路由硬约束）
-本次变更聚焦共享 `project-*` 工作流的执行纪律，目标是把当前“建议先委派 / 建议先讨论”的软约束，升级为真正影响执行分支的硬约束。否则即使项目级 `.council/config.yaml` 已经声明角色分工，主控仍可能绕过 `CouncilFlow` 直接编码，导致配置失去产品意义。
+仅 1 个最终 milestone gate（TASK-085）：在 `D:/AIProjects/test/` 下建 clean 测试项目，实际跑 `/project-ask discuss` + `/project-next` 端到端验证 A + B。pytest + ruff 全绿，完整 smoke-report 落盘。
 
-新增产品要求：
-1. **角色型步骤必须先走 `CouncilFlow` 路由**：当 `CouncilFlow` 可用时，任何进入执行角色的 `project-*` skill 都必须先调用对应的 `council delegate --role <role>`，再根据返回结果决定后续动作；主控不得在未调用路由命令前直接开始该角色的工作。
-2. **本地执行只能来自显式路由结果**：在已安装 `CouncilFlow` 的环境里，主控本地执行不再是 skill 可自由选择的默认分支；只有在 `council delegate` 返回 `status = local_execution` 时，当前主控才允许继续本地承担该角色。
-3. **缺少工具才允许降级**：如果当前机器没有安装、无法调用或明确检测不到 `council` 命令，workflow 才允许退回纯主控本地执行；这种降级必须在输出中明确说明，而不是静默发生。
-4. **路由失败应视为 workflow 失败，而不是可接受绕过**：当 `council delegate` 或 `council discuss` 调用失败时，workflow 应如实中止并报告失败原因；不能因为主控“也能做”就直接绕过 sidecar 继续执行。
-5. **所有相关共享 skills 都要遵守同一纪律**：至少 `project-next`、`project-review`、`project-change`、`project-design`、`project-plan`、`project-init`、`project-discuss`、`project-ask` 中涉及角色执行或显式 discuss 的部分，都必须把 `CouncilFlow` 调用写成硬前置步骤，而不是“如果愿意可以先调用”的可选建议。
-6. **`config.yaml` 的意义是约束分工，不是建议偏好**：项目级 `.council/config.yaml` 应继续作为不同项目的独立真相源；一旦 `CouncilFlow` 可用，主工作流就必须服从该项目配置所定义的分工与默认讨论策略。
-7. **验收必须验证“主控不能偷偷跳过”**：新的 workflow 验收不只检查最终能否成功委派，还要检查在真实主控会话里，技能不会在未获得 `local_execution` 前就直接进入本地编码、评审或测试。
+### 31.6 明确不涉及（backlog 留档）
 
-范围说明：
-1. 本次变更优先修改共享 workflow 契约、集成文档和相关自动化验证；必要时再补充 `CouncilFlow` 本体返回字段或辅助命令，以便主控能稳定判定“允许本地执行”与“必须停下报告失败”。
-2. 本节覆盖并 supersede 文中所有“默认由当前主控直接执行步骤”或“主控可按经验直接继续”的旧 workflow 解释；新的产品语义应为：**已安装 `CouncilFlow` 时，先路由、后执行；只有拿到显式路由结果，主控才知道自己能不能继续。**
+本轮**不做**，放进 `docs/workflow-optimizations-backlog.md` 等未来评估：
+- Link folding（等 Phase 1 基线数据 + 小 RFC 再决定）
+- Sidecar 分层（按角色类型差异化 isolation）
+- Artifact 结构化 schema（取代自由 markdown）
+- Provider session 复用（长 discussion 场景才有价值）
+- Turn merging（同 discussion 内相邻同模型回合合并）
+- Delta handoff（增量 artifact 引用）
 
-## 25. 变更记录（2026-04-17，provider 活跃度监控与长时任务容错）
-本次变更聚焦非主控 provider 的执行可观察性与长时任务容错，目标是在保持 route-first 硬约束的前提下，让 `Claude Code CLI`、后续的 `Codex CLI` 与 `Gemini CLI` 在长时间推理或产出阶段不再仅凭固定总时长被粗暴判死。
+### 31.7 不变量总结
 
-新增产品要求：
-1. **provider 超时策略不再只看总时长**：对于支持流式输出或事件输出的 provider，系统需要同时区分：
-   - `total_timeout`：防止无限挂起的总上限；
-   - `idle_timeout`：只有在长时间无新输出、无新事件、无新进度文本时才视为失活。
-2. **优先消费 CLI 已显式暴露的进度信号**：`CouncilFlow` 不需要也不应依赖私有思维链，但应尽可能利用各家 CLI 已公开提供的 stdout/stderr 文本、事件流、partial messages 或状态事件来判断“进程仍在推进”。
-3. **Claude provider 先升级为流式监控主路径**：鉴于 `Claude Code CLI` 已支持 `--output-format stream-json` 等实时事件输出，非主控委派和讨论参与中的 `Claude` provider 应优先切换到流式消费模式，而不是继续只依赖 `subprocess.run(..., timeout=...)`。
-4. **Codex / Gemini 也要纳入统一 provider 运行抽象**：即便本次只先把 `Claude` 落成活跃度监控，provider 层也应抽象出统一的运行配置与活动心跳概念，避免把 `Codex`、`Gemini` 永久锁死在旧的单次阻塞调用模型上。
-5. **失败语义要区分“总超时”和“失活超时”**：结构化错误需要明确告诉宿主 workflow，失败究竟是：
-   - 进程活着但总时长超过上限；
-   - 长时间无输出/无进度被判定失活；
-   - 进程非零退出；
-   - 系统级调用失败。
-6. **项目级配置需要允许调优 provider 执行窗口**：不同项目、不同模型、不同任务长度差异很大，因此 `.council/config.yaml` 需要支持 provider 相关的执行窗口配置，而不是把超时常量硬编码在安装目录里。
-7. **路由硬约束仍然保持**：本次变更的目标是减少误判失败，而不是在 provider 超时后偷偷放开本地绕过；只要 `CouncilFlow` 路由已经启动，宿主 workflow 仍然必须以显式的 `delegated` / `local_execution` / `error` 结果为准。
+- 现有 `.council/config.yaml` 0 修改可用
+- `discussion.convergence_policy` 默认 `strict_count`，现有 discussion 行为不变
+- 67 + 11 = 78 个已完成任务零回改
+- `when` 表达式安全红线（受限 AST 白名单）
+- 配置权完全在用户手里：CouncilFlow 不预设任何"推荐降档"
+- 审计链完整性：所有路由决策 + 收敛决策都有结构化落盘
 
-范围说明：
-1. 本次变更优先覆盖 provider 层、配置 schema、委派/讨论错误语义和相关测试，不要求在这一轮把三家 CLI 全部重写成流式接入。
-2. `Claude` 流式监控会作为第一优先级落地；`Codex`、`Gemini` 至少需要在本轮中完成能力评估、抽象兼容和非回归验证。
+本节覆盖并 supersede 文中"RoleMapping 字段类型只能是 str"与"min_rounds 只能按轮数硬计数"两条旧隐含假设。新语义为：**RoleMapping 支持简写与表达式路由两种形态；discussion 可按配置切换 strict_count/semantic/hybrid 三种收敛策略；二者均完全向后兼容**。
 
-## 26. 变更记录（2026-04-17，全技能自动化阶段机与全链路硬约束）
-本次变更聚焦“所有 `project-*` skills 都必须真正服从项目级分工配置”这一产品语义，目标是把当前仍然存在的半硬约束状态彻底收口成一套**按技能、按阶段、按角色显式路由**的完整自动化工作流。
-
-新增产品要求：
-1. **所有 `project-*` skills 必须先被归类，再决定是否允许跳过角色路由**。新的正式分类为：
-   - **只读/状态型技能**：`project-status`、`project-resume`，只读取状态，不承担执行角色，因此不需要 `delegate`；
-   - **人工 gate / 状态流转型技能**：`project-feedback`，只负责人工验收结果回写、阶段 gate 收口或追加后续任务，除非用户显式要求“继续修复”之类的新执行动作，否则不直接承担代码、测试、评审工作；
-   - **执行型技能**：`project-init`、`project-design`、`project-plan`、`project-change`、`project-ask`、`project-review`、`project-next`，都必须拆成显式角色阶段并按阶段路由；
-   - **讨论型技能**：`project-discuss` 以及其它技能中的嵌入式 `discuss`，一旦触发就是硬前置，不允许主控绕过。
-2. **执行型技能必须定义最小阶段机**。V1 正式阶段机要求至少明确为：
-   - `project-init`：`planner -> synthesizer`
-   - `project-design`：`architect -> synthesizer`
-   - `project-plan`：`planner -> synthesizer`
-   - `project-change`：`architect -> planner -> synthesizer`
-   - `project-ask`：`advisor -> synthesizer`
-   - `project-review`：`reviewer`
-   - `project-next`：`implementer -> tester -> [fixer -> tester]* -> synthesizer`
-3. **`project-next` 的验证与修复不再默认由主控亲自承担**。任务的 `verification_commands` 与 `verification_profile` 应视为 `tester` 阶段的输入，而不是宿主 workflow 自动在本地执行的默认动作。
-4. **测试失败后的修补必须进入 `fixer` 阶段机**。当 `tester` 返回失败结论后，workflow 必须显式进入 `fixer` 路由，再回到 `tester` 复测；主控不得因为“问题不大”而直接本地补丁，除非当前阶段拿到了 `local_execution` 或明确进入 `CouncilFlow` 缺失降级路径。
-5. **主控的职责收缩为 orchestrate、读取 artifact、以及在获得显式许可后的本地执行**。也就是说，主控不再因为“自己也能做”就默许接管实现、测试、修复、评审或分析阶段。
-6. **每个阶段都必须有显式 artifact 消费契约**。至少要明确：
-   - 使用哪个 `role`
-   - 需要读取哪些前序 artifact
-   - 成功后宿主读取哪个 result/summary artifact
-   - 失败时如何停止并上报
-7. **允许不走 `delegate` 的情况必须是白名单，而不是默认宽松**。只有以下两类情况允许本地继续而不先委派：
-   - 技能本身属于只读/状态流转类型；
-   - 该阶段明确拿到 `local_execution`，或当前环境确认不存在/不可调用 `council`。
-8. **人工验收技能不直接“帮忙补做”执行工作**。`project-feedback` 在收到“未通过”或“需要修改”时，应优先推动新修复任务或重新打开现有任务，而不是在没有新路由的前提下直接进入本地修复。
-
-范围说明：
-1. 本次变更同时影响 `CouncilFlow` 本体的集成契约、`.workflow-core` 共享 `project-*` skills、用户文档、发布清单和自动化验证策略。
-2. 本次变更的目标不是把每个技能都变成复杂的编排引擎，而是确保**一旦某个阶段属于执行角色，就必须 route-first**。
-3. 本节覆盖并 supersede 当前文档中所有“部分角色已硬约束即可视为 workflow 完整”的旧理解；新的产品语义应为：**只有当每个技能的执行阶段都拥有明确角色归属、显式路由结果和清晰的失败/降级规则时，这套 workflow 才算真正完成。**
-
-## 27. 变更记录（2026-04-18，reviewer 闭环与 tester 预检强化）
-本次变更聚焦 `project-next` 的后半段闭环质量，目标是在现有 `implementer -> tester -> [fixer -> tester]* -> synthesizer` 的基础上，补齐正式 `reviewer` 阶段，并把 `tester` 从“只会跑命令”升级为“先做环境/权限预检，再执行结构化验证”的稳定执行者。
-
-新增产品要求：
-1. **`project-next` 的正式阶段机升级为 `implementer -> tester -> reviewer -> [fixer -> tester -> reviewer]* -> synthesizer`**。也就是说，`tester` 通过后不能直接视为可收口，而是必须进入显式 `reviewer` 阶段，确认语义缺口、状态机漏洞和契约遗漏是否仍然存在。
-2. **`tester_passed` 与 `review_passed` 必须是两个独立信号**。`tester` 的职责是执行 `verification_commands`、读取 `verification_profile` 并给出验证层结论；`reviewer` 的职责是基于实现产物和 tester artifact 做语义复查、风险识别与代码审查。只有两者都通过，任务才允许进入最终综合与状态流转。
-3. **测试失败与环境阻塞必须区分**。当 `tester` 因 sidecar 权限、CLI allowlist、依赖缺失或工作区环境未就绪而无法执行时，宿主 workflow 必须把它记录为独立的 `permission_blocked` / `environment_not_ready` 类失败，而不是混同为普通 `verification_failed`。
-4. **`tester` 进入执行前必须做最小预检**。至少需要验证：
-   - 当前目标模型 sidecar 可启动；
-   - 本轮 `verification_commands` 所需命令在目标环境中可执行；
-   - 若目标模型对命令执行有显式权限模型（如 `Claude Code`），则需要在 handoff 或预检结果中明确说明所需权限集合。
-5. **`verification_commands` 需要保持结构化，而不是在 workflow 中被拼接成单条 `&&` shell 字符串**。这样 `tester` 才能逐条执行、逐条上报，并把“哪一条失败”“哪一条因权限被拦截”明确写进 artifact。
-6. **`reviewer` 阶段需要结构化 findings 产物**。当 `reviewer` 发现问题时，至少要输出：
-   - `finding_id`
-   - `severity`
-   - `title`
-   - `affected_files`
-   - `rationale`
-   - `required_fix`
-   这样 `fixer` 才能基于结构化 review artifact 工作，而不是只消费一段自由文本。
-7. **`fixer` 必须消费明确来源的失败输入**。`fixer` 的输入应至少来自以下两类之一：
-   - `tester` 的失败 artifact（命令失败、断言失败、环境阻塞）
-   - `reviewer` 的 findings artifact（语义缺口、契约偏差、代码风险）
-   不允许宿主 workflow 只凭临时自然语言总结就进入修复。
-8. **任务执行角色不得越权修改 workflow 状态文件**。`implementer`、`tester`、`reviewer`、`fixer` 的默认允许修改面应聚焦任务相关代码、测试和任务产物；除非任务本身就是在修改 `CouncilFlow` 的 workflow 状态系统，否则不应在 sidecar 实现结果里混入 `.claude/state/*` 这类项目状态文件。
-9. **sidecar 默认不得擅自创建 git commit 或推进任务状态流转**。`implementer`、`tester`、`reviewer`、`fixer` 可以产生代码、测试、review artifact 和修复说明，但最终是否 `git commit`、是否标记任务完成、是否接受产物，必须由宿主 controller 在完成 tester/reviewer 闭环后显式决定。
-
-范围说明：
-1. 本次变更同时影响 `CouncilFlow` 本体的 delegation/review artifact 契约、共享 `project-next` skill、集成文档、发布清单与自动化测试。
-2. 本次变更的目标是把“测试通过但主控仍需肉眼补审”的隐式流程，升级为正式可路由、可验证、可回放的 reviewer 闭环，而不是让 `tester` 无限膨胀成兼做语义评审的超级角色。
-3. 本节覆盖并 supersede 当前文档中所有“tester 通过后即可直接综合收口”的旧理解；新的产品语义应为：**只有当 tester 和 reviewer 都以显式 artifact 给出通过结论时，任务才允许完成流转。**
-
-## 28. 变更记录（2026-04-18，sidecar isolation 与非递归委派）
-本次变更聚焦 delegated sidecar 对宿主 workflow 状态面的污染风险，目标是把当前“在主项目工作区内执行 sidecar，再靠事后 guardrail 拦截”的模式，升级为“先隔离 sidecar，再按允许规则把结果导回主项目”的安全委派模式。
-
-新增产品要求：
-1. **普通 delegated stage 默认不得直接在主项目根目录执行**。`implementer`、`tester`、`reviewer`、`fixer` 这类 sidecar 角色，在常规代码任务中应运行于独立的 sidecar 工作区，而不是直接复用 controller 当前所在的项目根目录。
-2. **sidecar 工作区必须与 workflow 状态面隔离**。默认情况下，delegated sidecar 不应看见或写入宿主项目中的：
-   - `.council/state.json`
-   - `.claude/state/**`
-   - 共享 workflow 安装目录与全局 skill/MCP 配置
-   除非任务本身就是维护 `CouncilFlow` workflow 基础设施，且宿主显式允许。
-3. **委派结果应以受控导回为主，而不是直接原地生效**。sidecar 在隔离工作区内完成实现、测试、评审或修复后，应把结果以 patch / 允许文件变更 / 结构化 artifact 的形式交回，由 `CouncilFlow` 或当前主控按白名单规则导回主项目。
-4. **递归 workflow 入口必须默认关闭**。delegated sidecar 不应再递归触发 `council`、`project-*` skills 或 `project-manager` 状态写入；若检测到这类递归调用，应视为结构化错误而不是允许继续。
-5. **guardrail 继续保留，但降级为最后一道兜底**。现有“受保护路径写入”和“sidecar 擅自 git commit”检测仍然保留，但产品主路径应从“事后发现越权”升级为“事前减少 sidecar 可触达面”。
-6. **真实验收需要证明 sidecar 隔离后仍能完成常规任务**。新的 release/workflow gate 不仅要验证 `.council` / `.claude/state` 不再被 sidecar 触碰，还要验证 implementer/fixer 的代码结果能够安全导回主项目，并继续进入 tester/reviewer 闭环。
-
-范围说明：
-1. 本次变更优先聚焦 `delegate` 主路径及其与 `project-next` 的集成，不顺手把 provider 调度、异步 wait 或新的 UI 表面混入同一轮范围。
-2. 本节补充并 supersede 当前文档中“sidecar 只要不允许写受保护路径就够了”的旧理解；新的产品语义应为：**sidecar 默认应被隔离在 workflow 状态面之外，guardrail 只负责兜底，而不是承担主要隔离职责。**
-
-## 29. 变更记录（2026-04-18，code-review 综合修复批次）
-本次变更依据 `docs/code-review-2026-04-18.md` 与 `docs/code-review-2026-04-18-solutions.md` 两份审查报告，统一收口 Python 本体、共享 skills 与三端 MCP 层遗留的 34 条修复方案。
-
-新增产品要求：
-1. **默认角色映射必须有单一真源**：`templates/default-config.yaml` 与代码中 `DEFAULT_ROLE_MODELS` / `RoleMapping` 字段默认值必须对齐到同一来源，不允许"YAML 模板默认一套、Python 类默认另一套"的两份真值。
-2. **默认 advisor 模型必须映射到已实现 adapter 的主控**：在 `OpenAIChatAdapter` 未落地前，默认模板里的 `roles.advisor` 必须指向 `codex` / `claude` / `gemini` 其中之一，禁止指向没有 adapter 的 `gpt`；不可识别的模型名必须在 config 加载期被 `RoleMapping.normalize_models` 主动拒绝，而不是拖到运行时才报 "no adapter"。
-3. **`tester` 阶段的 preflight 契约必须由 orchestrator 主动计算**：caller 提供的 preflight 仅在已有明确 status ∈ {passed, permission_blocked, environment_not_ready} 时生效；否则 orchestrator 必须重新计算当前工作区的 command availability 与 permission allow 集合，避免"caller 伪造 passed"场景。
-4. **`--controller-position` 模式下不得坍缩 `min_rounds`**：当用户提供本地初始立场且未显式传 `--max-rounds` 时，`effective_max_rounds` 与 `effective_min_rounds` 必须沿用 `.council/config.yaml` 的 `discussion.max_rounds` / `discussion.min_rounds`，不再把 max_rounds 硬编码为 1。若确需"local initial position 下少跑轮"，应用独立命名字段（例如 `discussion.max_rounds_when_local_initial_position`），不得与 `min_rounds` 的"最小闭环"语义混用。
-5. **错误分类字段必须统一命名为 `kind`**：`ProviderError.kind`、`UnavailableParticipantError.kind`、`DelegationExecutionError.error_kind` 对外必须对齐到同一字段名 `kind`；旧的 `.error_kind` 保留 deprecated 别名至少一个次版本。`DelegationRecord` / `TesterPreflight` 等序列化结构字段名保持向后兼容不改。
-6. **specific Gemini 版本名不得污染 `ProviderResponse.model` 与 `DiscussionTurn.speaker_model`**：即便用户请求 `gemini-1.5-flash`，adapter 对外的 `model_name` 仍须归一化为 `"gemini"`；具体版本进入 `ProviderResponse.metadata.gemini_variant` 字段。
-7. **verification_commands 必须以结构化列表形式传递**：共享 skills（特别是 `project-next`）不得再用 `--input verification_commands="<joined>"` 的 legacy 字符串写法；改用可重复的 `--verification-command` list 参数。`handoff/packages.py` 中 `&&` 拆分的 legacy 分支进入 DeprecationWarning 状态，下一个次版本移除。
-8. **共享 skills 源必须保持清洁**：`.workflow-core/skills/project-*/` 目录内禁止出现 `*.bak`、编辑器临时文件或其他非 SKILL 内容。同步脚本必须主动过滤 `*.bak`、主动清理非 `project-*` 白名单之外的目录（含 brace-expansion 之类的误创目录），并在同步后做 SHA-256 一致性校验。
-9. **同步脚本不再伪装"备份"**：`sync-skills.ps1` 的 `-CreateBackup` 分支不得在目标目录内先写 `.bak` 再把目标整体删除；真实备份统一由 `backup-global-workflow.ps1` 快照承担。
-10. **MCP 服务器路径必须有单一真源**：不允许把 `~/.claude/mcp-project-manager/dist/index.js` 这样的绝对路径硬编码在 5 个不同位置。新增 `C:\Users\David Zhai\.workflow-core\mcp-manifest.json` 作为 manifest 真源；`install-global-workflow.ps1` / `backup-global-workflow.ps1` / `restore-global-workflow.ps1` 与三端注册命令都从 manifest 派生。
-11. **Gemini provider 默认不得启用 YOLO 审批模式**：`GeminiCliAdapter` 的默认 `--approval-mode` 改为 `default`；仅当 project config 或任务级明确要求时才允许切换到 `yolo`。`.gemini/settings.json` 的 `mcpServers.trust` 字段默认值必须能被 manifest 配置，而不是装机脚本硬编码 `--trust`。
-12. **skill 失败上报必须有统一协议**：所有 `role_driven` / `discussion` 技能在路由失败或 artifact 缺失时，必须按 `docs/integration.md` 新增的"工作流失败上报协议"输出一条结构化 JSON（含 `workflow`、`failed_stage`、`error_kind`、`council_available`、`artifact_paths`、`fallback_attempted`）并调用 project-manager MCP `add_log`，然后停止。不允许三主控各自用自由文本描述同一类失败。
-13. **skill 文案一致性**：`project-feedback` 必须补齐 `milestone_manual + stage_gate=true` 的正向通过与阶段 gate closed 标记分支；`project-init` / `project-plan` 必须明确"项目目录已确定"的判定依据与"未确定"时允许的行为集合；`project-review` / `project-change` / `project-plan` 的 Markdown 标题层级必须整理为清晰的 H2/H3/H4 结构，不得把子章节头 H3 混入有序列表打断编号。
-
-阶段策略：
-1. **Phase 0 + Phase 1**：先做共享源清理 + sync-skills 重构 + `project-next` 改 list 参数（TASK-049），再做 R0 代码修复（TASK-046 默认配置真源、TASK-047 advisor 默认、TASK-048 命名/路由一组小修）。
-2. **Phase 2**：skill 层收口（TASK-053 失败上报协议、TASK-054 结构/文案）。
-3. **Phase 3**：运维加固（TASK-050 MCP manifest、TASK-051 structured logging）。
-4. **Phase 4**：承接现有 TASK-042/043/044/045，落地 sidecar isolation；其中 TASK-052（Codex/Gemini 流式 runtime）依赖 TASK-044 + TASK-051。
-5. **Phase 5（可选）**：TASK-055 `OpenAIChatAdapter` 正式落地，同步放开 `advisor=gpt` 默认路径（依赖 TASK-047）。
-
-本节覆盖并 supersede 文档中先前所有"默认配置与实际模板可以不一致"、"verification_commands 可以用 `&&` 拼接传给 `--input`"、"Gemini 默认 YOLO + trust 可接受"、"skill 失败文案由各主控自由发挥"等旧约定。
-
-## 30. 变更记录（2026-04-19，分发与安装）
-本次变更在 CouncilFlow 0.1.2 已发布、67 个已完成任务全部 done 的前提下，开启一个新的阶段：**分发与安装**。目标是让整套工作流（CouncilFlow 本体 + 共享 skills + project-manager MCP）能够"轻而易举地装到一台新电脑上"，同时保证当前**不开源**、将来想开源时可**无痛切换**。
-
-新增产品要求：
-
-1. **CouncilFlow 本体采用 private pipx 分发路线**：
-   - 主路径为 `pipx install git+https://github.com/SuperRedHat/CouncilFlow.git`
-   - 不发布到 PyPI（至少在本阶段保持仓库私有）
-   - **明确拒绝 Windows `.exe` 安装包方案**：经过评估，PyInstaller 打包后的 30-80MB 体积、AV 误报、SmartScreen 签名成本（$100-400/年）、无自动更新、平台锁定（只 Windows）等代价，均不能被"用户没有 Python"这个不存在的用户群体所证明
-   - 保留 PyInstaller 单文件 `council.exe` 作为 GitHub Releases 上的可选降级资产，但不做 Inno Setup 安装包
-
-2. **Skills + MCP 独立仓库 AutoSkills**：
-   - 新建 GitHub 私有仓库 `SuperRedHat/AutoSkills`，本地路径 `D:\project\AutoSkills`
-   - 内容：共享 `project-*` skills 源 + `project-manager` MCP server 源（Node 工程）+ MCP manifest + 一键 bootstrap 脚本
-   - 从 `~/.workflow-core/skills/` 和 `~/.claude/mcp-project-manager/` **拷贝**过来，保留原始位置不动（搬迁策略是 copy，不是 move）
-   - 所有硬编码的 `C:\Users\David Zhai\...` 用户家目录路径替换为占位符（`~/`、`$HOME`、`${AUTOSKILLS_HOME}` 等），确保仓库在任意用户家目录下都能 bootstrap
-   - `dist/` 和 `node_modules/` 不入仓；bootstrap 时强制 `npm install && npm run build`
-
-3. **一键 bootstrap 脚本（PS1 + Bash 双版本）**：
-   - `scripts/bootstrap.ps1`（Windows PowerShell）
-   - `scripts/bootstrap.sh`（macOS/Linux bash）
-   - 两版本**行为等价**：备份 → 同步 skills 到三端 → 构建 MCP server → 按 manifest 向 codex/claude/gemini 三端 `mcp add` → 校验
-   - 支持 `-DryRun` / `--dry-run` 用于验证脚本逻辑
-   - 失败时写快照到 `~/.workflow-core-backups/<timestamp>/` 可回滚
-
-4. **根目录 `readme.md` 完全重写（中文）**：
-   - 目标受众：**已经会用 Codex / Claude Code / Gemini CLI 之一的开发者**（不是完全零基础用户）
-   - 内容：5 分钟快速上手 + 私有 pipx 安装命令 + 核心命令速查 + `discuss` / `delegate` 实例 + 故障排查入口
-   - 当前 33 行极简英文版被完全替换
-
-5. **新增 `docs/distribution.md`**：
-   - 详细说明"如何装到新电脑"（CouncilFlow + AutoSkills 两步）
-   - 详细说明"如何翻转为开源"（LICENSE、git 历史审计、pyproject 元数据补全、可选 PyPI 发布）
-   - 排错指引：PAT / SSH 配置、AV 误报、PATH 未生效、pipx 版本不兼容、Node.js 版本要求等
-
-6. **LICENSE 文件（MIT）**：
-   - 本阶段就放入仓库，即便仓库当前是 private；这样将来翻转 public 时立即生效，不用再补
-   - pyproject.toml 同步补 `license = {text = "MIT"}`、`authors`、`urls` 字段
-
-7. **Git 历史敏感信息审计**：
-   - 在任何开源动作前，**必须**先扫描 CouncilFlow 仓库的 git 历史，检查是否有误提交的 API key / token / 邮箱 / 私人讨论
-   - 扫描是独立任务，有 finding 时进入人工 gate 决定处置方案（ignore / filter-repo 清洗）
-   - AutoSkills 仓库从 0 开始 commit，不需要审计历史
-
-8. **开源切换的无痛保证**：
-   - 切换动作仅为"在 GitHub 上把仓库从 private 翻为 public"；安装命令不变
-   - PyPI 名字抢注风险留给未来处理（现在不占 placeholder，避免污染 PyPI 心智）
-   - AutoSkills 与 CouncilFlow 物理分仓，将来可以独立决定各自开源时机
-
-9. **本阶段不 bump CouncilFlow 版本**：
-   - 零 Python 源码改动
-   - pyproject.toml 补元数据字段属于 meta-only 变更，若要 bump 版本最多 0.1.3
-   - 67 个 done 任务**零回改**
-
-10. **阶段性 gate**：
-    - `TASK-061`（git 历史审计）：stage_gate=true，findings 须人工定夺
-    - `TASK-070`（AutoSkills 首次 push + 真机 smoke）：stage_gate=true，必须在**不同真机或 clean VM** 上跑通端到端安装
-
-范围说明：
-1. 本次变更聚焦"分发与安装"外围交付物，不改 CouncilFlow 本体的产品语义、角色协议、workflow 契约、provider runtime 等任何内部行为
-2. 本次变更完成后，`~/.workflow-core/` 与 `~/.claude/mcp-project-manager/` 保持原地不动，但其长期真相源会迁移到 AutoSkills；用户可在本阶段 smoke 通过后自行决定是否清理家目录老版本
-3. 本节覆盖并 supersede 当前文档中所有"CouncilFlow 的共享 skills 和 MCP 只能通过 `~/.workflow-core/` 全局目录维护"的暗含假设；新的分发语义应为：**AutoSkills 是共享 skills + MCP 的单一真源仓库，`~/.workflow-core/` 与 `~/.claude/mcp-project-manager/` 成为 bootstrap 脚本的安装目标而不是源**
+**注**：§3-§30 的完整历史变更记录内容过长未在本版本中逐字保留。如需查阅原文请回溯 git 历史（commits `ef61ba1` 及之前的 `.claude/state/prd.md`）。

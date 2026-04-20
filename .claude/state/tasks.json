@@ -3189,6 +3189,656 @@
       "updated_at": "2026-04-20T05:18:56.159Z",
       "commit_hash": "",
       "notes": "Manual gate 接受 2026-04-20：用户确认\"通过\"。基于本机 dry-run + 67 个历史 smoke 的覆盖已足以证明脚本可靠，加之本机已经实际完成 (1) 8 个 commit 推到 GitHub AutoSkills private repo；(2) 本地分支 master → main 重命名并 push 成功；(3) bash/PS1 bootstrap 双 dry-run 通过；(4) MCP server build 实测产出 dist/index.js；(5) mcp-manifest.json JSON 校验通过。不同真机 smoke 的 B 段填空留作未来\"新电脑第一次装时\"的现场记录。未执行任何破坏性 git 操作。"
+    },
+    {
+      "id": "TASK-071",
+      "title": "撰写 RFC 草案 docs/rfc-workflow-token-optimization.md",
+      "description": "基于 2026-04-20 的 codex discuss 和用户讨论，撰写 RFC 草案。覆盖：本轮目标与非目标（明确排除 link folding / sidecar 分层等）、codex discuss 的关键结论与我方回应、'最薄协议 + controller 本地判定'指导原则、A 和 B 的协议层改动面、向后兼容硬红线、0.1.3 版本决策理由。",
+      "dependencies": [],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "RFC 文档存在且长度 > 3000 字符",
+        "包含章节：目标与非目标 / codex discuss 结论 / 设计原则 / 向后兼容 / 0.1.3 版本决策",
+        "明确引用 .council/discuss/disc_20260420T065559937703Z/summary.md",
+        "列出明确排除项（link folding / sidecar 分层 / artifact schema / session 复用 / turn merging / delta handoff）"
+      ],
+      "files": [
+        "docs/rfc-workflow-token-optimization.md"
+      ],
+      "module": "councilflow/docs",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "docs",
+      "verification_commands": [
+        "python -c \"c=open('docs/rfc-workflow-token-optimization.md',encoding='utf-8').read(); assert len(c)>3000; assert all(k in c for k in ['Phase 1','动态角色路由','语义','向后兼容','link folding','codex'])\""
+      ],
+      "review_checklist": [
+        "覆盖本轮目标与非目标（明确排除项完整）",
+        "引用 codex discuss summary 路径",
+        "明确最薄协议 + controller 本地判定原则",
+        "标注向后兼容硬红线（现有 config 0 修改可用）",
+        "版本决策（0.1.3）与理由清晰"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:21:58.168Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-072",
+      "title": "实现基线测量脚本 scripts/measure_ceremony_tokens.py",
+      "description": "独立可运行的基线测量工具。输入一个或多个 .council/delegations/<id>/ 目录，输出 markdown 报告 + JSON 原始数据。报告字段：总 token / ceremony 占比 / artifact reread 估算 / cross-model handoff token / 每 role 分布。使用 tiktoken 优先 fallback 字符数/4 并注明。同一输入多次运行结果一致。不依赖本轮新特性。",
+      "dependencies": [],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "脚本独立可运行（python scripts/measure_ceremony_tokens.py --help 返回 0）",
+        "支持 --input（目录）+ --output（md 报告路径）参数",
+        "支持 --dry-run 模式（不实际写文件）",
+        "报告包含总 token / ceremony 占比 / reread 估算字段",
+        "使用确定性 tokenizer（tiktoken 优先），方法论注明在报告里",
+        "同一输入多次运行产出相同 token 数"
+      ],
+      "files": [
+        "scripts/measure_ceremony_tokens.py"
+      ],
+      "module": "councilflow/tooling",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python scripts/measure_ceremony_tokens.py --help",
+        "python -m compileall scripts/measure_ceremony_tokens.py",
+        "python scripts/measure_ceremony_tokens.py --dry-run --input .council/delegations/local-architect-token-opt-2026-04-20 --output /tmp/test-baseline.md"
+      ],
+      "review_checklist": [
+        "使用确定性 tokenizer（tiktoken 优先，fallback 字符数/4 并注明）",
+        "输入支持单目录或多目录",
+        "输出含 markdown 报告 + 原始 JSON 数据",
+        "报告方法论段注明假设与不确定性区间",
+        "不依赖本轮新特性（A/B），独立可运行",
+        "错误处理：目录不存在 / 空目录 / 损坏 artifact 均有明确错误信息"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:21:58.168Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-073",
+      "title": "跑基线产出 docs/ceremony-baseline-2026-04-20.md",
+      "description": "对当前 CouncilFlow 仓库的 .council/delegations/ 跑一次真实基线测量，产出 docs/ceremony-baseline-2026-04-20.md 作为 Phase 2 决策依据。如果测量 session 数不够，可补跑 D:/AIProjects/test/ 下的测试项目作补充数据。",
+      "dependencies": [
+        "TASK-072"
+      ],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "docs/ceremony-baseline-2026-04-20.md 存在且长度 > 1000 字符",
+        "基于真实 .council/delegations/ 数据，至少覆盖最近 5 个 delegation record",
+        "报告给出绝对 token 数 + 相对占比",
+        "记录测量方法论（tokenizer / 假设 / 不确定性区间）"
+      ],
+      "files": [
+        "docs/ceremony-baseline-2026-04-20.md"
+      ],
+      "module": "councilflow/tooling",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python scripts/measure_ceremony_tokens.py --input .council/delegations/ --output docs/ceremony-baseline-2026-04-20.md",
+        "python -c \"c=open('docs/ceremony-baseline-2026-04-20.md',encoding='utf-8').read(); assert len(c)>1000\""
+      ],
+      "review_checklist": [
+        "基于真实仓库数据（非 mock）",
+        "至少覆盖 5 个 delegation record",
+        "方法论段明确",
+        "结论可为 Phase 2 决策提供参考（比如给出 ceremony token 占比的具体数字）"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:21:58.168Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-074",
+      "title": "扩展 RoleMapping schema 支持动态路由",
+      "description": "扩展 models/config.py 的 RoleMapping 字段类型为 str | list[RoleRoute]。新增 RoleRoute Pydantic 模型（model/when/fallback）。@field_validator(mode='before') 把简写 str 归一化为 [RoleRoute(model=<str>)]。完整测试覆盖：简写加载 / list 格式加载 / 无 when 默认总匹配 / model 名白名单校验 / 向后兼容（现有 config 加载等价于旧版）。",
+      "dependencies": [],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "RoleMapping 字段类型扩展支持 str | list[RoleRoute]",
+        "新增 RoleRoute 类：model/when/fallback 字段齐全",
+        "简写字符串自动归一化为 list[RoleRoute]",
+        "测试覆盖向后兼容（现有 .council/config.yaml 加载等价）",
+        "pytest tests/test_config_schema.py 全绿",
+        "ruff 无警告"
+      ],
+      "files": [
+        "src/councilflow/models/config.py",
+        "tests/test_config_schema.py"
+      ],
+      "module": "councilflow/config",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "pytest tests/test_config_schema.py -v",
+        "pytest tests/ -k config -v",
+        "ruff check src/councilflow/models/config.py"
+      ],
+      "review_checklist": [
+        "RoleMapping 字段默认值不改（仍由 templates/default-config.yaml 派生）",
+        "RoleRoute Pydantic 模型字段：model(必填)、when(可选)、fallback(可选)",
+        "field_validator 在 parse 期归一化简写",
+        "model 名白名单校验触发 RoleMapping.normalize_models（已有机制复用）",
+        "向后兼容测试 pass：加载现有全简写 config 与旧版行为等价",
+        "导出类型可被其他模块 import"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:21:58.168Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-075",
+      "title": "实现受限表达式求值器 when_eval",
+      "description": "新建 src/councilflow/config/when_eval.py，用 Python ast 模块实现受限表达式求值器。AST 节点白名单：Compare/BoolOp(And/Or)/UnaryOp(Not)/Name/Constant/Attribute(仅 task.<field>)/List/Tuple。操作符：==/!=/</<=/>/>=/in/not in/and/or/not。严禁 Call/Subscript（除 list/tuple 内）/Import/Assign/Lambda/FunctionDef/ClassDef/dunder 访问。测试危险表达式集合均应被拒。错误消息带违规节点类型。",
+      "dependencies": [
+        "TASK-074"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "when_eval.py 提供 evaluate(expr: str, context: dict) -> bool 单一入口",
+        "支持白名单 AST 节点集合（Compare/BoolOp/Name/Constant/Attribute 一层/List/Tuple/UnaryOp Not）",
+        "支持操作符：==/!=/</<=/>/>=/in/not in/and/or/not",
+        "危险表达式（__import__/dunder/Call/Lambda/列表推导）均被拒并给出明确错误",
+        "未知 task.<field> 访问返回 None，不抛异常",
+        "pytest tests/test_when_eval.py 全绿"
+      ],
+      "files": [
+        "src/councilflow/config/when_eval.py",
+        "tests/test_when_eval.py"
+      ],
+      "module": "councilflow/config",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "pytest tests/test_when_eval.py -v",
+        "python -c \"from councilflow.config.when_eval import evaluate; assert evaluate('task.complexity in [\\\"L\\\"]', {'task': {'complexity': 'L'}}) == True\"",
+        "ruff check src/councilflow/config/when_eval.py"
+      ],
+      "review_checklist": [
+        "AST 白名单严格：任何非白名单节点抛 ValueError 或特定 SafetyError",
+        "测试集合必须包含：__import__('os')、task.__class__、[x for x in range(10)]、open('/etc/passwd')、lambda: None、eval(...)、subprocess 调用",
+        "测试合法表达式：task.complexity == 'L'、'frontend' in task.module、task.complexity in ['S','M'] and 'test' in task.module、not task.complexity == 'L'",
+        "Attribute 深度限制：task.x 允许，task.x.y 拒绝",
+        "未知字段访问行为明确（返回 None 而非抛异常）",
+        "错误消息带表达式位置 + 违规节点类型"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:21:58.168Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-076",
+      "title": "实现路由引擎 role_router",
+      "description": "新建 src/councilflow/controller/role_router.py。resolve(role: str, task_context: dict) -> RoutingDecision 单一入口。按 RoleMapping[role] 的 list 顺序尝试 when 命中（when=None 默认匹配），首个命中返回。RoutingDecision 包含 primary_model/fallback_chain/matched_route_index/matched_when_expr。所有路由尝试追加日志到 .council/runs/<run_id>/routing.json。错误：role 不存在或所有 route 都 miss → RoutingNoMatchError(kind='routing_no_match')。",
+      "dependencies": [
+        "TASK-074",
+        "TASK-075"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "role_router.py 提供 resolve() 入口",
+        "返回 RoutingDecision 结构化对象",
+        "按 RoleMapping 配置顺序尝试 when 条件",
+        "决策日志落 .council/runs/<run_id>/routing.json",
+        "RoutingNoMatchError 带 kind 字段符合 integration 契约",
+        "pytest tests/test_role_router.py 全绿"
+      ],
+      "files": [
+        "src/councilflow/controller/role_router.py",
+        "tests/test_role_router.py"
+      ],
+      "module": "councilflow/controller",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "pytest tests/test_role_router.py -v",
+        "ruff check src/councilflow/controller/role_router.py"
+      ],
+      "review_checklist": [
+        "简写路由（单 str）测试通过",
+        "表达式路由命中测试通过",
+        "所有表达式都 miss → RoutingNoMatchError",
+        "fallback_chain 顺序正确传递（primary + [fallback1, fallback2, ...]）",
+        "routing.json 落盘内容结构化（含 role/task_context/tried routes/matched/final_model）",
+        "路由决策独立于 provider 启动，仅返回决策不调 adapter"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:21:58.168Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-077",
+      "title": "cli/delegate.py 消费新路由",
+      "description": "修改 src/councilflow/cli/delegate.py 的 get_provider_adapter 改调 role_router.resolve()。保留 --model CLI 参数作临时一次性 override（最高优先级）。primary adapter 调用失败时按 fallback_chain 顺序重试，每次尝试记入 routing.json。错误 kind=routing_no_match 结构化向 caller 返回。关键：向后兼容测试：现有 .council/config.yaml（简写）下 delegate 行为完全等价于旧版。",
+      "dependencies": [
+        "TASK-076"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "get_provider_adapter 改调 role_router.resolve()",
+        "--model CLI 参数保持最高优先级",
+        "primary 失败自动按 fallback 链重试",
+        "错误 JSON 输出含 error.kind='routing_no_match' + 具体 role",
+        "向后兼容测试：简写 config 下行为等价于旧版",
+        "pytest tests/test_cli_delegate.py 全绿"
+      ],
+      "files": [
+        "src/councilflow/cli/delegate.py",
+        "tests/test_cli_delegate.py"
+      ],
+      "module": "councilflow/cli",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "pytest tests/test_cli_delegate.py -v",
+        "pytest tests/ -k delegate -v",
+        "ruff check src/councilflow/cli/delegate.py"
+      ],
+      "review_checklist": [
+        "--model CLI 参数优先级最高（用户显式覆盖路由）",
+        "--model 未给时走路由；路由返回 primary 作 adapter 选择",
+        "primary adapter 失败时按 fallback_chain 顺序尝试",
+        "所有 fallback 决策日志到 routing.json",
+        "routing_no_match 作为结构化错误向 caller 返回",
+        "向后兼容 smoke：现有全简写 config 跑出的 status/model/adapter 与旧版一致"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:21:58.168Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-078",
+      "title": "默认配置模板更新",
+      "description": "更新 src/councilflow/templates/default-config.yaml。保持默认 roles.* 全部用简写字符串格式（不启用动态路由）。文件顶部注释块示范 3 种动态路由 pattern（fallback / task.complexity / task.module）作 example。example 注释必须以 # 开头，不被 yaml load 消费。明确说明'这是模板，每个项目首次 council 调用时会被拷到项目 .council/config.yaml'。",
+      "dependencies": [
+        "TASK-077"
+      ],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "默认 roles.* 全部是简写字符串",
+        "文件顶部有 example 注释块展示 3 种动态路由用法",
+        "example 是注释形式，不作为合法 yaml 被消费",
+        "注释说明文件用途和拷贝时机",
+        "yaml 格式正确，Pydantic 可加载"
+      ],
+      "files": [
+        "src/councilflow/templates/default-config.yaml"
+      ],
+      "module": "councilflow/config",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "docs",
+      "verification_commands": [
+        "python -c \"import yaml; d=yaml.safe_load(open('src/councilflow/templates/default-config.yaml')); assert all(isinstance(v, str) for v in d['roles'].values())\"",
+        "python -c \"c=open('src/councilflow/templates/default-config.yaml').read(); assert 'example' in c.lower() or '# 示例' in c\""
+      ],
+      "review_checklist": [
+        "默认 roles 保持简写",
+        "3 种 example 完整（fallback / task.complexity / task.module）",
+        "注释符合 yaml 语法（# 开头）",
+        "load 后字段可被 Pydantic RoleMapping 接受",
+        "templates/default-config.yaml 的其他现有字段（discussion 等）不动"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:21:58.168Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-079",
+      "title": "扩展 discussion schema",
+      "description": "修改 models/config.py 的 Discussion Pydantic 模型。新增 convergence_policy: Literal['strict_count','semantic','hybrid'] = 'strict_count'。新增 min_rounds_by_topic: dict[str,int] | None = None。保留现有 min_rounds/max_rounds/default_models 字段行为不变。向后兼容测试：现有 config 无新字段时默认 strict_count。semantic 模式下 min_rounds 作硬底线。",
+      "dependencies": [],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "Discussion 新增 convergence_policy 字段（Literal，默认 strict_count）",
+        "Discussion 新增 min_rounds_by_topic 字段（dict[str,int] | None）",
+        "现有 min_rounds/max_rounds/default_models 字段行为不变",
+        "向后兼容测试：无 convergence_policy 字段的 config 加载默认为 strict_count",
+        "pytest tests/test_config_schema.py::discussion 全绿"
+      ],
+      "files": [
+        "src/councilflow/models/config.py",
+        "tests/test_config_schema.py"
+      ],
+      "module": "councilflow/config",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "pytest tests/test_config_schema.py -v -k discussion",
+        "ruff check src/councilflow/models/config.py"
+      ],
+      "review_checklist": [
+        "convergence_policy 为 Literal 类型，非法值被 Pydantic 拒绝",
+        "min_rounds_by_topic 可选，None 表示不使用 topic 路由",
+        "现有字段（min_rounds/max_rounds/default_models）行为 0 改动",
+        "向后兼容 smoke：加载当前仓库 .council/config.yaml 无字段时行为等价于旧版",
+        "semantic 模式下 min_rounds 的硬底线语义写入 docstring 或注释"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:21:58.168Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-080",
+      "title": "实现语义收敛评估器",
+      "description": "新建 src/councilflow/controller/convergence_evaluator.py。evaluate(discussion, config) -> ConvergenceDecision 单一入口。三种模式：strict_count 保持现行逻辑；semantic 使用已有的 DiscussionTurn.introduced_new_info 字段（不调 LLM），连续 N 轮（默认 1）为 false 且 disagreements_count 未增加才算收敛；hybrid 从 question 关键词推断 topic（architecture/review/clarification/other），按 min_rounds_by_topic 取刚性底线。必须保留：无额外参与者时 short-circuit。",
+      "dependencies": [
+        "TASK-079"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "convergence_evaluator.py 提供 evaluate() 入口",
+        "返回 ConvergenceDecision 结构化对象（converged/reason/next_action）",
+        "strict_count 模式保持现行逻辑",
+        "semantic 模式使用 introduced_new_info 字段（不调 LLM）",
+        "hybrid 模式按 topic 推断 + min_rounds_by_topic 查表",
+        "无外部参与者时 short-circuit 直接 converge",
+        "pytest tests/test_convergence_evaluator.py 全绿"
+      ],
+      "files": [
+        "src/councilflow/controller/convergence_evaluator.py",
+        "tests/test_convergence_evaluator.py"
+      ],
+      "module": "councilflow/controller",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "pytest tests/test_convergence_evaluator.py -v",
+        "ruff check src/councilflow/controller/convergence_evaluator.py"
+      ],
+      "review_checklist": [
+        "ConvergenceDecision 字段：converged/reason/next_action",
+        "next_action ∈ {'continue', 'converge', 'max_rounds_reached'}",
+        "semantic 不调 LLM，只读已有 DiscussionTurn 字段",
+        "hybrid topic 推断：从 question 关键词取（不调 LLM）",
+        "测试覆盖：每种 policy 的 converge/continue/max_rounds 边界",
+        "无外部参与者 short-circuit 覆盖",
+        "semantic 模式下 min_rounds 作硬底线（即使 introduced_new_info=false 也要满足 min_rounds）"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:21:58.168Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-081",
+      "title": "discussion_orchestrator 消费新评估器",
+      "description": "修改 src/councilflow/controller/discussion_orchestrator.py。每轮结束后调 convergence_evaluator.evaluate() 而不是内联判断。按 convergence_policy 切换路径。discussion summary artifact 新增 convergence_trace: list[{round, reason, decision}]。保留无额外参与者 short-circuit 现行逻辑。向后兼容：convergence_policy=strict_count 时行为完全等价于旧版。",
+      "dependencies": [
+        "TASK-080"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "orchestrator 改调 convergence_evaluator.evaluate() 而不是内联判断",
+        "按 convergence_policy 字段路由",
+        "summary artifact 新增 convergence_trace 字段",
+        "strict_count 模式下 end-to-end 行为等价于旧版",
+        "无额外参与者 short-circuit 保留",
+        "pytest tests/test_discussion_orchestrator.py 全绿"
+      ],
+      "files": [
+        "src/councilflow/controller/discussion_orchestrator.py",
+        "tests/test_discussion_orchestrator.py"
+      ],
+      "module": "councilflow/controller",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "pytest tests/test_discussion_orchestrator.py -v",
+        "pytest tests/ -k discussion -v",
+        "ruff check src/councilflow/controller/discussion_orchestrator.py"
+      ],
+      "review_checklist": [
+        "orchestrator 不内联判断收敛，调 evaluator",
+        "convergence_trace 记录每轮决策原因",
+        "strict_count 模式行为等价于旧版（向后兼容）",
+        "无外部参与者 short-circuit 保留",
+        "summary.md 结构除新增 convergence_trace 段外不变",
+        "向后兼容 smoke：跑一次当前项目的 discuss（claude+codex strict_count），产出等价于旧版"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:21:58.168Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-082",
+      "title": "council status 观测指标",
+      "description": "修改 src/councilflow/cli/status.py。新增 --recent N 参数（默认 30，单位天）。输出新增段：'Routing distribution (last N days)'：列出每个 role 命中了哪些 model 几次。'Discussion convergence (last N days)'：平均轮数 + 按收敛原因分布。数据源：扫描 .council/runs/*/routing.json + .council/discuss/*/summary.md。无数据时明确打印 'no routing data' 而非崩溃。",
+      "dependencies": [
+        "TASK-077",
+        "TASK-081"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "--recent N 参数可用（默认 30 天）",
+        "输出新增 Routing distribution 段",
+        "输出新增 Discussion convergence 段",
+        "数据源扫描 .council/runs/ + .council/discuss/",
+        "无数据时明确打印提示而非崩溃",
+        "pytest tests/test_cli_status.py 全绿"
+      ],
+      "files": [
+        "src/councilflow/cli/status.py",
+        "tests/test_cli_status.py"
+      ],
+      "module": "councilflow/cli",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "pytest tests/test_cli_status.py -v",
+        "ruff check src/councilflow/cli/status.py",
+        "council status --recent 30 2>&1 | head -30"
+      ],
+      "review_checklist": [
+        "--recent 参数接受数字，默认 30",
+        "routing distribution 按 role 分组展示",
+        "convergence distribution 按原因（converged/max_rounds/no_new_info）分组",
+        "数据源文件不存在时优雅降级（打印 no data）",
+        "现有 status 输出段保留不动",
+        "ruff + pytest 全绿"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:21:58.168Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-083",
+      "title": "shared skills 文案更新（AutoSkills）",
+      "description": "更新 D:/project/AutoSkills/skills/project-{init,design,plan,next,review,change,ask}/SKILL.md（7 个 role_driven skills）。每份添加一小段说明：'如果项目配置了动态角色路由，council delegate 返回的 target model 由路由引擎决定；skill 层不干预，按返回的 status（delegated/local_execution）继续'。不改变核心业务流程（阶段机 / artifact 消费契约 / 失败上报协议）。改动完成后 AutoSkills 是真源，用户本机 ~/.{codex,claude,gemini}/skills/ 由下次 bootstrap 覆盖。",
+      "dependencies": [
+        "TASK-077"
+      ],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "7 个 role_driven SKILL.md 全部添加动态路由说明段",
+        "核心业务流程（阶段机 / artifact 消费契约 / 失败上报）未改动",
+        "说明段格式统一（路由说明 + skill 不干预的语句）",
+        "AutoSkills 仓库 git add + commit"
+      ],
+      "files": [
+        "D:/project/AutoSkills/skills/project-init/SKILL.md",
+        "D:/project/AutoSkills/skills/project-design/SKILL.md",
+        "D:/project/AutoSkills/skills/project-plan/SKILL.md",
+        "D:/project/AutoSkills/skills/project-next/SKILL.md",
+        "D:/project/AutoSkills/skills/project-review/SKILL.md",
+        "D:/project/AutoSkills/skills/project-change/SKILL.md",
+        "D:/project/AutoSkills/skills/project-ask/SKILL.md"
+      ],
+      "module": "autoskills/skills",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "docs",
+      "verification_commands": [
+        "bash -c \"for f in D:/project/AutoSkills/skills/project-{init,design,plan,next,review,change,ask}/SKILL.md; do grep -q '动态路由\\|dynamic rout' \\\"$f\\\" && echo OK: \\\"$f\\\" || { echo MISS: \\\"$f\\\"; exit 1; }; done\""
+      ],
+      "review_checklist": [
+        "7 个 role_driven skills 全部改动",
+        "每份 SKILL.md 添加的说明一致（路由 + skill 不干预）",
+        "核心业务逻辑不改",
+        "AutoSkills 作真源，用户家目录将由下次 bootstrap 覆盖",
+        "read_only / gate_close skills（status / resume / feedback）不在改动范围内"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:21:58.168Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-084",
+      "title": "integration.md 更新",
+      "description": "在 docs/integration.md 新增两个章节：1) 'Dynamic Role Routing'：schema + when 表达式语法 + 白名单/黑名单 + fallback 语义 + routing_no_match 错误处理。2) 'Discussion Convergence Policy'：三种模式行为对比 + min_rounds_by_topic 使用方式 + convergence_trace artifact 字段。保留现有章节不破坏（workflow failure report protocol / sidecar isolation 等）。",
+      "dependencies": [
+        "TASK-077",
+        "TASK-081"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "integration.md 含 'Dynamic Role Routing' 段",
+        "integration.md 含 'Discussion Convergence Policy' 段",
+        "schema + when 语法 + fallback 语义说明清晰",
+        "三种收敛模式行为对比表完整",
+        "现有章节不被破坏"
+      ],
+      "files": [
+        "docs/integration.md"
+      ],
+      "module": "councilflow/docs",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "docs",
+      "verification_commands": [
+        "python -c \"c=open('docs/integration.md',encoding='utf-8').read(); assert all(k in c for k in ['Dynamic Role Routing','when','fallback','convergence_policy','semantic','hybrid'])\""
+      ],
+      "review_checklist": [
+        "Dynamic Role Routing 段：schema 示例 + when 语法白名单黑名单 + fallback 链 + routing_no_match 错误类",
+        "Convergence Policy 段：三种模式对比表 + min_rounds_by_topic 使用场景 + convergence_trace 字段说明",
+        "示例代码可直接复制执行",
+        "现有章节未被删除或语义改变（特别是 workflow failure report protocol / sidecar isolation）"
+      ],
+      "stage_gate": false,
+      "status": "todo",
+      "created_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:21:58.168Z",
+      "commit_hash": "",
+      "notes": ""
+    },
+    {
+      "id": "TASK-085",
+      "title": "0.1.3 发布 gate",
+      "description": "本阶段最终 milestone gate。pyproject.toml 版本 bump 到 0.1.3。CHANGELOG.md 新增 [0.1.3] 段：dynamic role routing + semantic convergence + baseline measurement tool + config schema 扩展 + 向后兼容保证 + 明确不做的事（link folding 推迟及理由）。docs/release-notes-0.1.3.md 新增，明确列出：新能力、不做的事、从 0.1.2 升级 checklist。完整 pytest + ruff 全绿。在 D:/AIProjects/test/ 下建 clean 测试项目跑 /project-ask discuss + /project-next 端到端验证 A+B。smoke-report 记录实际命令+输出摘要+结论。破坏性 git 操作未执行。",
+      "dependencies": [
+        "TASK-071",
+        "TASK-072",
+        "TASK-073",
+        "TASK-074",
+        "TASK-075",
+        "TASK-076",
+        "TASK-077",
+        "TASK-078",
+        "TASK-079",
+        "TASK-080",
+        "TASK-081",
+        "TASK-082",
+        "TASK-083",
+        "TASK-084"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "pyproject.toml version = 0.1.3",
+        "CHANGELOG.md 含 0.1.3 段列出新能力 + 不做的事",
+        "docs/release-notes-0.1.3.md 长度 > 2000 字符",
+        "完整 pytest 通过",
+        "完整 ruff check 通过",
+        "在 D:/AIProjects/test/ 下建测试项目实际跑 A+B 端到端",
+        "docs/token-opt-smoke-report-2026-04-20.md 记录 smoke 结果",
+        "无破坏性 git 操作"
+      ],
+      "files": [
+        "pyproject.toml",
+        "CHANGELOG.md",
+        "docs/release-notes-0.1.3.md",
+        "docs/token-opt-smoke-report-2026-04-20.md"
+      ],
+      "module": "councilflow/release",
+      "needs_manual_review": true,
+      "acceptance_mode": "milestone_manual",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -c \"import tomllib; assert tomllib.load(open('pyproject.toml','rb'))['project']['version'] == '0.1.3'\"",
+        "python -c \"c=open('CHANGELOG.md',encoding='utf-8').read(); assert '0.1.3' in c and ('Dynamic Role Routing' in c or '动态角色路由' in c)\"",
+        "python -c \"c=open('docs/release-notes-0.1.3.md',encoding='utf-8').read(); assert len(c) > 2000\"",
+        "pytest tests/ -q",
+        "ruff check src/ tests/"
+      ],
+      "review_checklist": [
+        "pyproject.toml version 从 0.1.2 bump 到 0.1.3",
+        "CHANGELOG 在新 [0.1.3] 段列出所有新能力 + 向后兼容保证",
+        "release-notes-0.1.3 明确列出：Added（动态路由、语义收敛、测量工具）/ Deferred（link folding + 其他 backlog）/ Upgrade path（0.1.2 → 0.1.3 零改动）",
+        "完整 pytest 全绿（不只是本轮新增测试）",
+        "完整 ruff check 全绿",
+        "在 D:/AIProjects/test/ 下建 clean 项目，用动态路由 example 配置跑 /project-ask discuss 和 /project-next 各一次",
+        "smoke-report 记录实际命令 + 输出摘要 + 结论 + 异常处理",
+        "无 git filter-repo、无 force push、无 reset --hard"
+      ],
+      "stage_gate": true,
+      "status": "todo",
+      "created_at": "2026-04-20T08:21:58.168Z",
+      "updated_at": "2026-04-20T08:21:58.168Z",
+      "commit_hash": "",
+      "notes": ""
     }
   ]
 }
