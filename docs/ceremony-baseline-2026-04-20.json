@@ -1,0 +1,336 @@
+{
+  "tokenizer": "fallback:chars/4",
+  "scanned_inputs": [
+    "D:\\project\\CouncilFlow\\.council\\delegations"
+  ],
+  "summary": {
+    "total_delegations": 13,
+    "total_tokens": 13115,
+    "total_handoff_tokens": 651,
+    "total_result_tokens": 11900,
+    "ceremony_ratio_pct": 4.96,
+    "reread_estimate_tokens": 0,
+    "local_execution_count": 0,
+    "delegated_count": 0,
+    "role_distribution": {
+      "<unknown>": 8,
+      "advisor": 1,
+      "tester": 1,
+      "implementer": 3
+    },
+    "model_distribution": {
+      "<unknown>": 13
+    }
+  },
+  "delegations": [
+    {
+      "delegation_id": "del_20260416T084153784650Z",
+      "dir_path": "D:\\project\\CouncilFlow\\.council\\delegations\\del_20260416T084153784650Z",
+      "role": null,
+      "target_model": null,
+      "status": "failed",
+      "via_sidecar": null,
+      "handoff_tokens": 0,
+      "result_tokens": 0,
+      "total_tokens": 69,
+      "artifacts": [
+        {
+          "path": "record.json",
+          "role": null,
+          "kind": "record",
+          "bytes": 277,
+          "tokens": 69
+        }
+      ]
+    },
+    {
+      "delegation_id": "del_20260416T084619428174Z",
+      "dir_path": "D:\\project\\CouncilFlow\\.council\\delegations\\del_20260416T084619428174Z",
+      "role": null,
+      "target_model": null,
+      "status": "failed",
+      "via_sidecar": null,
+      "handoff_tokens": 0,
+      "result_tokens": 0,
+      "total_tokens": 69,
+      "artifacts": [
+        {
+          "path": "record.json",
+          "role": null,
+          "kind": "record",
+          "bytes": 277,
+          "tokens": 69
+        }
+      ]
+    },
+    {
+      "delegation_id": "del_20260416T085110733118Z",
+      "dir_path": "D:\\project\\CouncilFlow\\.council\\delegations\\del_20260416T085110733118Z",
+      "role": null,
+      "target_model": null,
+      "status": "failed",
+      "via_sidecar": null,
+      "handoff_tokens": 0,
+      "result_tokens": 0,
+      "total_tokens": 69,
+      "artifacts": [
+        {
+          "path": "record.json",
+          "role": null,
+          "kind": "record",
+          "bytes": 277,
+          "tokens": 69
+        }
+      ]
+    },
+    {
+      "delegation_id": "del_20260416T093616463509Z",
+      "dir_path": "D:\\project\\CouncilFlow\\.council\\delegations\\del_20260416T093616463509Z",
+      "role": "advisor",
+      "target_model": null,
+      "status": null,
+      "via_sidecar": null,
+      "handoff_tokens": 61,
+      "result_tokens": 0,
+      "total_tokens": 61,
+      "artifacts": [
+        {
+          "path": "handoff.yaml",
+          "role": "advisor",
+          "kind": "handoff",
+          "bytes": 246,
+          "tokens": 61
+        }
+      ]
+    },
+    {
+      "delegation_id": "del_20260416T203716949448Z",
+      "dir_path": "D:\\project\\CouncilFlow\\.council\\delegations\\del_20260416T203716949448Z",
+      "role": "tester",
+      "target_model": null,
+      "status": "completed",
+      "via_sidecar": null,
+      "handoff_tokens": 127,
+      "result_tokens": 514,
+      "total_tokens": 715,
+      "artifacts": [
+        {
+          "path": "handoff.yaml",
+          "role": "tester",
+          "kind": "handoff",
+          "bytes": 508,
+          "tokens": 127
+        },
+        {
+          "path": "record.json",
+          "role": "tester",
+          "kind": "record",
+          "bytes": 297,
+          "tokens": 74
+        },
+        {
+          "path": "result.md",
+          "role": "tester",
+          "kind": "result",
+          "bytes": 3030,
+          "tokens": 514
+        }
+      ]
+    },
+    {
+      "delegation_id": "del_20260416T203716949504Z",
+      "dir_path": "D:\\project\\CouncilFlow\\.council\\delegations\\del_20260416T203716949504Z",
+      "role": "implementer",
+      "target_model": null,
+      "status": "completed",
+      "via_sidecar": null,
+      "handoff_tokens": 141,
+      "result_tokens": 330,
+      "total_tokens": 546,
+      "artifacts": [
+        {
+          "path": "handoff.yaml",
+          "role": "implementer",
+          "kind": "handoff",
+          "bytes": 564,
+          "tokens": 141
+        },
+        {
+          "path": "record.json",
+          "role": "implementer",
+          "kind": "record",
+          "bytes": 302,
+          "tokens": 75
+        },
+        {
+          "path": "result.md",
+          "role": "implementer",
+          "kind": "result",
+          "bytes": 2096,
+          "tokens": 330
+        }
+      ]
+    },
+    {
+      "delegation_id": "del_20260416T204014019449Z",
+      "dir_path": "D:\\project\\CouncilFlow\\.council\\delegations\\del_20260416T204014019449Z",
+      "role": "implementer",
+      "target_model": null,
+      "status": "completed",
+      "via_sidecar": null,
+      "handoff_tokens": 141,
+      "result_tokens": 866,
+      "total_tokens": 1082,
+      "artifacts": [
+        {
+          "path": "handoff.yaml",
+          "role": "implementer",
+          "kind": "handoff",
+          "bytes": 564,
+          "tokens": 141
+        },
+        {
+          "path": "record.json",
+          "role": "implementer",
+          "kind": "record",
+          "bytes": 302,
+          "tokens": 75
+        },
+        {
+          "path": "result.md",
+          "role": "implementer",
+          "kind": "result",
+          "bytes": 3576,
+          "tokens": 866
+        }
+      ]
+    },
+    {
+      "delegation_id": "del_20260418T123255588339Z",
+      "dir_path": "D:\\project\\CouncilFlow\\.council\\delegations\\del_20260418T123255588339Z",
+      "role": "implementer",
+      "target_model": null,
+      "status": "failed",
+      "via_sidecar": null,
+      "handoff_tokens": 181,
+      "result_tokens": 0,
+      "total_tokens": 314,
+      "artifacts": [
+        {
+          "path": "handoff.yaml",
+          "role": "implementer",
+          "kind": "handoff",
+          "bytes": 727,
+          "tokens": 181
+        },
+        {
+          "path": "record.json",
+          "role": "implementer",
+          "kind": "record",
+          "bytes": 534,
+          "tokens": 133
+        }
+      ]
+    },
+    {
+      "delegation_id": "local-advisor-ask-2026-04-19",
+      "dir_path": "D:\\project\\CouncilFlow\\.council\\delegations\\local-advisor-ask-2026-04-19",
+      "role": null,
+      "target_model": null,
+      "status": null,
+      "via_sidecar": null,
+      "handoff_tokens": 0,
+      "result_tokens": 437,
+      "total_tokens": 437,
+      "artifacts": [
+        {
+          "path": "advisor_result.md",
+          "role": null,
+          "kind": "result",
+          "bytes": 3330,
+          "tokens": 437
+        }
+      ]
+    },
+    {
+      "delegation_id": "local-architect-change-2026-04-19",
+      "dir_path": "D:\\project\\CouncilFlow\\.council\\delegations\\local-architect-change-2026-04-19",
+      "role": null,
+      "target_model": null,
+      "status": null,
+      "via_sidecar": null,
+      "handoff_tokens": 0,
+      "result_tokens": 1616,
+      "total_tokens": 1616,
+      "artifacts": [
+        {
+          "path": "architect_result.md",
+          "role": null,
+          "kind": "result",
+          "bytes": 9693,
+          "tokens": 1616
+        }
+      ]
+    },
+    {
+      "delegation_id": "local-architect-token-opt-2026-04-20",
+      "dir_path": "D:\\project\\CouncilFlow\\.council\\delegations\\local-architect-token-opt-2026-04-20",
+      "role": null,
+      "target_model": null,
+      "status": null,
+      "via_sidecar": null,
+      "handoff_tokens": 0,
+      "result_tokens": 1013,
+      "total_tokens": 1013,
+      "artifacts": [
+        {
+          "path": "architect_result.md",
+          "role": null,
+          "kind": "result",
+          "bytes": 6108,
+          "tokens": 1013
+        }
+      ]
+    },
+    {
+      "delegation_id": "local-planner-change-2026-04-19",
+      "dir_path": "D:\\project\\CouncilFlow\\.council\\delegations\\local-planner-change-2026-04-19",
+      "role": null,
+      "target_model": null,
+      "status": null,
+      "via_sidecar": null,
+      "handoff_tokens": 0,
+      "result_tokens": 3141,
+      "total_tokens": 3141,
+      "artifacts": [
+        {
+          "path": "planner_result.md",
+          "role": null,
+          "kind": "result",
+          "bytes": 14691,
+          "tokens": 3141
+        }
+      ]
+    },
+    {
+      "delegation_id": "local-planner-token-opt-2026-04-20",
+      "dir_path": "D:\\project\\CouncilFlow\\.council\\delegations\\local-planner-token-opt-2026-04-20",
+      "role": null,
+      "target_model": null,
+      "status": null,
+      "via_sidecar": null,
+      "handoff_tokens": 0,
+      "result_tokens": 3983,
+      "total_tokens": 3983,
+      "artifacts": [
+        {
+          "path": "planner_result.md",
+          "role": null,
+          "kind": "result",
+          "bytes": 18853,
+          "tokens": 3983
+        }
+      ]
+    }
+  ]
+}
