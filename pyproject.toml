@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "councilflow"
-version = "0.1.4"
+version = "0.1.5"
 description = "CLI-first, local-first, controller-aware sidecar for multi-model collaboration."
 readme = "readme.md"
 requires-python = ">=3.13"

@@ -4,6 +4,80 @@ All notable changes to CouncilFlow are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] — 2026-04-20
+
+Patch release closing two structural defects that survived into 0.1.4
+and were exposed by the cnchess test project on 2026-04-20:
+
+1. `src/councilflow/cli/delegate.py:149` `_RETRYABLE_FALLBACK_KINDS`
+   listed the string `"process_error"`, but every adapter emits
+   `"process_exit"`. The typo had been live since 0.1.3, silently
+   disabling fallback on any CLI-subprocess failure.
+2. `project-design` / `project-plan` / `project-change` skill
+   protocols did not warn the delegated sidecar to avoid MCP writes
+   into host `.claude/state/*`. A sub-controller that "helpfully"
+   saved its output via `save_architecture` / `save_prd` /
+   `create_tasks` triggered the protected-paths guardrail and got
+   rolled back as `guardrail_violation`.
+
+### Fixed
+
+- **Fallback retry no longer silent-fails on `process_exit`**.
+  `_RETRYABLE_FALLBACK_KINDS` now contains the correct
+  `"process_exit"` string. Correctly-configured fallback chains
+  (`roles.<role>: [ {model: A}, {model: B, fallback: true} ]`) start
+  working as PRD §31.2 originally promised. Regression tests
+  (`test_fallback_whitelist_contains_process_exit_not_process_error`,
+  `test_is_retryable_with_fallback_true_for_process_exit`,
+  `test_is_retryable_with_fallback_false_for_guardrail_violation`)
+  pin the correct classification.
+
+### Changed
+
+- **Synthesizer skill protocol is now artifact-first**. The three
+  workflow skills pass an explicit negative constraint in their
+  `council delegate --role synthesizer` invocation
+  ("不要调用 save_architecture / save_prd / create_tasks / add_log
+  等 MCP 写入工具"), and the host-side persistence step explicitly
+  reads `.council/delegations/<id>/result.md` before driving the
+  appropriate MCP writes itself. This aligns synthesizer with the
+  `implementer` contract already in place since 0.1.0. Applies to
+  `project-design`, `project-plan`, `project-change` across both
+  repositories (`D:/project/AutoSkills/skills/` and
+  `~/.workflow-core/skills/`).
+- `docs/integration.md` gained a "Synthesizer artifact contract
+  (0.1.5+)" subsection and the "Fallback retry semantics" section
+  was corrected + annotated with the 0.1.5 typo note.
+
+### Backward compatibility guarantees
+
+- No new protocol, no new CLI flag, no new config schema.
+- Existing 0.1.4 `.council/config.yaml` files load and behave
+  identically.
+- All 99 previously-done tasks (0.1.0 through 0.1.4) required zero
+  code rework.
+- `--allow-workflow-state-write` remains an opt-in escape hatch for
+  callers who genuinely need sidecar-driven host-state writes.
+- Guardrail default behavior unchanged (`PROTECTED_WORKFLOW_PATHS`
+  still deny-all).
+
+### Tests
+
+- **347 pytest cases** (was 342 at 0.1.4, +5 new): 3 in
+  `tests/test_cli_delegate.py` for the fallback typo regression + 2
+  in the new `tests/test_synthesizer_artifact_contract.py` file.
+- `ruff check src/ tests/`: clean.
+
+### Operator note
+
+No upgrade actions required. `pipx upgrade councilflow` picks up
+0.1.5. If you maintain a local copy of the workflow skills under
+`~/.workflow-core/skills/`, re-sync from AutoSkills (or run
+`sync-skills.ps1`) so `project-design` / `project-plan` /
+`project-change` pick up the 0.1.5 artifact-first protocol.
+
+See `docs/release-notes-0.1.5.md` for the full write-up.
+
 ## [0.1.4] — 2026-04-20
 
 Patch release closing the Claude variant gap left by 0.1.3's Part A
@@ -435,6 +509,7 @@ giving up local-first guardrails.
   defined for POSIX symlinks but Linux / macOS coverage is exercised through
   unit tests only, not a packaged smoke run.
 
+[0.1.5]: https://github.com/SuperRedHat/CouncilFlow/releases/tag/v0.1.5
 [0.1.4]: https://github.com/SuperRedHat/CouncilFlow/releases/tag/v0.1.4
 [0.1.3]: https://github.com/SuperRedHat/CouncilFlow/releases/tag/v0.1.3
 [0.1.2]: https://github.com/SuperRedHat/CouncilFlow/releases/tag/v0.1.2

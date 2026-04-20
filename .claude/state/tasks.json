@@ -4348,11 +4348,11 @@
         "无破坏性 git"
       ],
       "stage_gate": true,
-      "status": "todo",
+      "status": "awaiting_manual_acceptance",
       "created_at": "2026-04-20T13:17:01.298Z",
-      "updated_at": "2026-04-20T13:17:01.298Z",
+      "updated_at": "2026-04-20T13:36:30.529Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "milestone_manual + stage_gate=true. User can /project-feedback TASK-106 accept after reviewing CHANGELOG, release-notes, and smoke report."
     }
   ]
 }
