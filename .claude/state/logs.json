@@ -3399,6 +3399,30 @@
       "from_status": "auto_verified",
       "to_status": "done",
       "message": "TASK-107 auto_verified → done"
+    },
+    {
+      "timestamp": "2026-04-21T07:15:49.731Z",
+      "type": "task_status_change",
+      "task_id": "TASK-108",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-108 todo → in_progress"
+    },
+    {
+      "timestamp": "2026-04-21T07:17:56.604Z",
+      "type": "task_status_change",
+      "task_id": "TASK-108",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-108 in_progress → auto_verified: 4 skills synced both repos with shell-timeout recovery protocol. NOTE: command name is `council discussion wait` (noun form, mirrors delegation wait) not `council discuss wait` — Typer cannot register both `discuss` as command (existing) AND `discuss` as sub-app (new). All 4 skills reference correct command name. Both repos diff-q identical."
+    },
+    {
+      "timestamp": "2026-04-21T07:18:02.523Z",
+      "type": "task_status_change",
+      "task_id": "TASK-108",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-108 auto_verified → done"
     }
   ]
 }

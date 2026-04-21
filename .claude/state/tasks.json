@@ -4428,11 +4428,11 @@
         "保留现有失败上报协议"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-21T07:07:55.519Z",
-      "updated_at": "2026-04-21T07:07:55.519Z",
+      "updated_at": "2026-04-21T07:18:02.501Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "4 skills synced both repos with shell-timeout recovery protocol. NOTE: command name is `council discussion wait` (noun form, mirrors delegation wait) not `council discuss wait` — Typer cannot register both `discuss` as command (existing) AND `discuss` as sub-app (new). All 4 skills reference correct command name. Both repos diff-q identical."
     },
     {
       "id": "TASK-109",
