@@ -3367,6 +3367,14 @@
       "from_status": null,
       "to_status": null,
       "message": "0.1.5 milestone accepted by SuperRedHat on 2026-04-20. stage_gate_closed=true, phase_summary='0.1.5 Synthesizer artifact-first + fallback typo patch: 7 tasks (TASK-100~106), 8 commits on main (1 code fix, 1 new test file, 3 skill updates, 1 docs update, 1 release bundle, 1 state commit). Validated by cnchess 6-task MVP integration run: fixer loop fired on legitimate semantic bug, shell timeout protocol worked 5x without false positive, synthesizer zero guardrail_violation across all 6 tasks.', next_phase='completed (0.1.5 shipped)'."
+    },
+    {
+      "timestamp": "2026-04-21T07:09:21.505Z",
+      "type": "phase_change",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "0.1.6 project-change 完成。architect -> planner -> synthesizer 三阶段全部 local_execution，遵循 0.1.5 artifact-first 契约（synthesizer 只产 markdown 草稿在 .council/artifacts/，host 主控通过 MCP 落盘 PRD/architecture/tasks）。新增 4 tasks (TASK-107~110)，其中 TASK-110 是 milestone_manual + stage_gate=true 发布门。核心发现：discussion_orchestrator.py:93 在 run() 启动时立即创建 discussion_id 并写 state.json:130 last_discussion_id，所以恢复路径 council status --json 已经够用，无需修改 cli/discuss.py 的 stderr 行为。新增 council discuss wait 子命令 mirror delegation wait 但完成判定改为双条件 (record.status==completed AND summary.md 可读)。0.1.6 patch bump，0.1.5 配置零修改。PRD §34 + architecture §30 已落盘。项目 status 从 completed 迁回 in_progress。"
     }
   ]
 }

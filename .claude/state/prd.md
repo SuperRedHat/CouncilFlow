@@ -9,59 +9,55 @@
 （§1-§30 保留 git 历史中的原文，摘要见 commits ef61ba1 及之前的 .claude/state/prd.md）
 
 ## 31. 变更记录（2026-04-20，工作流 token 效率优化轮）
-
-本阶段引入 Dynamic Role Routing + Semantic Convergence + 基线测量工具 + council status 观测。完整内容见 git 历史 0.1.3 发布前的 PRD 版本（commits 26259e5 及之前）。
-
-关键产出：
-- PRD §31.2 动态角色路由（`RoleRoute` + `RoleMapping` list form + 受限 `when` 表达式 + fallback 链）
-- PRD §31.3 语义收敛（`convergence_policy` + `min_rounds_by_topic` + `convergence_trace`）
-- PRD §31.6 明确排除项：link folding / sidecar 分层 / artifact schema / session 复用 / turn merging / delta handoff
-- 78+15 → 93 tasks done，版本 0.1.3 发布
+0.1.3 发布。详见 git 历史 commits 26259e5 及之前。
 
 ## 32. 变更记录（2026-04-20，0.1.4 Claude Variant 路由补丁）
-
-0.1.3 发布后验证中发现：`resolve_adapter_model` 的白名单只支持 `codex` / `claude` / `gemini-<variant>` / `gpt-<variant>` / `o1-<variant>`，**遗漏 `claude-<variant>`**。结果是用户配置 `tester: claude-haiku` 会在 config 加载时被 `validate_model_name` 直接拒掉。0.1.4 补齐 Claude 家族的 variant 路径，完全对标 Gemini 已有实现。93+6 → 99 tasks done，版本 0.1.4 发布。
+0.1.4 补齐 Claude 家族 variant 路径。详见 CHANGELOG [0.1.4]。
 
 ## 33. 变更记录（2026-04-20，0.1.5 Synthesizer artifact-first + Fallback typo 补丁）
+0.1.5 修两个 0.1.3 起的结构性缺陷。详见 CHANGELOG [0.1.5] 与 docs/release-notes-0.1.5.md。
 
-0.1.4 发布后的 cnchess 测试项目暴露两个 0.1.3 已埋下的结构/编码缺陷，0.1.4 没发现也没修：
+## 34. 变更记录（2026-04-21，0.1.6 `council discuss wait` + 恢复契约补丁）
 
-### 33.1 问题 1：Synthesizer 和 protected-paths 契约不对齐
+0.1.5 发布后，用户在外部 SDL 项目（Gemini 主控）跑 `project-init` 时反复撞到 `council discuss` shell 超时。0.1.5 已修了 `council delegate` 的 fallback typo，但**discuss 这条路径从来没有对应的恢复机制**。
 
-cnchess 跑 project-design 时，delegated sidecar synthesizer 调 MCP `save_architecture`，MCP 写入落点 `.claude/state/architecture.md` 正好被 `PROTECTED_WORKFLOW_PATHS` 守护，导致 orchestrator 回滚并报 `guardrail_violation`。
+### 34.1 问题：discuss shell 超时 ↔ provider 总超时不匹配
 
-根因是跨层契约矛盾：
-- MCP policy 层说"synthesizer 允许用 MCP"
-- Protected paths 层说"没人可以动 `.claude/state`"
-- 两个层都对，但 synthesizer 用了 MCP → 被正确但无用地回滚
+- `council discuss` 是同步子进程，provider total timeout=7200s，真实多模型讨论常跑 3-10 分钟
+- 主控 CLI 的 shell 命令超时层只有 3-4 分钟（Codex / Claude Code / Gemini 都这样）
+- `council delegate` 有 `council delegation wait <id>` 做 shell 超时后的 2h 恢复路径
+- **`council discuss` 没有对应子命令** —— 用户每次撞到超时都要手动 ls `.council/discuss/` 找产物
 
-### 33.2 问题 2：Fallback chain 字符串 typo
+2026-04-20 跟 codex 走了一轮 discuss 收敛（disc_20260420T195908387651Z），结论：
+- 方向正确（mirror `delegation wait` 模式）
+- 但不能直接搬：discussion 启动即落 `record.json(status=running)`，`discuss wait` 完成判定必须是 `record.status=='completed'` **AND** `summary.md` 可读
+- `discussion_id` 恢复路径用 `council status --json → state.last_discussion_id`，无需修改 discuss.py 的 stderr 行为
 
-`src/councilflow/cli/delegate.py:149` 的 `_RETRYABLE_FALLBACK_KINDS` 白名单写的是 `"process_error"`，但所有 adapter（base/claude/gemini/codex/openai）实际发的都是 `"process_exit"`。**typo 导致从 0.1.3 上线起，任何 fallback 都不会在子进程失败时触发。** 这是 PRD §31.2 "按角色下沉省 $" 承诺的隐含破损——用户正确配了 fallback 也没用。
+### 34.2 产品要求（0.1.6）
 
-### 33.3 产品要求（0.1.5）
+1. **新子命令 `council discuss wait <discussion_id> --timeout 7200 --poll-interval 30`**
+   - 完成判定双条件：`record.status == "completed"` AND `summary.md` 可读
+   - 退出码 + error_kind mirror `delegation wait`：`wait_timeout` / `discussion_not_found` / `record_corrupt` / `discussion_failed` / `summary_missing`
+   - JSON 响应结构 mirror `delegation wait`
+2. **不改 `council discuss` 的现有行为**：启动流程、emit 时机、prompt、收敛逻辑全部不动
+3. **4 个 skill 协议同步**：`project-init` / `project-design` / `project-change` / `project-ask`
+   - 协议补 "shell 超时 → `council status --json` 取 id → `council discuss wait <id>` → 读 summary.md" 两段式
+   - AutoSkills + ~/.workflow-core/skills 两仓同步
+4. **docs/integration.md** 新增 "Discuss wait (0.1.6+)" 小节，README 审计同步
+5. **向后兼容硬红线**：
+   - 0.1.5 配置 / 0.1.5 skill 在 0.1.6 下继续工作
+   - 0.1.6 skill 在 0.1.5 CouncilFlow 下 wait 命令缺失需优雅降级（`command not found` 不中断 happy path）
+   - 0.1.5 的 106 个历史 done 任务零回改
 
-1. **Fallback 在 `process_exit` 时必须真 retry**（字符串修正）
-2. **Synthesizer 契约对齐到 implementer 的 artifact-first 模式**：
-   - sidecar synthesizer 只写 `.council/delegations/<id>/result.md`（既有约定）
-   - host 主控读取 artifact 后负责调 MCP `save_architecture` / `save_prd` / `create_tasks` / `add_log`
-   - `--allow-workflow-state-write` 保持 opt-in 不变默认；protected-paths 硬红线保留
-3. **Skill 协议同步**：project-design / project-plan / project-change 三个 skill（AutoSkills + ~/.workflow-core/skills 两仓 × 三 controller = 9 个副本组合）的 synthesizer 阶段协议更新
-4. **向后兼容硬红线**：
-   - 0.1.4 现有所有配置零修改继续工作
-   - 99 个历史 done 任务零回改
-   - Guardrail 默认行为不变
-5. **发布策略**：0.1.4 → 0.1.5 **patch bump**。理由：无新协议 / 无新 CLI 参数 / 无新 schema，纯 bug fix + 文档层契约修正
+### 34.3 明确不涉及（0.1.6）
 
-### 33.4 明确不涉及（0.1.5）
+- 通用 `council wait <type> <id>` 抽象（codex 讨论建议延后）
+- daemon / IPC 推送（过度设计）
+- 改 `council discuss` 启动流程或 stderr 输出格式
+- 任何 role 路由、变体、guardrail 行为变化
 
-- Model 可达性 ping / preflight（显式跳过；failure-then-fallback 已经够用，尤其在修 typo 之后）
-- `error_kind=model_unavailable` 新分类（backlog；0.1.5 只修 typo 已经解决 90% 问题）
-- Synthesizer 的职责范围（仍是综合多 artifact 产出最终稿，只是落盘方式变）
-- 任何 role 的路由优先级 / when 表达式语义
+### 34.4 阶段 gate
 
-### 33.5 阶段 gate
+TASK-110 milestone_manual + stage_gate=true：cf-0.1.6-smoke clean 项目跑"`council discuss` shell 超时模拟 + `council status --json` 取 id + `discuss wait` 拿 summary.md"完整链路；新子命令 7 个错误分类 e2e 验证。
 
-TASK-106 milestone_manual + stage_gate=true：cf-0.1.5-smoke clean 项目跑 project-design 的 synthesizer 阶段**不再** `guardrail_violation`；fake-adapter 测试证实 fallback 在 `process_exit` 时真 retry。
-
-本节 supersede §31.2 里 fallback 链描述的"fallback 在子进程失败时会 retry"这个隐含承诺——0.1.5 之前该承诺因 typo 并未兑现。
+本节补齐 §31.2 隐含承诺的"长任务恢复路径"在 discuss 这一边的能力缺口。
