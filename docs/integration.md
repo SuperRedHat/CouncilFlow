@@ -746,6 +746,86 @@ The `--model <name>` CLI flag takes the **highest** priority and
 bypasses routing entirely. This preserves the legacy CLI behavior for
 ad-hoc one-off invocations.
 
+### Discuss wait (0.1.6+)
+
+`council discuss` is synchronous: the controller's shell blocks for
+the entire multi-model exchange. Real discussions (5 rounds × 2-3
+critic models) routinely run 3-10 minutes, but most desktop CLI
+shells time out after 3-4 minutes. Before 0.1.6 there was no way to
+recover the discussion result after a shell timeout — the subprocess
+kept running and `summary.md` eventually landed, but the caller had
+to manually `ls .council/discuss/` to find it. (`council delegate`
+had `council delegation wait` for the same problem since 0.1.0;
+`council discuss` was the asymmetric gap.)
+
+0.1.6 adds the parallel: **`council discussion wait <discussion_id>
+--timeout 7200`**. The naming (noun form `discussion`, mirroring
+`delegation`) preserves the existing `council discuss "question"`
+verb-form interface unchanged.
+
+#### Recovery protocol (host-controller workflow skills)
+
+```bash
+# 1. Try the normal call. If shell times out or returns non-zero:
+council discuss "..." --controller-position "..." --models claude,codex
+
+# 2. Recover the discussion id from project state.
+DISC_ID=$(council status --json --project-root "$ROOT" | jq -r .data.state.last_discussion_id)
+
+# 3. Block until the discussion finishes (default budget 7200s = 2h).
+council discussion wait "$DISC_ID" --project-root "$ROOT" --timeout 7200
+
+# 4. Read the summary the wait command pointed at.
+cat ".council/discuss/$DISC_ID/summary.md"
+```
+
+`DiscussionOrchestrator.run()` writes
+`state.json::last_discussion_id` within ~50ms of starting (before any
+LLM call), so the `council status --json` recovery path is reliable
+even if the shell timed out very early.
+
+#### Completion contract (dual condition)
+
+Unlike `delegation wait`, which treats "record.json exists" as
+completion, `discussion wait` requires **both**:
+
+1. `record.status == "completed"` (the orchestrator finished the
+   convergence loop), AND
+2. `summary.md` is present and readable.
+
+The dual condition is necessary because
+`DiscussionOrchestrator.run()` writes `record.json(status="running")`
+on start, so a single-condition check would return prematurely.
+
+#### Error kinds (mirror `delegation wait`)
+
+| `error_kind` | Triggered by |
+|---|---|
+| `wait_timeout` | Total wait exceeds `--timeout` seconds. |
+| `discussion_not_found` | `.council/discuss/<id>/` does not exist. |
+| `record_corrupt` | `record.json` exists but cannot be parsed as JSON. |
+| `discussion_failed` | `record.status == "failed"` (e.g. participant unavailable). |
+| `summary_missing` | `record.status == "completed"` but `summary.md` is absent or unreadable (rare write race). |
+
+All non-zero kinds exit code 1 with a JSON error payload. Happy path
+exits 0 with `data.summary_path` for the caller to read.
+
+#### Defaults
+
+- `--timeout`: 7200 seconds (2 hours), matching `delegation wait`.
+- `--poll-interval`: 30 seconds.
+
+#### Backward compatibility
+
+- `council discuss "question"` behavior is **completely unchanged**.
+  No new flags, no protocol shift.
+- 0.1.5 callers that don't use `discussion wait` work exactly as
+  before.
+- 0.1.6 skill files reference `discussion wait`; on a 0.1.5
+  CouncilFlow install the call returns "command not found" and the
+  caller must fall back to manual recovery (the same posture as
+  pre-0.1.6).
+
 ---
 
 ## Discussion Convergence Policy (0.1.3+)
