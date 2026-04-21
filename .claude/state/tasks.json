@@ -4389,11 +4389,11 @@
         "头部 docstring 写明这个命令存在原因（shell 超时 + provider 7200s 不匹配）"
       ],
       "stage_gate": false,
-      "status": "todo",
+      "status": "done",
       "created_at": "2026-04-21T07:07:55.518Z",
-      "updated_at": "2026-04-21T07:07:55.519Z",
+      "updated_at": "2026-04-21T07:15:12.875Z",
       "commit_hash": "",
-      "notes": ""
+      "notes": "discuss_wait.py + 8 tests (7 scenarios + --help smoke). 347 -> 355 pass, ruff clean. Naming: council discussion wait (noun form) to preserve council discuss \"question\" verb-form backward compat. Dual-condition completion: record.status==completed AND summary.md readable. Recursive subcommand allowlist updated to include discussion."
     },
     {
       "id": "TASK-108",

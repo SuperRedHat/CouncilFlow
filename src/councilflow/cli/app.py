@@ -10,6 +10,7 @@ from councilflow import __version__
 from councilflow.cli.delegate import delegate
 from councilflow.cli.delegation import delegation_app
 from councilflow.cli.discuss import discuss
+from councilflow.cli.discuss_wait import discussion_app
 from councilflow.cli.status import status
 from councilflow.cli.synthesize import synthesize
 from councilflow.providers.base import (
@@ -29,7 +30,7 @@ app = typer.Typer(
 # `delegation` (read-only polling) stay available for inspection/debugging but
 # may not mutate the workflow state.
 _ALLOWED_RECURSIVE_SUBCOMMANDS: frozenset[str] = frozenset(
-    {"status", "version", "delegation"}
+    {"status", "version", "delegation", "discussion"}
 )
 
 
@@ -76,6 +77,7 @@ app.command(name="delegate")(delegate)
 app.command(name="status")(status)
 app.command(name="synthesize")(synthesize)
 app.add_typer(delegation_app, name="delegation")
+app.add_typer(discussion_app, name="discussion")
 
 
 def main() -> None:
