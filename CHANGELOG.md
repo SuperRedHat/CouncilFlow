@@ -4,6 +4,92 @@ All notable changes to CouncilFlow are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] — 2026-04-21
+
+Patch release closing the asymmetric gap left between
+`council delegate` and `council discuss` since 0.1.0:
+`council delegation wait` already gave callers a 2-hour recovery
+path when their shell timed out before a delegation finished, but
+**`council discuss` had no equivalent**. Multi-model discussions of
+3-5 minutes (typical for 5-round critique) routinely exceeded the
+3-4 minute shell timeout in desktop CLI hosts, leaving callers to
+manually `ls .council/discuss/` for the artifact. 2026-04-21
+encountered this on a real SDL project init via Gemini controller.
+
+### Added
+
+- **`council discussion wait <discussion_id>`** subcommand
+  (`src/councilflow/cli/discuss_wait.py`). Mirrors
+  `council delegation wait`'s polling shape, defaults
+  (`--timeout 7200`, `--poll-interval 30`), and JSON response
+  structure. Naming uses the noun form `discussion` to mirror
+  `delegation` and to preserve the existing
+  `council discuss "question"` verb-form interface unchanged.
+- **Dual completion contract**: completion requires BOTH
+  `record.status == "completed"` AND `summary.md` is readable. The
+  single-condition pattern (`delegation wait` uses "record exists
+  is enough") would return prematurely because
+  `DiscussionOrchestrator.run()` writes
+  `record.json(status="running")` immediately on start.
+- **Error kinds**: `wait_timeout` / `discussion_not_found` /
+  `record_corrupt` / `discussion_failed` / `summary_missing`. All
+  exit code 1 with structured JSON error payload. Happy path
+  returns `summary_path` for the caller to read.
+- **Recursive subcommand allowlist** updated to include
+  `discussion` so delegated sidecars can also poll discussion
+  artifacts (read-only, mirrors the `delegation` allowance).
+
+### Changed
+
+- **Skill protocols updated** in `project-init`, `project-design`,
+  `project-change`, `project-ask` (both
+  `D:/project/AutoSkills/skills/` and `~/.workflow-core/skills/`):
+  callers now follow the two-stage recovery pattern when
+  `council discuss` shell call times out — `council status --json`
+  → `state.last_discussion_id` → `council discussion wait <id>` →
+  read summary. Only the wait command's own error kinds escalate
+  to `workflow_failure`.
+- `docs/integration.md` gained a "Discuss wait (0.1.6+)"
+  subsection with the recovery protocol, completion contract,
+  error_kind table, defaults, and backward compatibility notes.
+- `readme.md` gained a short note in the multi-model discussion
+  section pointing operators at the recovery path.
+
+### Backward compatibility guarantees
+
+- `council discuss "question"` behavior is **completely unchanged**
+  (no flags added, no protocol shift, no schema change).
+- All 110 done tasks across 0.1.0 through 0.1.5 unchanged.
+- Existing 0.1.5 `.council/config.yaml` files load identically.
+- 0.1.5 callers that don't use `discussion wait` continue to work
+  exactly as they did.
+- 0.1.6 skill files reference `council discussion wait`; on a 0.1.5
+  CouncilFlow install the call returns "command not found" and the
+  caller must fall back to manual recovery (the same posture as
+  pre-0.1.6).
+
+### Tests
+
+- **355 pytest cases** (was 347 at 0.1.5, +8 new): 7 scenarios for
+  `discussion wait` (completed+summary / running+poll / failed /
+  summary_missing / record_corrupt / discussion_not_found /
+  wait_timeout) + 1 `--help` smoke test, all in
+  `tests/test_cli_discuss_wait.py`.
+- `ruff check src/ tests/`: clean.
+
+### Operator note
+
+No upgrade actions required. `pipx upgrade councilflow` picks up
+0.1.6. If you maintain a local copy of the workflow skills under
+`~/.workflow-core/skills/`, re-sync `project-init`,
+`project-design`, `project-change`, `project-ask` from AutoSkills
+(or run `sync-skills.ps1`) so the new shell-timeout recovery
+protocol is in place.
+
+See `docs/release-notes-0.1.6.md` for the full write-up and
+`docs/discuss-wait-smoke-report-2026-04-21.md` for the
+clean-project recovery evidence.
+
 ## [0.1.5] — 2026-04-20
 
 Patch release closing two structural defects that survived into 0.1.4
@@ -509,6 +595,7 @@ giving up local-first guardrails.
   defined for POSIX symlinks but Linux / macOS coverage is exercised through
   unit tests only, not a packaged smoke run.
 
+[0.1.6]: https://github.com/SuperRedHat/CouncilFlow/releases/tag/v0.1.6
 [0.1.5]: https://github.com/SuperRedHat/CouncilFlow/releases/tag/v0.1.5
 [0.1.4]: https://github.com/SuperRedHat/CouncilFlow/releases/tag/v0.1.4
 [0.1.3]: https://github.com/SuperRedHat/CouncilFlow/releases/tag/v0.1.3

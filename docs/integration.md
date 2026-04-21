@@ -770,7 +770,7 @@ verb-form interface unchanged.
 council discuss "..." --controller-position "..." --models claude,codex
 
 # 2. Recover the discussion id from project state.
-DISC_ID=$(council status --json --project-root "$ROOT" | jq -r .data.state.last_discussion_id)
+DISC_ID=$(council status --project-root "$ROOT" | jq -r .data.state.last_discussion_id)
 
 # 3. Block until the discussion finishes (default budget 7200s = 2h).
 council discussion wait "$DISC_ID" --project-root "$ROOT" --timeout 7200
@@ -781,7 +781,7 @@ cat ".council/discuss/$DISC_ID/summary.md"
 
 `DiscussionOrchestrator.run()` writes
 `state.json::last_discussion_id` within ~50ms of starting (before any
-LLM call), so the `council status --json` recovery path is reliable
+LLM call), so the `council status` recovery path is reliable
 even if the shell timed out very early.
 
 #### Completion contract (dual condition)

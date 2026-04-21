@@ -115,7 +115,7 @@ council discuss "这个架构该怎么拆？" \
 - CouncilFlow 把立场交给 Claude 和 Gemini 评论，**不是**让它们各自从零起草方案
 - 多轮之后由当前主控综合，不再额外调外部模型做最终综合
 - 不写 `--models` 时自动读取项目级 `.council/config.yaml` 的 `discussion.default_models`
-- **shell 超时恢复（0.1.6+）**：如果调用方 shell 命令超时（多数桌面 CLI 是 3-4 分钟）但 discussion 还没收敛，**不要**直接当失败处理。子进程会继续跑，`summary.md` 最终会落盘。用 `council status --json | jq -r .data.state.last_discussion_id` 拿到 id，然后 `council discussion wait <id> --timeout 7200` 轮询到完成（详见 `docs/integration.md::Discuss wait`）
+- **shell 超时恢复（0.1.6+）**：如果调用方 shell 命令超时（多数桌面 CLI 是 3-4 分钟）但 discussion 还没收敛，**不要**直接当失败处理。子进程会继续跑，`summary.md` 最终会落盘。用 `council status | jq -r .data.state.last_discussion_id` 拿到 id，然后 `council discussion wait <id> --timeout 7200` 轮询到完成（详见 `docs/integration.md::Discuss wait`）
 
 ### 委派一个实现任务
 

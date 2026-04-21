@@ -3447,6 +3447,30 @@
       "from_status": "auto_verified",
       "to_status": "done",
       "message": "TASK-109 auto_verified → done"
+    },
+    {
+      "timestamp": "2026-04-21T07:20:33.132Z",
+      "type": "task_status_change",
+      "task_id": "TASK-110",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-110 todo → in_progress"
+    },
+    {
+      "timestamp": "2026-04-21T07:25:20.854Z",
+      "type": "task_status_change",
+      "task_id": "TASK-110",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-110 in_progress → auto_verified: 355 pytest pass (347+8 new), ruff clean, pyproject=0.1.6. Smoke at D:/AIProjects/test/cf-0.1.6-smoke/ confirms two-stage recovery (council status -> last_discussion_id -> discussion wait -> read summary) end-to-end + discussion_not_found negative path. CHANGELOG [0.1.6], release-notes-0.1.6.md (~9KB), discuss-wait-smoke-report-2026-04-21.md (~9KB) committed. Operator note: --json flag references in skills/docs were corrected to plain council status (always emits JSON)."
+    },
+    {
+      "timestamp": "2026-04-21T07:25:27.129Z",
+      "type": "task_status_change",
+      "task_id": "TASK-110",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-110 auto_verified → awaiting_manual_acceptance: milestone_manual + stage_gate=true. User can /project-feedback TASK-110 accept after reviewing CHANGELOG [0.1.6], release-notes-0.1.6.md, smoke report, and confirming the recovery path is what they wanted."
     }
   ]
 }
