@@ -4513,11 +4513,11 @@
         "无破坏性 git"
       ],
       "stage_gate": true,
-      "status": "awaiting_manual_acceptance",
+      "status": "done",
       "created_at": "2026-04-21T07:07:55.519Z",
-      "updated_at": "2026-04-21T07:25:27.110Z",
+      "updated_at": "2026-04-21T07:39:02.718Z",
       "commit_hash": "",
-      "notes": "milestone_manual + stage_gate=true. User can /project-feedback TASK-110 accept after reviewing CHANGELOG [0.1.6], release-notes-0.1.6.md, smoke report, and confirming the recovery path is what they wanted."
+      "notes": "User accepted 2026-04-21. 0.1.6 closes the asymmetric gap between council delegate (had delegation wait since 0.1.0) and council discuss (no recovery path). 355 pytest green, ruff clean, end-to-end smoke verified two-stage recovery."
     }
   ]
 }

@@ -3471,6 +3471,22 @@
       "from_status": "auto_verified",
       "to_status": "awaiting_manual_acceptance",
       "message": "TASK-110 auto_verified → awaiting_manual_acceptance: milestone_manual + stage_gate=true. User can /project-feedback TASK-110 accept after reviewing CHANGELOG [0.1.6], release-notes-0.1.6.md, smoke report, and confirming the recovery path is what they wanted."
+    },
+    {
+      "timestamp": "2026-04-21T07:39:02.740Z",
+      "type": "task_status_change",
+      "task_id": "TASK-110",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-110 awaiting_manual_acceptance → done: User accepted 2026-04-21. 0.1.6 closes the asymmetric gap between council delegate (had delegation wait since 0.1.0) and council discuss (no recovery path). 355 pytest green, ruff clean, end-to-end smoke verified two-stage recovery."
+    },
+    {
+      "timestamp": "2026-04-21T07:39:13.185Z",
+      "type": "milestone_gate",
+      "task_id": "TASK-110",
+      "from_status": null,
+      "to_status": null,
+      "message": "0.1.6 milestone accepted by SuperRedHat on 2026-04-21. stage_gate_closed=true, phase_summary='0.1.6 council discussion wait subcommand patch: 4 tasks (TASK-107~110), 8 commits on main (1 code+tests, 1 skill sync, 1 docs, 1 release, plus state commits). Closes the 0.1.0-era gap where council discuss had no recovery path parallel to delegation wait, forcing callers to manually ls .council/discuss/ after shell timeouts. Naming decision: discussion wait (noun form) mirrors delegation wait, preserves council discuss \\\"question\\\" unchanged. Dual completion contract (record.status==completed AND summary.md readable) required because DiscussionOrchestrator writes record.json(status=running) on start. Validated on cf-0.1.6-smoke clean project.', next_phase='completed (0.1.6 shipped)'."
     }
   ]
 }
