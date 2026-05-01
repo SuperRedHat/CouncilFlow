@@ -35,7 +35,6 @@ council status      # 查看 sidecar 状态
   - [Codex CLI](https://github.com/openai/codex)
   - [Claude Code CLI](https://docs.claude.com/en/docs/claude-code/overview)
   - [Gemini CLI](https://github.com/google-gemini/gemini-cli)
-- **GitHub 访问凭据**（PAT 或 SSH key；因为本仓库目前是 private）
 
 ### 安装
 
