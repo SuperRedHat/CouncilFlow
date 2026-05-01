@@ -75,7 +75,7 @@ pipx reinstall councilflow
 
 ## 配套工作流：AutoSkills
 
-CouncilFlow 本体只负责 sidecar CLI 能力。真正把 CouncilFlow 串进你日常开发节奏的，是一套配套的 `project-*` 工作流 skills 和 `project-manager` MCP server。这两块放在独立仓库 **[AutoSkills](https://github.com/SuperRedHat/AutoSkills)**（同样是 private）。
+CouncilFlow 本体只负责 sidecar CLI 能力。真正把 CouncilFlow 串进你日常开发节奏的，是一套配套的 `project-*` 工作流 skills 和 `project-manager` MCP server。这两块放在独立仓库 **[AutoSkills](https://github.com/SuperRedHat/AutoSkills)**。
 
 装完 CouncilFlow 后，额外跑：
 
