@@ -3559,6 +3559,30 @@
       "from_status": "auto_verified",
       "to_status": "done",
       "message": "TASK-113 auto_verified → done"
+    },
+    {
+      "timestamp": "2026-05-12T01:35:18.560Z",
+      "type": "task_status_change",
+      "task_id": "TASK-114",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-114 todo → in_progress"
+    },
+    {
+      "timestamp": "2026-05-12T01:39:41.139Z",
+      "type": "task_status_change",
+      "task_id": "TASK-114",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-114 in_progress → auto_verified: ruff 全绿；pytest 全量绿（含 test_cli_app version 已同步到 0.1.7）。release notes 中等详尽，覆盖 4 项主要变动 + behavior change 提示 + 兼容性说明。"
+    },
+    {
+      "timestamp": "2026-05-12T01:39:42.000Z",
+      "type": "task_status_change",
+      "task_id": "TASK-114",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-114 auto_verified → awaiting_manual_acceptance: stage_gate=true：发版需用户手工 sign-off。commit + tag + push 已完成，等待 review。"
     }
   ]
 }

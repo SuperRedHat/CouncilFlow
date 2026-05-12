@@ -4,6 +4,100 @@ All notable changes to CouncilFlow are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] — 2026-05-12
+
+Patch release bundling three independent issues that surfaced while
+running 0.1.6 against a long-lived `D:/project/simplatform` workspace
+on 2026-05-12. None of the fixes touch the public CLI surface; the
+behavioral note worth highlighting is that single-external-model
+discussions now honor `discussion.max_rounds` instead of being silently
+clamped to five rounds.
+
+### Fixed
+
+- **`council discuss` no longer caps single-external-model rounds at
+  5.** `src/councilflow/controller/discussion_orchestrator.py:108`
+  carried an undocumented `min(max_rounds, 5)` clamp that triggered
+  whenever exactly one external model was attached. Projects that
+  set `discussion.max_rounds: 10` (or any N>5) saw discussions stop
+  at round 5 with `ended_reason="max_rounds_reached"` despite the
+  configured ceiling. The clamp was introduced in 93af08c with no
+  rationale and contradicted the documented config contract. Removed
+  in `decec65`. `required_rounds = min(min_rounds, allowed_rounds)`
+  still tames the `min_rounds > max_rounds` edge case, and
+  `evaluate_convergence` continues to terminate early once
+  `min_rounds` is satisfied. (TASK-111)
+- **`council delegate` now fail-fasts on malformed
+  `--input` / `--required-artifact` even on the local-execution
+  path.** `src/councilflow/cli/delegate.py` used to defer
+  `_parse_key_value_items()` until *after* the `local_execution`
+  short-circuit. When the resolved target model matched the active
+  controller (e.g. `tester=codex` with `controller=codex`), the
+  command returned exit_code 0 before validating KEY=VALUE shapes,
+  so `--input not-a-pair` was silently dropped. Validation moved
+  upstream of route resolution in `77f92ce`. Restores the contract
+  asserted by
+  `tests/test_cli_delegate.py::test_delegate_command_rejects_invalid_input_shape`.
+  (TASK-112)
+
+### Changed
+
+- **`templates/default-config.yaml` defaults refreshed.** Fresh
+  projects now ship with `implementer / tester / advisor: codex`
+  (was `claude` for those three roles), `discussion.default_models:
+  [codex, claude]` (was empty), `providers.default.total_timeout_seconds:
+  90000` (was 900), and `providers.claude.idle_timeout_seconds: 18000`
+  (was 180). The two timeout bumps acknowledge that real-world
+  delegations can take an hour or more; the role default flip
+  matches how most users actually configure the project after
+  the first edit. (`c7fee9b`)
+- Test expectations in `test_config_loader.py`, `test_routing.py`,
+  `test_state_store.py`, and `test_cli_discuss.py` synced to the
+  new template defaults. `test_route_role_delegates_when_target_differs_from_controller`
+  was reframed around `controller=CLAUDE` so the "differs" branch
+  still has coverage now that every default role resolves to
+  `codex`. The "warn when no default models" test now writes its
+  own project-local config with `default_models: []` so the warn
+  path stays exercised regardless of what the packaged template
+  ships. (TASK-113, `5ce59c8`)
+- `src/councilflow/__init__.py::__version__` re-synced to track
+  `pyproject.toml`. The string had drifted to `0.1.2` since 0.1.3
+  and was missed during every subsequent release; restoring the
+  invariant here.
+
+### Backward compatibility guarantees
+
+- `council discuss "question"` and `council delegate ...` CLI
+  surfaces are **completely unchanged** (no flags added or removed,
+  no schema change, no exit-code shifts on the happy path).
+- Existing project-local `.council/config.yaml` files load
+  identically — only the **packaged template** changed, so projects
+  that ran `council` before 0.1.7 keep their committed config. The
+  template change only affects projects that initialize a new
+  `.council/config.yaml` against 0.1.7 or later.
+- 0.1.6 callers that set `discussion.max_rounds: N` and use one
+  external model will now see up to N rounds instead of 5. If the
+  one-on-one exchange does not introduce new information, the
+  discussion runs to the configured upper bound — token use scales
+  accordingly. To preserve the old behavior, lower
+  `discussion.max_rounds` to 5 explicitly.
+
+### Tests
+
+- Full pytest suite green after the changes (no regressions, all
+  pre-existing tests preserved).
+- `ruff check .`: clean.
+
+### Operator note
+
+`pipx upgrade councilflow` picks up 0.1.7. No skill changes are
+required. If you maintain projects that already have a
+`.council/config.yaml` in version control, no action is needed —
+the template defaults only affect projects bootstrapping their
+config for the first time on this version.
+
+See `docs/release-notes-0.1.7.md` for the full write-up.
+
 ## [0.1.6] — 2026-04-21
 
 Patch release closing the asymmetric gap left between

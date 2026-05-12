@@ -4642,6 +4642,57 @@
       "updated_at": "2026-05-12T01:30:12.337Z",
       "commit_hash": "",
       "notes": "4 个测试文件期望同步至 default-config.yaml 新值；test_cli_discuss warn 路径用 write_project_config 强制 default_models=[] 保留覆盖。reviewer 5 项全过；全量 pytest 365+ 全绿。"
+    },
+    {
+      "id": "TASK-114",
+      "title": "发版 CouncilFlow 0.1.7",
+      "description": "0.1.6 后累积三个 patch 改动，打包为 0.1.7：\n\n1. **TASK-111** — discussion_orchestrator.py 移除单外部模型 5 轮硬上限，用户配置的 max_rounds 现在真正生效\n2. **TASK-112** — cli/delegate.py 修复 local_execution 路径跳过 --input/--required-artifact 校验的 fail-fast 丢失\n3. **chore(54ed43b/c7fee9b)** — templates/default-config.yaml 模板默认 implementer/tester/advisor 改为 codex，default_models 预填 [codex,claude]，provider timeout 抬到小时级\n4. **TASK-113**（内部）— 同步 5 个测试期望值到新 default\n\n## 发版工作项\n\n- pyproject.toml: 0.1.6 → 0.1.7\n- src/councilflow/__init__.py: 0.1.2 → 0.1.7（顺手补 0.1.6 遗漏的同步）\n- CHANGELOG.md：追加 [0.1.7] — 2026-05-12 段落，按 Keep a Changelog 格式列出 Added/Changed/Fixed\n- docs/release-notes-0.1.7.md：中等详尽（参 0.1.6 风格但体量可减半，本次是 patch + default tuning）\n- 不需要单独 smoke report（本次仅 fix，没有新 surface）\n\n## 发版后动作\n\n- commit `release(0.1.7): bump version, CHANGELOG, release notes (TASK-114)`\n- tag `v0.1.7`\n- push commit + tag 到 origin/main\n- TASK-114 状态停在 awaiting_manual_acceptance 等用户 sign-off",
+      "dependencies": [
+        "TASK-111",
+        "TASK-112",
+        "TASK-113"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "pyproject.toml 版本 == 0.1.7",
+        "src/councilflow/__init__.py __version__ == 0.1.7",
+        "CHANGELOG.md 顶部出现 [0.1.7] — 2026-05-12 段落，涵盖 4 项变动",
+        "docs/release-notes-0.1.7.md 补口成完整发版说明（中译可选，其余参 0.1.6 结构）",
+        "python -m ruff check . 通过",
+        "python -m pytest 全量通过",
+        "tag v0.1.7 已创建（annotated）并 push 到 origin",
+        "release commit 已 push 到 origin/main",
+        "TASK-114 状态 → awaiting_manual_acceptance"
+      ],
+      "files": [
+        "pyproject.toml",
+        "src/councilflow/__init__.py",
+        "CHANGELOG.md",
+        "docs/release-notes-0.1.7.md"
+      ],
+      "module": "release",
+      "needs_manual_review": true,
+      "acceptance_mode": "milestone_manual",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest"
+      ],
+      "review_checklist": [
+        "确认 pyproject.toml 与 __init__.py 版本一致（0.1.7）",
+        "确认 CHANGELOG 顶部 [0.1.7] 段落位于 [0.1.6] 之上，格式与 Keep a Changelog 一致",
+        "确认 release notes 覆盖 4 项主要变动 + behavior change 提示（单外部模型 discussion 可跑满 max_rounds）",
+        "确认 release notes 该提醒升级者 templates/default-config.yaml 的默认改为 codex（只影响新 init 项目，已有项目本地 .council/config.yaml 不变）",
+        "确认 ruff + pytest 全量绿",
+        "确认 git tag v0.1.7 已 push",
+        "确认 stage_gate 未提前被跳过"
+      ],
+      "stage_gate": true,
+      "status": "awaiting_manual_acceptance",
+      "created_at": "2026-05-12T01:35:15.525Z",
+      "updated_at": "2026-05-12T01:39:41.979Z",
+      "commit_hash": "",
+      "notes": "stage_gate=true：发版需用户手工 sign-off。commit + tag + push 已完成，等待 review。"
     }
   ]
 }
