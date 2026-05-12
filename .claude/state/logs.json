@@ -3487,6 +3487,30 @@
       "from_status": null,
       "to_status": null,
       "message": "0.1.6 milestone accepted by SuperRedHat on 2026-04-21. stage_gate_closed=true, phase_summary='0.1.6 council discussion wait subcommand patch: 4 tasks (TASK-107~110), 8 commits on main (1 code+tests, 1 skill sync, 1 docs, 1 release, plus state commits). Closes the 0.1.0-era gap where council discuss had no recovery path parallel to delegation wait, forcing callers to manually ls .council/discuss/ after shell timeouts. Naming decision: discussion wait (noun form) mirrors delegation wait, preserves council discuss \\\"question\\\" unchanged. Dual completion contract (record.status==completed AND summary.md readable) required because DiscussionOrchestrator writes record.json(status=running) on start. Validated on cf-0.1.6-smoke clean project.', next_phase='completed (0.1.6 shipped)'."
+    },
+    {
+      "timestamp": "2026-05-12T00:48:59.297Z",
+      "type": "task_status_change",
+      "task_id": "TASK-111",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-111 todo → in_progress: 开始执行：移除 discussion_orchestrator.py:108 的 5 轮硬上限，并同步更新注释与单元测试。"
+    },
+    {
+      "timestamp": "2026-05-12T00:53:21.316Z",
+      "type": "task_status_change",
+      "task_id": "TASK-111",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-111 in_progress → auto_verified: ruff + tests/test_discussion_orchestrator.py 全绿；唯一的 test_cli_delegate.py::test_delegate_command_rejects_invalid_input_shape fail 已用 git stash 验证为 pre-existing（与 discussion_orchestrator 无导入关联）。reviewer 5 项全部通过。"
+    },
+    {
+      "timestamp": "2026-05-12T00:53:24.671Z",
+      "type": "task_status_change",
+      "task_id": "TASK-111",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-111 auto_verified → done"
     }
   ]
 }

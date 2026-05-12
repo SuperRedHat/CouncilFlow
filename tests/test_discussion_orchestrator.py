@@ -97,7 +97,7 @@ class ExternalOnlyFactory:
         )
 
 
-def test_single_external_model_discussion_caps_rounds_at_five(tmp_path: Path) -> None:
+def test_single_external_model_discussion_runs_full_max_rounds(tmp_path: Path) -> None:
     store = CouncilStateStore(tmp_path)
     factory = ScriptedFactory(
         {
@@ -116,7 +116,7 @@ def test_single_external_model_discussion_caps_rounds_at_five(tmp_path: Path) ->
                     supports_current_direction=False,
                     has_new_information=True,
                 )
-                for index in range(1, 7)
+                for index in range(1, 10)
             ],
             "claude": [
                 ParticipantResponse(
@@ -126,7 +126,7 @@ def test_single_external_model_discussion_caps_rounds_at_five(tmp_path: Path) ->
                     supports_current_direction=False,
                     has_new_information=True,
                 )
-                for index in range(1, 7)
+                for index in range(1, 10)
             ],
         }
     )
@@ -144,11 +144,11 @@ def test_single_external_model_discussion_caps_rounds_at_five(tmp_path: Path) ->
         min_rounds=2,
     )
 
-    assert summary.rounds_completed == 5
+    assert summary.rounds_completed == 9
     assert summary.ended_reason == "max_rounds_reached"
     assert summary.min_rounds == 2
     assert summary.initial_position == "Initial controller position"
-    assert summary.current_controller_position == "Controller round 5"
+    assert summary.current_controller_position == "Controller round 9"
     assert summary.summary_path is not None
     assert (tmp_path / summary.summary_path).is_file()
 

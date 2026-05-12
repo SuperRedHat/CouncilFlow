@@ -105,7 +105,7 @@ class DiscussionOrchestrator:
             min_rounds,
             max_rounds,
         )
-        allowed_rounds = min(max_rounds, 5) if len(external_models) == 1 else max_rounds
+        allowed_rounds = max_rounds
         required_rounds = min(min_rounds, allowed_rounds)
         participants = [controller, *external_models]
         turns: list[DiscussionTurn] = []
@@ -301,10 +301,10 @@ class DiscussionOrchestrator:
                     external_participant_count=len(external_models),
                 )
                 # Prefer the evaluator's config view; `self.config.discussion`
-                # carries convergence_policy + min_rounds_by_topic. We
-                # override min_rounds / max_rounds with the per-run values
-                # already clamped above (they differ from the project defaults
-                # in edge cases like "only 1 external model so max=min(5,max_rounds)").
+                # carries convergence_policy + min_rounds_by_topic. Override
+                # min_rounds / max_rounds with the per-run values resolved
+                # for this call, which may differ from the project defaults
+                # when the caller passes an explicit limit.
                 eval_config = self.config.discussion.model_copy(
                     update={"min_rounds": required_rounds, "max_rounds": allowed_rounds}
                 )

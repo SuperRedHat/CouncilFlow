@@ -4518,6 +4518,49 @@
       "updated_at": "2026-04-21T07:39:02.718Z",
       "commit_hash": "",
       "notes": "User accepted 2026-04-21. 0.1.6 closes the asymmetric gap between council delegate (had delegation wait since 0.1.0) and council discuss (no recovery path). 355 pytest green, ruff clean, end-to-end smoke verified two-stage recovery."
+    },
+    {
+      "id": "TASK-111",
+      "title": "移除 discussion 单外部模型轮数硬上限",
+      "description": "src/councilflow/controller/discussion_orchestrator.py:108 当前对 len(external_models) == 1 的场景强制 `min(max_rounds, 5)`，导致用户配置 max_rounds=10 实际仍被裁到 5 轮。这是一个未文档化的硬限制（首版 commit 93af08c 引入，无 rationale），与项目配置约定相违背。本任务直接信任用户配置，移除该裁剪。\n\n## 修改\n\n1. `src/councilflow/controller/discussion_orchestrator.py:108`：\n   ```python\n   # 改前\n   allowed_rounds = min(max_rounds, 5) if len(external_models) == 1 else max_rounds\n   # 改后\n   allowed_rounds = max_rounds\n   ```\n   `required_rounds = min(min_rounds, allowed_rounds)` 保持不变。\n\n2. `src/councilflow/controller/discussion_orchestrator.py:303-310` 的注释块同步更新，移除对 `min(5, max_rounds)` 边界的解释（注释里 \"only 1 external model so max=min(5,max_rounds)\" 一行需删/改）。\n\n3. `tests/test_discussion_orchestrator.py:139-153`（test_discussion_walks_max_rounds 或同名 case）原本通过 `max_rounds=9` 验证 `rounds_completed == 5`，依赖被裁的行为。需更新：\n   - 方案 A：把 max_rounds 改为 5 + scripted data 扩到能跑满 5 轮，保留原意图\n   - 方案 B：把 mock data 扩到 ≥9 条，断言 `rounds_completed == 9`，更贴近新语义\n   推荐方案 B。\n\n## 不在范围内\n\n- 不新增 single_external_cap 配置项（保持 KISS，直接移除硬上限即可）。\n- 不改 convergence policy；收敛仍由 evaluate_convergence 决定，cap 只是上限护栏。\n- 不重新设计 discussion config schema。\n\n## 风险\n\n- 单模型对线无新信息时会跑满用户设置的 max_rounds（如 10），增加 token 消耗。由 convergence_evaluator 的常规 stop 条件兜底；用户也可主动调小 max_rounds。",
+      "dependencies": [],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "discussion_orchestrator.py:108 移除 `min(max_rounds, 5)` 钳制，allowed_rounds 直接等于 max_rounds",
+        "discussion_orchestrator.py 注释中关于 `only 1 external model so max=min(5,max_rounds)` 的描述被同步更新或删除",
+        "test_discussion_orchestrator.py 中依赖 5 轮钳制的用例已更新，断言反映新语义（max_rounds=N 时单外部模型可跑满 N 轮）",
+        "python -m ruff check . 通过",
+        "python -m pytest tests/test_discussion_orchestrator.py 通过",
+        "python -m pytest 全量通过"
+      ],
+      "files": [
+        "src/councilflow/controller/discussion_orchestrator.py",
+        "tests/test_discussion_orchestrator.py"
+      ],
+      "module": "discussion",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_discussion_orchestrator.py -v",
+        "python -m pytest"
+      ],
+      "review_checklist": [
+        "确认 allowed_rounds = max_rounds 后 required_rounds = min(min_rounds, allowed_rounds) 仍合理（min_rounds > max_rounds 时被裁到 max_rounds）",
+        "确认 evaluate_convergence 仍能在 min_rounds 满足后正常 converge，不会因为去掉 cap 出现死循环",
+        "确认 discussion_orchestrator.py:305-310 注释与新行为一致",
+        "确认 tests/test_discussion_orchestrator.py 中 max_rounds=9 case 已更新，且其余 max_rounds=5/3 case 未受影响",
+        "ScriptedFactory mock 数据条数足够支撑跑满新的 max_rounds，避免 IndexError",
+        "是否需要在 CHANGELOG / release notes 标注 behavior change（单外部模型 discussion 现在可跑满 max_rounds）",
+        "default-config.yaml 中 max_rounds 注释/默认值是否需要顺带说明此行为"
+      ],
+      "stage_gate": false,
+      "status": "done",
+      "created_at": "2026-05-12T00:43:26.556Z",
+      "updated_at": "2026-05-12T00:53:24.652Z",
+      "commit_hash": "",
+      "notes": "ruff + tests/test_discussion_orchestrator.py 全绿；唯一的 test_cli_delegate.py::test_delegate_command_rejects_invalid_input_shape fail 已用 git stash 验证为 pre-existing（与 discussion_orchestrator 无导入关联）。reviewer 5 项全部通过。"
     }
   ]
 }
