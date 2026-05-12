@@ -55,19 +55,19 @@ controller_override: null
 roles:
   planner: codex
   architect: codex
-  implementer: claude
-  tester: claude
+  implementer: codex
+  tester: codex
   reviewer: codex
   fixer: codex
-  advisor: claude
+  advisor: codex
   synthesizer: codex
 discussion:
-  default_models: []
+  default_models: [codex,claude]
   min_rounds: 2
   max_rounds: 5
 providers:
   default:
-    total_timeout_seconds: 900
+    total_timeout_seconds: 90000
     idle_timeout_seconds: null
   claude:
-    idle_timeout_seconds: 180
+    idle_timeout_seconds: 18000
