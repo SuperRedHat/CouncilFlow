@@ -3583,6 +3583,14 @@
       "from_status": "auto_verified",
       "to_status": "awaiting_manual_acceptance",
       "message": "TASK-114 auto_verified → awaiting_manual_acceptance: stage_gate=true：发版需用户手工 sign-off。commit + tag + push 已完成，等待 review。"
+    },
+    {
+      "timestamp": "2026-05-12T01:43:49.651Z",
+      "type": "task_status_change",
+      "task_id": "TASK-114",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-114 awaiting_manual_acceptance → done: 用户手工 sign-off 通过：CouncilFlow 0.1.7 commit 48d220c + tag v0.1.7 已发布到 origin/main。stage_gate 关闭。"
     }
   ]
 }

@@ -4688,11 +4688,11 @@
         "确认 stage_gate 未提前被跳过"
       ],
       "stage_gate": true,
-      "status": "awaiting_manual_acceptance",
+      "status": "done",
       "created_at": "2026-05-12T01:35:15.525Z",
-      "updated_at": "2026-05-12T01:39:41.979Z",
+      "updated_at": "2026-05-12T01:43:49.629Z",
       "commit_hash": "",
-      "notes": "stage_gate=true：发版需用户手工 sign-off。commit + tag + push 已完成，等待 review。"
+      "notes": "用户手工 sign-off 通过：CouncilFlow 0.1.7 commit 48d220c + tag v0.1.7 已发布到 origin/main。stage_gate 关闭。"
     }
   ]
 }
