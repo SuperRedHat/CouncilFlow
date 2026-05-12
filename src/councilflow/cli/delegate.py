@@ -244,6 +244,15 @@ def delegate(
     controller = controller_context.controller.value
     output_language = resolve_output_language(config.output_language)
 
+    # Validate KEY=VALUE shapes up front so malformed --input /
+    # --required-artifact still fail-fast even when routing short-circuits
+    # to local_execution before the downstream consumers run.
+    structured_inputs = _parse_key_value_items(stage_input, option_name="--input")
+    required_artifacts = _parse_key_value_items(
+        required_artifact,
+        option_name="--required-artifact",
+    )
+
     # --- Route resolution --------------------------------------------------
     # --model CLI override has the highest priority. When omitted, consult
     # role_router.resolve() to pick the primary model and any fallbacks
@@ -324,11 +333,6 @@ def delegate(
             requested_model,
             config.providers.for_model(requested_model),
         ),
-    )
-    structured_inputs = _parse_key_value_items(stage_input, option_name="--input")
-    required_artifacts = _parse_key_value_items(
-        required_artifact,
-        option_name="--required-artifact",
     )
     guardrails_kwargs: dict[str, object] = {}
     if allow_commit:
