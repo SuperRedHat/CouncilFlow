@@ -15,14 +15,14 @@ def test_build_default_config_uses_packaged_template_defaults() -> None:
     config = build_default_config()
 
     assert config.output_language == "zh-CN"
-    assert config.roles.for_role(RoleName.IMPLEMENTER) == "claude"
-    assert config.discussion.default_models == []
+    assert config.roles.for_role(RoleName.IMPLEMENTER) == "codex"
+    assert config.discussion.default_models == ["codex", "claude"]
     assert config.discussion.min_rounds == 2
     assert config.discussion.max_rounds == 5
-    assert config.providers.default.total_timeout_seconds == 900
+    assert config.providers.default.total_timeout_seconds == 90000
     assert config.providers.default.idle_timeout_seconds is None
     assert config.providers.claude is not None
-    assert config.providers.for_model("claude").idle_timeout_seconds == 180
+    assert config.providers.for_model("claude").idle_timeout_seconds == 18000
 
 
 def test_ensure_config_exists_copies_project_local_default_template(tmp_path: Path) -> None:

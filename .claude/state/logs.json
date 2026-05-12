@@ -3511,6 +3511,54 @@
       "from_status": "auto_verified",
       "to_status": "done",
       "message": "TASK-111 auto_verified → done"
+    },
+    {
+      "timestamp": "2026-05-12T01:03:50.798Z",
+      "type": "task_status_change",
+      "task_id": "TASK-112",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-112 todo → in_progress"
+    },
+    {
+      "timestamp": "2026-05-12T01:25:44.466Z",
+      "type": "task_status_change",
+      "task_id": "TASK-113",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-113 todo → in_progress"
+    },
+    {
+      "timestamp": "2026-05-12T01:30:06.980Z",
+      "type": "task_status_change",
+      "task_id": "TASK-112",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-112 in_progress → auto_verified: cli/delegate.py 改动验证通过（test_cli_delegate.py 39/39）。全量 pytest 在 TASK-113 同步测试期望后绿。"
+    },
+    {
+      "timestamp": "2026-05-12T01:30:08.545Z",
+      "type": "task_status_change",
+      "task_id": "TASK-113",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-113 in_progress → auto_verified: 4 个测试文件期望同步至 default-config.yaml 新值；test_cli_discuss warn 路径用 write_project_config 强制 default_models=[] 保留覆盖。reviewer 5 项全过；全量 pytest 365+ 全绿。"
+    },
+    {
+      "timestamp": "2026-05-12T01:30:11.912Z",
+      "type": "task_status_change",
+      "task_id": "TASK-112",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-112 auto_verified → done"
+    },
+    {
+      "timestamp": "2026-05-12T01:30:12.356Z",
+      "type": "task_status_change",
+      "task_id": "TASK-113",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-113 auto_verified → done"
     }
   ]
 }

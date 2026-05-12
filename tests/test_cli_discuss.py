@@ -244,6 +244,16 @@ def test_discuss_command_prefers_explicit_models_over_project_defaults(
 def test_discuss_command_warns_when_no_explicit_or_default_models_exist(
     tmp_path: Path,
 ) -> None:
+    write_project_config(
+        tmp_path,
+        "config_version: 1\n"
+        "output_language: zh-CN\n"
+        "discussion:\n"
+        "  default_models: []\n"
+        "  min_rounds: 2\n"
+        "  max_rounds: 5\n",
+    )
+
     result = runner.invoke(
         app,
         [

@@ -4561,6 +4561,87 @@
       "updated_at": "2026-05-12T00:53:24.652Z",
       "commit_hash": "",
       "notes": "ruff + tests/test_discussion_orchestrator.py 全绿；唯一的 test_cli_delegate.py::test_delegate_command_rejects_invalid_input_shape fail 已用 git stash 验证为 pre-existing（与 discussion_orchestrator 无导入关联）。reviewer 5 项全部通过。"
+    },
+    {
+      "id": "TASK-112",
+      "title": "修复 cli/delegate.py local_execution 跳过 --input/--required-artifact 校验",
+      "description": "src/councilflow/cli/delegate.py:300-319 在 routing 结果为 local_execution 时直接 return，导致 line 328-332 的 `_parse_key_value_items` 校验被跳过。表现为：用户写 `--input not-a-pair`（缺 `=`）时同模型路径下 exit_code 仍为 0，不能 fail-fast。\n\n该问题在 tests/test_cli_delegate.py::test_delegate_command_rejects_invalid_input_shape 中被捕获，为 pre-existing failure，独立于 TASK-111。\n\n## 修复方案\n\n把 `_parse_key_value_items` 对 `stage_input` 和 `required_artifact` 的校验调用从 line 328-332 上移到 line 247 (“--- Route resolution ---”) 之前，让所有路径（含 local_execution）都先走 input 校验。`structured_inputs` / `required_artifacts` 变量定义在同一位置，后续代码不重复调用。\n\n## 范围外\n\n- 不动 `_parse_key_value_items` 内部逻辑\n- 不增加新校验项\n- 不变动 `_build_task_context` 对脏数据 silent skip 的现有行为（提前校验会在其之前 fail，并不依赖其 silent skip）\n\n## 风险\n\n极低：仅调整代码顺序，不增不减逻辑。local_execution 路径中 structured_inputs 本来不被使用，提前解析不会引入 side effect。",
+      "dependencies": [],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "_parse_key_value_items 调用提前到 “--- Route resolution ---” 块之前，local_execution 路径也会先 fail-fast",
+        "tests/test_cli_delegate.py::test_delegate_command_rejects_invalid_input_shape 通过",
+        "python -m pytest tests/test_cli_delegate.py 全量通过（原原先仅 1 个 fail 变为 0）",
+        "python -m ruff check . 通过",
+        "python -m pytest 全量通过（不引入新的邀请失败）"
+      ],
+      "files": [
+        "src/councilflow/cli/delegate.py"
+      ],
+      "module": "cli",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_cli_delegate.py -v",
+        "python -m pytest"
+      ],
+      "review_checklist": [
+        "确认 structured_inputs / required_artifacts 在提前后的下游使用点仍能读取到（不重复调用 _parse_key_value_items）",
+        "确认 _build_task_context 仍接收 raw stage_input list 不变（提前校验不影响其调用签名）",
+        "确认 ruff 不报 unused import 或顺序问题",
+        "确认 test_cli_delegate.py 其他 case（如 local_execution 成功、routing_no_match、process_exit）仍然通过"
+      ],
+      "stage_gate": false,
+      "status": "done",
+      "created_at": "2026-05-12T01:03:46.218Z",
+      "updated_at": "2026-05-12T01:30:11.891Z",
+      "commit_hash": "",
+      "notes": "cli/delegate.py 改动验证通过（test_cli_delegate.py 39/39）。全量 pytest 在 TASK-113 同步测试期望后绿。"
+    },
+    {
+      "id": "TASK-113",
+      "title": "同步测试期望值到新的 default-config.yaml",
+      "description": "Commit 54ed43b 将 templates/default-config.yaml 默认 implementer/tester/advisor 从 claude 改为 codex，default_models 从 [] 改为 [codex,claude]，timeout 从分钟级改为小时级。\n\n多个测试 hard-code 了旧默认值，产生 5 个 regression。本任务同步这些期望值。\n\n## 修复项\n\n1. tests/test_config_loader.py:18 `test_build_default_config_uses_packaged_template_defaults` —— IMPLEMENTER 期望 `claude` → `codex`。同一测试如果还隐含 TESTER/ADVISOR 期望，一起改\n2. tests/test_routing.py:21 `test_load_config_returns_defaults_when_file_is_missing` —— IMPLEMENTER 期望 `claude` → `codex`\n3. tests/test_routing.py:129 `test_route_role_delegates_when_target_differs_from_controller` —— 原用 `controller=CODEX` + `role=IMPLEMENTER` 期望 delegate；现在所有 role 都是 codex，必须改 controller 为 CLAUDE，期望 `target_model=\"codex\"`\n4. tests/test_state_store.py:114 `test_project_local_configs_remain_isolated_between_projects` —— IMPLEMENTER 期望 `claude` → `codex`\n5. tests/test_cli_discuss.py:244 `test_discuss_command_warns_when_no_explicit_or_default_models_exist` —— 测试意图是“无默认 models 时 warn”；新模板 default_models 不为空，走不到 warn 分支。在测试内手写一份 `.council/config.yaml` 覆盖 `default_models: []`，让 warn 路径仍能被测。\n\n## 不在范围内\n\n- 不再改动 templates/default-config.yaml（本任务只同步测试）\n- 不重构 build_default_config / load_config\n- 不动其他 “需要 claude 默认” 的产品代码逻辑\n\n## 风险\n\n低：纯测试修复。需点到为止保证“覆盖需求”仍被诶盖。",
+      "dependencies": [],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "test_build_default_config_uses_packaged_template_defaults 期望值与新模板一致",
+        "test_load_config_returns_defaults_when_file_is_missing 期望值与新模板一致",
+        "test_route_role_delegates_when_target_differs_from_controller 中 controller / target_model 重成能证明“delegate 路径仍可被测”",
+        "test_project_local_configs_remain_isolated_between_projects 期望值与新模板一致",
+        "test_discuss_command_warns_when_no_explicit_or_default_models_exist 仍覆盖 “无 default models 时 warn” 路径（通过测试内写 config.yaml 强制 default_models=[]）",
+        "python -m ruff check . 通过",
+        "python -m pytest 全量通过（0 fail）"
+      ],
+      "files": [
+        "tests/test_config_loader.py",
+        "tests/test_routing.py",
+        "tests/test_state_store.py",
+        "tests/test_cli_discuss.py"
+      ],
+      "module": "tests",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check .",
+        "python -m pytest tests/test_config_loader.py tests/test_routing.py tests/test_state_store.py tests/test_cli_discuss.py -v"
+      ],
+      "review_checklist": [
+        "确认 5 个 fail 都以“同步期望”的方式修复，而不是隐藏 / 跳过测试",
+        "确认 test_route_role_delegates_when_target_differs_from_controller 重构后仍能区分 “local_execution” 与 “delegated”，覆盖不重复于 test_route_role_runs_locally_when_target_matches_controller",
+        "确认 test_discuss_command_warns_when_no_explicit_or_default_models_exist 内写 config 后仍被 CLI 读取生效，warn 分支被走到",
+        "确认本任务未动 templates/default-config.yaml 本身",
+        "确认全量 python -m pytest 返回 0 fail（可以验证之前 TASK-112 同期修的 test_delegate_command_rejects_invalid_input_shape 也仍绿）"
+      ],
+      "stage_gate": false,
+      "status": "done",
+      "created_at": "2026-05-12T01:25:41.413Z",
+      "updated_at": "2026-05-12T01:30:12.337Z",
+      "commit_hash": "",
+      "notes": "4 个测试文件期望同步至 default-config.yaml 新值；test_cli_discuss warn 路径用 write_project_config 强制 default_models=[] 保留覆盖。reviewer 5 项全过；全量 pytest 365+ 全绿。"
     }
   ]
 }

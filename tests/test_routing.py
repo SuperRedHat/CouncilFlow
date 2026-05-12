@@ -18,7 +18,7 @@ def test_load_config_returns_defaults_when_file_is_missing(tmp_path: Path) -> No
     config = load_config(tmp_path / "missing-config.yaml")
 
     assert config == build_default_config()
-    assert config.roles.for_role(RoleName.IMPLEMENTER) == "claude"
+    assert config.roles.for_role(RoleName.IMPLEMENTER) == "codex"
 
 
 def test_load_config_validates_custom_role_mapping(tmp_path: Path) -> None:
@@ -123,10 +123,10 @@ def test_route_role_delegates_when_target_differs_from_controller() -> None:
     decision = route_role(
         role=RoleName.IMPLEMENTER,
         config=build_default_config(),
-        controller=ControllerName.CODEX,
+        controller=ControllerName.CLAUDE,
     )
 
-    assert decision.target_model == "claude"
+    assert decision.target_model == "codex"
     assert decision.status == "delegated"
     assert decision.via_sidecar is True
 
