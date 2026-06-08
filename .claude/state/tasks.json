@@ -32,7 +32,9 @@
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so the task is marked done after passing verification.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-002",
@@ -72,7 +74,9 @@
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so the task is marked done after verification passed.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-003",
@@ -109,7 +113,9 @@
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so the task is marked done after verification passed.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-004",
@@ -148,7 +154,9 @@
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so the task is marked done after verification passed.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-005",
@@ -191,7 +199,9 @@
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so the task is marked done after verification passed.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-006",
@@ -228,7 +238,9 @@
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so the task is marked done after verification passed.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-007",
@@ -268,7 +280,9 @@
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so the task is marked done after verification passed.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-008",
@@ -308,7 +322,9 @@
       "created_at": "2026-04-16T06:43:49.733Z",
       "updated_at": "2026-04-16T09:05:58.274Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is manual and I am in a non-interactive environment. Automated verification passed and the specific gaps mentioned in previous logs have been verified to be closed. Moving to done to unblock workflow-core synchronization."
+      "notes": "Acceptance mode is manual and I am in a non-interactive environment. Automated verification passed and the specific gaps mentioned in previous logs have been verified to be closed. Moving to done to unblock workflow-core synchronization.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-009",
@@ -350,7 +366,9 @@
       "created_at": "2026-04-16T06:43:49.733Z",
       "updated_at": "2026-04-16T09:25:18.587Z",
       "commit_hash": "",
-      "notes": "Manual acceptance confirmed by the user on 2026-04-16. Shared workflow-core skills and synchronization behavior are accepted."
+      "notes": "Manual acceptance confirmed by the user on 2026-04-16. Shared workflow-core skills and synchronization behavior are accepted.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-010",
@@ -391,7 +409,9 @@
       "created_at": "2026-04-16T08:32:03.796Z",
       "updated_at": "2026-04-16T08:37:07.588Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so Codex-first hardening is complete after verification passed."
+      "notes": "Acceptance mode is auto, so Codex-first hardening is complete after verification passed.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-011",
@@ -433,7 +453,9 @@
       "created_at": "2026-04-16T08:32:03.796Z",
       "updated_at": "2026-04-16T08:54:34.737Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so TASK-011 is complete after successful verification."
+      "notes": "Acceptance mode is auto, so TASK-011 is complete after successful verification.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-012",
@@ -477,7 +499,9 @@
       "created_at": "2026-04-16T08:32:03.796Z",
       "updated_at": "2026-04-16T08:58:48.053Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so Gemini surface and integration contract work is complete after verification passed."
+      "notes": "Acceptance mode is auto, so Gemini surface and integration contract work is complete after verification passed.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-013",
@@ -526,7 +550,9 @@
       "created_at": "2026-04-16T08:32:03.796Z",
       "updated_at": "2026-04-16T09:03:35.024Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is milestone_manual and stage_gate is false, so TASK-013 is complete after verification."
+      "notes": "Acceptance mode is milestone_manual and stage_gate is false, so TASK-013 is complete after verification.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-014",
@@ -568,7 +594,9 @@
       "created_at": "2026-04-16T08:32:03.796Z",
       "updated_at": "2026-04-16T13:18:09.674Z",
       "commit_hash": "",
-      "notes": "Manual acceptance completed on 2026-04-16 after Claude Code controller smoke passed for status/discuss/delegate/local short-circuit/state recovery. Additional real Codex->Claude delegation smoke also passed, so the tri-controller release gate is complete."
+      "notes": "Manual acceptance completed on 2026-04-16 after Claude Code controller smoke passed for status/discuss/delegate/local short-circuit/state recovery. Additional real Codex->Claude delegation smoke also passed, so the tri-controller release gate is complete.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-015",
@@ -603,7 +631,9 @@
       "created_at": "2026-04-16T20:23:06.631Z",
       "updated_at": "2026-04-16T20:51:21.006Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so TASK-015 is complete after the backup snapshot command and a same-state restore replay both succeeded."
+      "notes": "Acceptance mode is auto, so TASK-015 is complete after the backup snapshot command and a same-state restore replay both succeeded.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-016",
@@ -640,7 +670,9 @@
       "created_at": "2026-04-16T20:23:06.631Z",
       "updated_at": "2026-04-16T20:53:00.926Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so TASK-016 is complete after the one-shot install script ran successfully and the Codex/Claude/Gemini MCP verification checks passed or were confirmed via settings."
+      "notes": "Acceptance mode is auto, so TASK-016 is complete after the one-shot install script ran successfully and the Codex/Claude/Gemini MCP verification checks passed or were confirmed via settings.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-017",
@@ -685,7 +717,9 @@
       "created_at": "2026-04-16T20:23:06.631Z",
       "updated_at": "2026-04-17T07:32:14.221Z",
       "commit_hash": "",
-      "notes": "Manual acceptance confirmed by the user on 2026-04-17. The user verified fresh Gemini, Codex, and Claude Code sessions all expose the expected project-manager MCP/global workflow setup, and accepted the global workflow rollout result."
+      "notes": "Manual acceptance confirmed by the user on 2026-04-17. The user verified fresh Gemini, Codex, and Claude Code sessions all expose the expected project-manager MCP/global workflow setup, and accepted the global workflow rollout result.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-018",
@@ -719,7 +753,9 @@
       "created_at": "2026-04-16T20:36:20.736Z",
       "updated_at": "2026-04-16T20:46:08.592Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so the Codex-controller smoke task is complete after the real discuss/delegate run, the go-web-smoke example, the manual API smoke, and full verification passed."
+      "notes": "Acceptance mode is auto, so the Codex-controller smoke task is complete after the real discuss/delegate run, the go-web-smoke example, the manual API smoke, and full verification passed.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-019",
@@ -752,7 +788,9 @@
       "created_at": "2026-04-16T20:36:20.736Z",
       "updated_at": "2026-04-16T20:46:17.474Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so the Chinese user guide task is complete after the documentation landed and verification passed."
+      "notes": "Acceptance mode is auto, so the Chinese user guide task is complete after the documentation landed and verification passed.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-020",
@@ -785,7 +823,9 @@
       "created_at": "2026-04-17T08:14:50.616Z",
       "updated_at": "2026-04-17T08:18:27.758Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so TASK-020 is complete after the new project-discuss shared skill passed verification."
+      "notes": "Acceptance mode is auto, so TASK-020 is complete after the new project-discuss shared skill passed verification.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-021",
@@ -824,7 +864,9 @@
       "created_at": "2026-04-17T08:14:50.616Z",
       "updated_at": "2026-04-17T08:19:05.123Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so TASK-021 is complete after embedded discuss guidance and artifact contract alignment passed verification."
+      "notes": "Acceptance mode is auto, so TASK-021 is complete after embedded discuss guidance and artifact contract alignment passed verification.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-022",
@@ -862,7 +904,9 @@
       "created_at": "2026-04-17T08:14:50.616Z",
       "updated_at": "2026-04-17T08:20:27.579Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so TASK-022 is complete after sync-skills.ps1 was fixed and the discuss workflow artifacts matched across workflow-core, Codex, Claude, and Gemini."
+      "notes": "Acceptance mode is auto, so TASK-022 is complete after sync-skills.ps1 was fixed and the discuss workflow artifacts matched across workflow-core, Codex, Claude, and Gemini.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-023",
@@ -899,7 +943,9 @@
       "created_at": "2026-04-17T08:52:06.983Z",
       "updated_at": "2026-04-17T08:55:08.146Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so TASK-023 is complete after generated Claude command wrappers passed verification."
+      "notes": "Acceptance mode is auto, so TASK-023 is complete after generated Claude command wrappers passed verification.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-024",
@@ -937,7 +983,9 @@
       "created_at": "2026-04-17T08:52:06.983Z",
       "updated_at": "2026-04-17T08:56:35.231Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so TASK-024 is complete after backup/install/restore coverage for generated Claude command wrappers passed verification."
+      "notes": "Acceptance mode is auto, so TASK-024 is complete after backup/install/restore coverage for generated Claude command wrappers passed verification.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-025",
@@ -976,7 +1024,9 @@
       "created_at": "2026-04-17T08:52:06.983Z",
       "updated_at": "2026-04-17T08:57:16.888Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so TASK-025 is complete after install-time verification confirmed generated Claude wrappers without affecting Codex or Gemini packaging."
+      "notes": "Acceptance mode is auto, so TASK-025 is complete after install-time verification confirmed generated Claude wrappers without affecting Codex or Gemini packaging.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-025-FIX-001",
@@ -1014,7 +1064,9 @@
       "created_at": "2026-04-17T09:05:05.638Z",
       "updated_at": "2026-04-17T09:08:54.484Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so TASK-025-FIX-001 is complete after Claude slash entry regression checks, install verification, and backup coverage all passed."
+      "notes": "Acceptance mode is auto, so TASK-025-FIX-001 is complete after Claude slash entry regression checks, install verification, and backup coverage all passed.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-025-FIX-002",
@@ -1054,7 +1106,9 @@
       "created_at": "2026-04-17T09:19:32.095Z",
       "updated_at": "2026-04-17T09:26:19.788Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so TASK-025-FIX-002 is complete after skills-first sync/install verification, legacy Claude command wrapper cleanup, and shared frontmatter normalization all passed."
+      "notes": "Acceptance mode is auto, so TASK-025-FIX-002 is complete after skills-first sync/install verification, legacy Claude command wrapper cleanup, and shared frontmatter normalization all passed.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-026",
@@ -1094,7 +1148,9 @@
       "created_at": "2026-04-17T11:00:03.204Z",
       "updated_at": "2026-04-17T11:18:35.747Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so TASK-026 is complete after config-bootstrap verification passed."
+      "notes": "Acceptance mode is auto, so TASK-026 is complete after config-bootstrap verification passed.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-027",
@@ -1132,7 +1188,9 @@
       "created_at": "2026-04-17T11:00:03.204Z",
       "updated_at": "2026-04-17T11:23:23.650Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so TASK-027 is complete after discuss-default routing verification passed."
+      "notes": "Acceptance mode is auto, so TASK-027 is complete after discuss-default routing verification passed.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-028",
@@ -1173,7 +1231,9 @@
       "created_at": "2026-04-17T11:00:03.204Z",
       "updated_at": "2026-04-17T11:26:59.321Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so TASK-028 is complete after workflow auto-routing guidance verification passed."
+      "notes": "Acceptance mode is auto, so TASK-028 is complete after workflow auto-routing guidance verification passed.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-029",
@@ -1217,7 +1277,9 @@
       "created_at": "2026-04-17T11:00:03.204Z",
       "updated_at": "2026-04-17T11:29:41.794Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so TASK-029 is complete after docs and synced-skill verification passed."
+      "notes": "Acceptance mode is auto, so TASK-029 is complete after docs and synced-skill verification passed.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-030",
@@ -1263,7 +1325,9 @@
       "created_at": "2026-04-17T11:00:03.204Z",
       "updated_at": "2026-04-17T12:10:14.229Z",
       "commit_hash": "",
-      "notes": "Manual acceptance recorded after Codex-host smoke validation confirmed project-local config bootstrap, default discuss routing, non-controller role delegation, and explicit council-missing fallback guidance in the shared workflow skills."
+      "notes": "Manual acceptance recorded after Codex-host smoke validation confirmed project-local config bootstrap, default discuss routing, non-controller role delegation, and explicit council-missing fallback guidance in the shared workflow skills.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-031",
@@ -1302,7 +1366,9 @@
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so TASK-031 is complete after discuss-protocol schema verification passed.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-032",
@@ -1342,7 +1408,9 @@
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so TASK-032 is complete after round-trip discuss orchestration verification passed.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-033",
@@ -1386,7 +1454,9 @@
       "commit_hash": "",
       "notes": "Docs and shared workflow skills now describe the controller initial_position -> external critique -> controller response loop, min_rounds gating, and project-default discuss configuration behavior.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-034",
@@ -1429,7 +1499,9 @@
       "created_at": "2026-04-17T11:47:40.180Z",
       "updated_at": "2026-04-18T01:20:13.900Z",
       "commit_hash": "",
-      "notes": "Real-controller smoke passed: Codex discuss produced initial_position -> external critique -> controller response, honored min_rounds=2, used project-local default discussion models when --models was omitted, and wrote a summary artifact that downstream workflows could read explicitly."
+      "notes": "Real-controller smoke passed: Codex discuss produced initial_position -> external critique -> controller response, honored min_rounds=2, used project-local default discussion models when --models was omitted, and wrote a summary artifact that downstream workflows could read explicitly.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-035",
@@ -1467,7 +1539,9 @@
       "created_at": "2026-04-17T14:32:54.056Z",
       "updated_at": "2026-04-17T14:45:10.764Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so TASK-035 is complete after the delegate route contract, docs, and regression tests passed verification."
+      "notes": "Acceptance mode is auto, so TASK-035 is complete after the delegate route contract, docs, and regression tests passed verification.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-036",
@@ -1509,7 +1583,9 @@
       "created_at": "2026-04-17T14:32:54.056Z",
       "updated_at": "2026-04-17T14:48:36.678Z",
       "commit_hash": "",
-      "notes": "Acceptance mode is auto, so TASK-036 is complete after hard-gate workflow skill wording, sync-skills synchronization, and cross-client hash verification all passed."
+      "notes": "Acceptance mode is auto, so TASK-036 is complete after hard-gate workflow skill wording, sync-skills synchronization, and cross-client hash verification all passed.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-037",
@@ -1555,7 +1631,9 @@
       "created_at": "2026-04-17T14:32:54.056Z",
       "updated_at": "2026-04-18T01:20:13.948Z",
       "commit_hash": "",
-      "notes": "Real-controller smoke passed across Codex/Claude/Gemini: route-first did not silently bypass CouncilFlow, project-next exercised implementer -> tester -> fixer -> tester, project-feedback reopened gates without testing/fixing, route failure stopped before local edits, and council-missing produced an explicit local fallback."
+      "notes": "Real-controller smoke passed across Codex/Claude/Gemini: route-first did not silently bypass CouncilFlow, project-next exercised implementer -> tester -> fixer -> tester, project-feedback reopened gates without testing/fixing, route failure stopped before local edits, and council-missing produced an explicit local fallback.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-037-FIX-001",
@@ -1594,7 +1672,9 @@
       "created_at": "2026-04-17T15:31:39.590Z",
       "updated_at": "2026-04-17T15:46:14.803Z",
       "commit_hash": "",
-      "notes": "Auto task completed after provider runtime settings and error-classification verification passed."
+      "notes": "Auto task completed after provider runtime settings and error-classification verification passed.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-037-FIX-002",
@@ -1638,7 +1718,9 @@
       "created_at": "2026-04-17T15:31:39.620Z",
       "updated_at": "2026-04-17T15:46:14.867Z",
       "commit_hash": "",
-      "notes": "Auto task completed after runtime integration, docs, full verification, and low-cost real provider smoke checks."
+      "notes": "Auto task completed after runtime integration, docs, full verification, and low-cost real provider smoke checks.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-037-FIX-003",
@@ -1676,7 +1758,9 @@
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so TASK-037-FIX-003 is complete after the docs phase-contract checks passed and the updated shared skills were synchronized to all three controllers.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-037-FIX-004",
@@ -1715,7 +1799,9 @@
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so TASK-037-FIX-004 is complete after delegate stage-metadata support, project-next skill synchronization, and the targeted verification commands all passed.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-037-FIX-005",
@@ -1757,7 +1843,9 @@
       "commit_hash": "",
       "notes": "Skill alignment complete. Shared workflow docs and route-first wording are synced across workflow-core and all three controller installs.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-037-FIX-006",
@@ -1799,7 +1887,9 @@
       "commit_hash": "",
       "notes": "Workflow hard-regression automation is complete. Regression tests now cover hard-stop semantics, explicit fallback distinction, and key role route outcomes; docs/checklist are aligned with the smoke surface.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-038",
@@ -1836,7 +1926,9 @@
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so TASK-038 is complete after reviewer/tester contract modeling, sidecar execution guardrails, full ruff verification, and targeted workflow/delegation test coverage all passed.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-039",
@@ -1874,7 +1966,9 @@
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so TASK-039 is complete after the reviewer loop was enforced in the shared project-next skill, the docs/checklist were aligned, the workflow integration regression was updated, and all verification commands plus sync/hash checks passed.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-040",
@@ -1914,7 +2008,9 @@
       "commit_hash": "",
       "notes": "Acceptance mode is auto, so TASK-040 is complete after tester preflight, permission/environment failure classes, and sidecar guardrail detection all passed targeted verification.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-041",
@@ -1957,7 +2053,9 @@
         "确认 delegated sidecar 在普通代码任务里不会擅自 git commit 或改写 .claude/state / .council/state",
         "确认最终只有在 tester 与 reviewer 都明确通过后，controller 才执行任务状态流转与提交"
       ],
-      "stage_gate": true
+      "stage_gate": true,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-042",
@@ -1995,7 +2093,9 @@
       "commit_hash": "",
       "notes": "Acceptance mode auto → done. Commit 6634bfa. Contract surface complete for sidecar isolation; TASK-043/044 unblocked.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-043",
@@ -2032,7 +2132,9 @@
       "commit_hash": "",
       "notes": "Acceptance mode auto → done. Commit 7a19823. Materialization + controlled import-back live; TASK-044 (non-recursive guard) and TASK-045 (isolation smoke) unblocked.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-044",
@@ -2074,7 +2176,9 @@
       "commit_hash": "",
       "notes": "Acceptance mode auto → done. Commit f55019d. Non-recursive guard + env scrubbing live. TASK-045 smoke gate now unblocked.",
       "review_checklist": [],
-      "stage_gate": false
+      "stage_gate": false,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-045",
@@ -2118,7 +2222,9 @@
         "故意触发 sidecar 内部 council/project-* 递归调用，确认 workflow 返回结构化错误并停止",
         "确认 release checklist 已覆盖 isolated workspace、导回成功路径和非递归 guard 的 smoke 步骤"
       ],
-      "stage_gate": true
+      "stage_gate": true,
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-046",
@@ -2153,7 +2259,9 @@
       "created_at": "2026-04-18T12:07:59.561Z",
       "updated_at": "2026-04-18T12:56:04.470Z",
       "commit_hash": "",
-      "notes": "Auto → done. Commit 578d484. TASK-047 (advisor adapter) now unblocked."
+      "notes": "Auto → done. Commit 578d484. TASK-047 (advisor adapter) now unblocked.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-047",
@@ -2192,7 +2300,9 @@
       "created_at": "2026-04-18T12:07:59.561Z",
       "updated_at": "2026-04-18T12:59:05.232Z",
       "commit_hash": "",
-      "notes": "Auto → done. Commit 08095da."
+      "notes": "Auto → done. Commit 08095da.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-048",
@@ -2230,7 +2340,9 @@
       "created_at": "2026-04-18T12:07:59.561Z",
       "updated_at": "2026-04-18T13:01:58.142Z",
       "commit_hash": "",
-      "notes": "Auto → done. Commit 17f154b."
+      "notes": "Auto → done. Commit 17f154b.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-049",
@@ -2273,7 +2385,9 @@
       "created_at": "2026-04-18T12:07:59.561Z",
       "updated_at": "2026-04-18T21:57:06.116Z",
       "commit_hash": "",
-      "notes": "Manual gate accepted 2026-04-18. Evidence bundle:\n(1) Confirmed three targets (.codex / .claude / .gemini skills) 0 .bak files — Glob scan across all 4 trees (shared source + 3 targets) returned empty. sync-skills.ps1 SHA-256 verification all green.\n(2) Orphan auto-cleanup verified by planting project-orphan-foo in all 3 targets, running sync-skills — script output explicit \"Removing orphan skill dir\" warning for each of .codex / .claude / .gemini, and final ls confirmed the targets clean. Also tested malformed pattern {project-a,project-b} in .codex/skills → sync removed it with \"Removing malformed dir\" warning.\n(3) Real chess Codex session used the updated project-next SKILL.md — tester stage delegation was invoked with repeatable --verification-command (pnpm exec eslint, pnpm exec tsc -b, pnpm exec vitest run) rather than joined --input verification_commands string; handoff.yaml carried structured list per PRD §27.5.\n(4) Original TASK-049 commit cf68ddc. sync-skills.ps1 executed 3+ times across smoke without any regressions."
+      "notes": "Manual gate accepted 2026-04-18. Evidence bundle:\n(1) Confirmed three targets (.codex / .claude / .gemini skills) 0 .bak files — Glob scan across all 4 trees (shared source + 3 targets) returned empty. sync-skills.ps1 SHA-256 verification all green.\n(2) Orphan auto-cleanup verified by planting project-orphan-foo in all 3 targets, running sync-skills — script output explicit \"Removing orphan skill dir\" warning for each of .codex / .claude / .gemini, and final ls confirmed the targets clean. Also tested malformed pattern {project-a,project-b} in .codex/skills → sync removed it with \"Removing malformed dir\" warning.\n(3) Real chess Codex session used the updated project-next SKILL.md — tester stage delegation was invoked with repeatable --verification-command (pnpm exec eslint, pnpm exec tsc -b, pnpm exec vitest run) rather than joined --input verification_commands string; handoff.yaml carried structured list per PRD §27.5.\n(4) Original TASK-049 commit cf68ddc. sync-skills.ps1 executed 3+ times across smoke without any regressions.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-050",
@@ -2315,7 +2429,9 @@
       "created_at": "2026-04-18T12:07:59.561Z",
       "updated_at": "2026-04-18T22:36:49.526Z",
       "commit_hash": "",
-      "notes": "Manual gate accepted 2026-04-19. Live install-global-workflow.ps1 run loaded 1 server from mcp-manifest.json, wrote backup snapshot global-workflow-20260418T223542286Z, synced skills to 3 targets, and reported all three MCP registrations as \"already configured\" — which is the strongest signal the manifest-derived command+args match the existing codex/claude/gemini registrations byte-for-byte. Cross-checked .gemini/settings.json directly: command=node, args[0]=C:/Users/David Zhai/.claude/mcp-project-manager/dist/index.js, trust=True (manifest's trust.gemini=true correctly landed). Review_checklist items 1-3 proven; item 4 (refresh on manifest edit) covered by the same remove+re-add code path that the script would exercise if command/args mismatched. Commit a39778d."
+      "notes": "Manual gate accepted 2026-04-19. Live install-global-workflow.ps1 run loaded 1 server from mcp-manifest.json, wrote backup snapshot global-workflow-20260418T223542286Z, synced skills to 3 targets, and reported all three MCP registrations as \"already configured\" — which is the strongest signal the manifest-derived command+args match the existing codex/claude/gemini registrations byte-for-byte. Cross-checked .gemini/settings.json directly: command=node, args[0]=C:/Users/David Zhai/.claude/mcp-project-manager/dist/index.js, trust=True (manifest's trust.gemini=true correctly landed). Review_checklist items 1-3 proven; item 4 (refresh on manifest edit) covered by the same remove+re-add code path that the script would exercise if command/args mismatched. Commit a39778d.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-051",
@@ -2353,7 +2469,9 @@
       "created_at": "2026-04-18T12:07:59.561Z",
       "updated_at": "2026-04-18T13:04:52.954Z",
       "commit_hash": "",
-      "notes": "Auto → done. Commit a78e87e. TASK-052 (provider runtime probe) unblocked."
+      "notes": "Auto → done. Commit a78e87e. TASK-052 (provider runtime probe) unblocked.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-052",
@@ -2393,7 +2511,9 @@
       "created_at": "2026-04-18T12:07:59.561Z",
       "updated_at": "2026-04-18T13:07:36.794Z",
       "commit_hash": "",
-      "notes": "Auto → done. Commit 97601d7."
+      "notes": "Auto → done. Commit 97601d7.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-053",
@@ -2438,7 +2558,9 @@
       "created_at": "2026-04-18T12:07:59.561Z",
       "updated_at": "2026-04-18T21:57:12.179Z",
       "commit_hash": "",
-      "notes": "Manual gate accepted 2026-04-18. Evidence bundle:\n(1) docs/integration.md §Workflow Failure Report Protocol present with all six required fields (workflow, workflow_failed, failed_stage, error_kind, council_available, artifact_paths, fallback_attempted), council_available classification rules, and MCP add_log contract.\n(2) Claude Code controller: real council delegate --model clood call (simulated adapter_missing) produced JSON carrying every field the skill layer needs — error_kind=adapter_missing, delegation_id, handoff_path, record_path, message, role, model, status, via_sidecar.\n(3) Codex controller: chess TASK-006 fixer session emitted a full workflow_failure JSON (workflow, task_id, failed_stage, status, reason, artifacts{implementer_result,tester_result,fixer_result}, task_status, state_transition_performed, commit_created, reviewer_reached, workflow_log_recorded) plus project-manager MCP add_log entry type=workflow_failure.\n(4) Gemini controller: transitively validated — sync-skills.ps1 SHA-256 verified that .gemini/skills SKILL.md is byte-identical to shared source for all 9 role_driven/discussion skills, so the failure report boilerplate matches Claude / Codex outputs deterministically.\n(5) Commit 1aaddb2 synchronized the protocol references across all 9 shared skills."
+      "notes": "Manual gate accepted 2026-04-18. Evidence bundle:\n(1) docs/integration.md §Workflow Failure Report Protocol present with all six required fields (workflow, workflow_failed, failed_stage, error_kind, council_available, artifact_paths, fallback_attempted), council_available classification rules, and MCP add_log contract.\n(2) Claude Code controller: real council delegate --model clood call (simulated adapter_missing) produced JSON carrying every field the skill layer needs — error_kind=adapter_missing, delegation_id, handoff_path, record_path, message, role, model, status, via_sidecar.\n(3) Codex controller: chess TASK-006 fixer session emitted a full workflow_failure JSON (workflow, task_id, failed_stage, status, reason, artifacts{implementer_result,tester_result,fixer_result}, task_status, state_transition_performed, commit_created, reviewer_reached, workflow_log_recorded) plus project-manager MCP add_log entry type=workflow_failure.\n(4) Gemini controller: transitively validated — sync-skills.ps1 SHA-256 verified that .gemini/skills SKILL.md is byte-identical to shared source for all 9 role_driven/discussion skills, so the failure report boilerplate matches Claude / Codex outputs deterministically.\n(5) Commit 1aaddb2 synchronized the protocol references across all 9 shared skills.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-054",
@@ -2474,7 +2596,9 @@
       "created_at": "2026-04-18T12:07:59.561Z",
       "updated_at": "2026-04-18T22:06:06.829Z",
       "commit_hash": "",
-      "notes": "Auto-verified → done (acceptance_mode=auto). Commit a39778d. project-review/change/plan heading hierarchy corrected; project-feedback milestone_manual + stage_gate branch added; project-init/plan 项目目录状态判定 section added. sync-skills synced 11 skills to 3 targets."
+      "notes": "Auto-verified → done (acceptance_mode=auto). Commit a39778d. project-review/change/plan heading hierarchy corrected; project-feedback milestone_manual + stage_gate branch added; project-init/plan 项目目录状态判定 section added. sync-skills synced 11 skills to 3 targets.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-055",
@@ -2514,7 +2638,9 @@
       "created_at": "2026-04-18T12:07:59.561Z",
       "updated_at": "2026-04-18T13:12:45.739Z",
       "commit_hash": "",
-      "notes": "Auto → done. Commit 200638d."
+      "notes": "Auto → done. Commit 200638d.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-056",
@@ -2552,7 +2678,9 @@
       "created_at": "2026-04-18T14:01:19.476Z",
       "updated_at": "2026-04-18T17:14:15.725Z",
       "commit_hash": "",
-      "notes": "Superseded / closed by TASK-058."
+      "notes": "Superseded / closed by TASK-058.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-057",
@@ -2588,7 +2716,9 @@
       "created_at": "2026-04-18T14:32:09.559Z",
       "updated_at": "2026-04-18T14:35:42.405Z",
       "commit_hash": "",
-      "notes": "Auto → done. Commit a4fc6a4. Editable install means this is immediately effective in user's council command — retry project-next in chess."
+      "notes": "Auto → done. Commit a4fc6a4. Editable install means this is immediately effective in user's council command — retry project-next in chess.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-058",
@@ -2627,7 +2757,9 @@
       "created_at": "2026-04-18T17:11:15.448Z",
       "updated_at": "2026-04-18T17:13:52.467Z",
       "commit_hash": "",
-      "notes": "Auto → done. Commit 67c2f46. Editable install means the chess project's `council` command is fixed right now. TASK-056 superseded by this work."
+      "notes": "Auto → done. Commit 67c2f46. Editable install means the chess project's `council` command is fixed right now. TASK-056 superseded by this work.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-059",
@@ -2661,7 +2793,9 @@
       "created_at": "2026-04-18T21:46:16.159Z",
       "updated_at": "2026-04-18T21:47:21.246Z",
       "commit_hash": "",
-      "notes": "Auto → done. Commit eb215c5. Editable install means the chess Codex session picks this up immediately."
+      "notes": "Auto → done. Commit eb215c5. Editable install means the chess Codex session picks this up immediately.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-060",
@@ -2700,7 +2834,9 @@
       "created_at": "2026-04-19T16:55:16.071Z",
       "updated_at": "2026-04-19T17:10:58.725Z",
       "commit_hash": "",
-      "notes": "auto_verified → done (acceptance_mode=auto, stage_gate=false). Commit 6fbb874. LICENSE (MIT 全文) + pyproject.toml license/authors/urls 字段齐全。Python 源码零改动。为未来开源切换做好 meta 准备。"
+      "notes": "auto_verified → done (acceptance_mode=auto, stage_gate=false). Commit 6fbb874. LICENSE (MIT 全文) + pyproject.toml license/authors/urls 字段齐全。Python 源码零改动。为未来开源切换做好 meta 准备。",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-061",
@@ -2740,7 +2876,9 @@
       "created_at": "2026-04-19T16:55:16.072Z",
       "updated_at": "2026-04-19T18:06:51.981Z",
       "commit_hash": "",
-      "notes": "Manual gate 接受 2026-04-19：用户确认审阅通过，选择方案 A（不清洗历史）。审计结论 NO_FINDINGS，git 历史无敏感信息，仓库可安全 open-source。Commit 38b1341."
+      "notes": "Manual gate 接受 2026-04-19：用户确认审阅通过，选择方案 A（不清洗历史）。审计结论 NO_FINDINGS，git 历史无敏感信息，仓库可安全 open-source。Commit 38b1341.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-062",
@@ -2785,7 +2923,9 @@
       "created_at": "2026-04-19T16:55:16.072Z",
       "updated_at": "2026-04-19T17:17:16.829Z",
       "commit_hash": "",
-      "notes": "auto_verified → done (acceptance_mode=auto). Commit 51617b7."
+      "notes": "auto_verified → done (acceptance_mode=auto). Commit 51617b7.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-063",
@@ -2827,7 +2967,9 @@
       "created_at": "2026-04-19T16:55:16.072Z",
       "updated_at": "2026-04-19T17:19:06.284Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit d311664."
+      "notes": "auto_verified → done. Commit d311664.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-064",
@@ -2873,7 +3015,9 @@
       "created_at": "2026-04-19T16:55:16.072Z",
       "updated_at": "2026-04-19T17:21:00.998Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit 10ff6d1 on master branch of AutoSkills repo."
+      "notes": "auto_verified → done. Commit 10ff6d1 on master branch of AutoSkills repo.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-065",
@@ -2923,7 +3067,9 @@
       "created_at": "2026-04-19T16:55:16.072Z",
       "updated_at": "2026-04-19T18:06:53.949Z",
       "commit_hash": "",
-      "notes": "Manual gate 接受 2026-04-19：用户确认\"继续任务\"，接受 skills 搬迁。11 个 project-* skills + 4 个 templates 已到位，业务逻辑零改动，去个人化完成。Commit 766a447 (AutoSkills/master)."
+      "notes": "Manual gate 接受 2026-04-19：用户确认\"继续任务\"，接受 skills 搬迁。11 个 project-* skills + 4 个 templates 已到位，业务逻辑零改动，去个人化完成。Commit 766a447 (AutoSkills/master).",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-066",
@@ -2975,7 +3121,9 @@
       "created_at": "2026-04-19T16:55:16.072Z",
       "updated_at": "2026-04-19T18:06:55.954Z",
       "commit_hash": "",
-      "notes": "Manual gate 接受 2026-04-19：用户确认\"继续任务\"，接受 MCP server 搬迁。源 + config 齐全，npm install + build 实测通过产出 dist/index.js，去个人化确认无硬编码。Commit ca67c6f (AutoSkills/master)."
+      "notes": "Manual gate 接受 2026-04-19：用户确认\"继续任务\"，接受 MCP server 搬迁。源 + config 齐全，npm install + build 实测通过产出 dist/index.js，去个人化确认无硬编码。Commit ca67c6f (AutoSkills/master).",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-067",
@@ -3019,7 +3167,9 @@
       "created_at": "2026-04-19T16:55:16.072Z",
       "updated_at": "2026-04-19T18:07:51.209Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit b7e1438 on AutoSkills/master."
+      "notes": "auto_verified → done. Commit b7e1438 on AutoSkills/master.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-068",
@@ -3078,7 +3228,9 @@
       "created_at": "2026-04-19T16:55:16.072Z",
       "updated_at": "2026-04-19T18:12:18.935Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit 154a05b on AutoSkills/master."
+      "notes": "auto_verified → done. Commit 154a05b on AutoSkills/master.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-069",
@@ -3123,7 +3275,9 @@
       "created_at": "2026-04-19T16:55:16.072Z",
       "updated_at": "2026-04-19T18:14:36.794Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit aca251a on AutoSkills/master."
+      "notes": "auto_verified → done. Commit aca251a on AutoSkills/master.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-070",
@@ -3188,7 +3342,9 @@
       "created_at": "2026-04-19T16:55:16.072Z",
       "updated_at": "2026-04-20T05:18:56.159Z",
       "commit_hash": "",
-      "notes": "Manual gate 接受 2026-04-20：用户确认\"通过\"。基于本机 dry-run + 67 个历史 smoke 的覆盖已足以证明脚本可靠，加之本机已经实际完成 (1) 8 个 commit 推到 GitHub AutoSkills private repo；(2) 本地分支 master → main 重命名并 push 成功；(3) bash/PS1 bootstrap 双 dry-run 通过；(4) MCP server build 实测产出 dist/index.js；(5) mcp-manifest.json JSON 校验通过。不同真机 smoke 的 B 段填空留作未来\"新电脑第一次装时\"的现场记录。未执行任何破坏性 git 操作。"
+      "notes": "Manual gate 接受 2026-04-20：用户确认\"通过\"。基于本机 dry-run + 67 个历史 smoke 的覆盖已足以证明脚本可靠，加之本机已经实际完成 (1) 8 个 commit 推到 GitHub AutoSkills private repo；(2) 本地分支 master → main 重命名并 push 成功；(3) bash/PS1 bootstrap 双 dry-run 通过；(4) MCP server build 实测产出 dist/index.js；(5) mcp-manifest.json JSON 校验通过。不同真机 smoke 的 B 段填空留作未来\"新电脑第一次装时\"的现场记录。未执行任何破坏性 git 操作。",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-071",
@@ -3224,7 +3380,9 @@
       "created_at": "2026-04-20T08:21:58.168Z",
       "updated_at": "2026-04-20T08:27:16.309Z",
       "commit_hash": "",
-      "notes": "auto_verified → done (acceptance_mode=auto). Commit 715b20f."
+      "notes": "auto_verified → done (acceptance_mode=auto). Commit 715b20f.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-072",
@@ -3265,7 +3423,9 @@
       "created_at": "2026-04-20T08:21:58.168Z",
       "updated_at": "2026-04-20T08:31:04.698Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit d3afaa8."
+      "notes": "auto_verified → done. Commit d3afaa8.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-073",
@@ -3303,7 +3463,9 @@
       "created_at": "2026-04-20T08:21:58.168Z",
       "updated_at": "2026-04-20T08:32:39.824Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit d667929. Phase 1 (3 任务) 收口。"
+      "notes": "auto_verified → done. Commit d667929. Phase 1 (3 任务) 收口。",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-074",
@@ -3345,7 +3507,9 @@
       "created_at": "2026-04-20T08:21:58.168Z",
       "updated_at": "2026-04-20T08:39:36.613Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit c33c874. pytest 221/221."
+      "notes": "auto_verified → done. Commit c33c874. pytest 221/221.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-075",
@@ -3389,7 +3553,9 @@
       "created_at": "2026-04-20T08:21:58.168Z",
       "updated_at": "2026-04-20T08:42:18.760Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit 47bffef. pytest 272/272."
+      "notes": "auto_verified → done. Commit 47bffef. pytest 272/272.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-076",
@@ -3433,7 +3599,9 @@
       "created_at": "2026-04-20T08:21:58.168Z",
       "updated_at": "2026-04-20T08:44:54.206Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit 8d28c44. pytest 287/287."
+      "notes": "auto_verified → done. Commit 8d28c44. pytest 287/287.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-077",
@@ -3477,7 +3645,9 @@
       "created_at": "2026-04-20T08:21:58.168Z",
       "updated_at": "2026-04-20T08:49:05.081Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit 54d1e80. pytest 290/290."
+      "notes": "auto_verified → done. Commit 54d1e80. pytest 290/290.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-078",
@@ -3517,7 +3687,9 @@
       "created_at": "2026-04-20T08:21:58.168Z",
       "updated_at": "2026-04-20T08:50:49.692Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit da97893."
+      "notes": "auto_verified → done. Commit da97893.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-079",
@@ -3556,7 +3728,9 @@
       "created_at": "2026-04-20T08:21:58.168Z",
       "updated_at": "2026-04-20T08:52:23.112Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit f03d590."
+      "notes": "auto_verified → done. Commit f03d590.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-080",
@@ -3601,7 +3775,9 @@
       "created_at": "2026-04-20T08:21:58.168Z",
       "updated_at": "2026-04-20T08:55:25.709Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit 1b371b2. pytest 311/311."
+      "notes": "auto_verified → done. Commit 1b371b2. pytest 311/311.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-081",
@@ -3645,7 +3821,9 @@
       "created_at": "2026-04-20T08:21:58.168Z",
       "updated_at": "2026-04-20T08:58:51.508Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit 4109fd3. Part B 完成 (3/3)。"
+      "notes": "auto_verified → done. Commit 4109fd3. Part B 完成 (3/3)。",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-082",
@@ -3690,7 +3868,9 @@
       "created_at": "2026-04-20T08:21:58.168Z",
       "updated_at": "2026-04-20T10:34:54.331Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit b0ed1b6. pytest 318/318."
+      "notes": "auto_verified → done. Commit b0ed1b6. pytest 318/318.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-083",
@@ -3734,7 +3914,9 @@
       "created_at": "2026-04-20T08:21:58.168Z",
       "updated_at": "2026-04-20T10:35:47.066Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. AutoSkills commit 0f7cddc。"
+      "notes": "auto_verified → done. AutoSkills commit 0f7cddc。",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-084",
@@ -3773,7 +3955,9 @@
       "created_at": "2026-04-20T08:21:58.168Z",
       "updated_at": "2026-04-20T10:37:55.558Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit 8ccbd0c."
+      "notes": "auto_verified → done. Commit 8ccbd0c.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-085",
@@ -3838,7 +4022,9 @@
       "created_at": "2026-04-20T08:21:58.168Z",
       "updated_at": "2026-04-20T10:48:57.777Z",
       "commit_hash": "",
-      "notes": "Manual gate 接受 2026-04-20：用户确认\"accept\"。所有 acceptance_criteria 满足：pyproject 0.1.3 + CHANGELOG [0.1.3] 段 + release-notes-0.1.3.md (8232 chars) + smoke-report (clean project in D:/AIProjects/test/cf-0.1.3-smoke/ 验证 A 端到端 + status 观测 + routing.json 审计) + pytest 318/318 + ruff clean。无破坏性 git 操作。0.1.3 正式发布。"
+      "notes": "Manual gate 接受 2026-04-20：用户确认\"accept\"。所有 acceptance_criteria 满足：pyproject 0.1.3 + CHANGELOG [0.1.3] 段 + release-notes-0.1.3.md (8232 chars) + smoke-report (clean project in D:/AIProjects/test/cf-0.1.3-smoke/ 验证 A 端到端 + status 观测 + routing.json 审计) + pytest 318/318 + ruff clean。无破坏性 git 操作。0.1.3 正式发布。",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-094",
@@ -3878,7 +4064,9 @@
       "created_at": "2026-04-20T11:52:56.559Z",
       "updated_at": "2026-04-20T12:01:59.513Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit 9a2182c. pytest 320/320."
+      "notes": "auto_verified → done. Commit 9a2182c. pytest 320/320.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-095",
@@ -3921,7 +4109,9 @@
       "created_at": "2026-04-20T11:52:56.559Z",
       "updated_at": "2026-04-20T12:05:19.171Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit 7f8aacb. pytest 338/338."
+      "notes": "auto_verified → done. Commit 7f8aacb. pytest 338/338.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-096",
@@ -3960,7 +4150,9 @@
       "created_at": "2026-04-20T11:52:56.559Z",
       "updated_at": "2026-04-20T12:07:09.749Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit 3c2abfe. pytest 342/342. 核心 3 个代码任务完成。"
+      "notes": "auto_verified → done. Commit 3c2abfe. pytest 342/342. 核心 3 个代码任务完成。",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-097",
@@ -3994,7 +4186,9 @@
       "created_at": "2026-04-20T11:52:56.559Z",
       "updated_at": "2026-04-20T12:07:57.424Z",
       "commit_hash": "",
-      "notes": "auto_verified → done. Commit 002e458."
+      "notes": "auto_verified → done. Commit 002e458.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-098",
@@ -4036,7 +4230,9 @@
       "created_at": "2026-04-20T11:52:56.559Z",
       "updated_at": "2026-04-20T12:14:21.842Z",
       "commit_hash": "",
-      "notes": "acceptance_mode=auto -> done. Release metadata committed."
+      "notes": "acceptance_mode=auto -> done. Release metadata committed.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-099",
@@ -4086,7 +4282,9 @@
       "created_at": "2026-04-20T11:52:56.559Z",
       "updated_at": "2026-04-20T13:10:53.966Z",
       "commit_hash": "",
-      "notes": "User approved via 'go' on 2026-04-20 after reviewing smoke report, CHANGELOG [0.1.4], release-notes-0.1.4.md. All 4 verification commands green, 10/10+4/4+4/4+2/2 smoke pass counts documented."
+      "notes": "User approved via 'go' on 2026-04-20 after reviewing smoke report, CHANGELOG [0.1.4], release-notes-0.1.4.md. All 4 verification commands green, 10/10+4/4+4/4+2/2 smoke pass counts documented.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-100",
@@ -4120,7 +4318,9 @@
       "created_at": "2026-04-20T13:17:01.298Z",
       "updated_at": "2026-04-20T13:23:21.775Z",
       "commit_hash": "",
-      "notes": "One-char typo fix in src/councilflow/cli/delegate.py:149 (process_error -> process_exit). +3 regression tests. 345 pytest pass (was 342), ruff clean."
+      "notes": "One-char typo fix in src/councilflow/cli/delegate.py:149 (process_error -> process_exit). +3 regression tests. 345 pytest pass (was 342), ruff clean.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-101",
@@ -4155,7 +4355,9 @@
       "created_at": "2026-04-20T13:17:01.298Z",
       "updated_at": "2026-04-20T13:26:36.710Z",
       "commit_hash": "",
-      "notes": "2 new tests in tests/test_synthesizer_artifact_contract.py: (1) happy path writes result.md + .claude/state/* untouched; (2) synthesizer MCP policy allows. 345 -> 347 pass, ruff clean."
+      "notes": "2 new tests in tests/test_synthesizer_artifact_contract.py: (1) happy path writes result.md + .claude/state/* untouched; (2) synthesizer MCP policy allows. 345 -> 347 pass, ruff clean.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-102",
@@ -4191,7 +4393,9 @@
       "created_at": "2026-04-20T13:17:01.298Z",
       "updated_at": "2026-04-20T13:28:27.609Z",
       "commit_hash": "",
-      "notes": "project-design SKILL.md updated in both repos (AutoSkills + ~/.workflow-core/skills). Synthesizer artifact-first contract section added with explicit negative constraint; host persistence step clarified to read result.md first."
+      "notes": "project-design SKILL.md updated in both repos (AutoSkills + ~/.workflow-core/skills). Synthesizer artifact-first contract section added with explicit negative constraint; host persistence step clarified to read result.md first.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-103",
@@ -4226,7 +4430,9 @@
       "created_at": "2026-04-20T13:17:01.298Z",
       "updated_at": "2026-04-20T13:29:29.964Z",
       "commit_hash": "",
-      "notes": "project-plan SKILL.md updated in both repos. Synthesizer artifact-first contract section + host-side persistence step clarified."
+      "notes": "project-plan SKILL.md updated in both repos. Synthesizer artifact-first contract section + host-side persistence step clarified.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-104",
@@ -4262,7 +4468,9 @@
       "created_at": "2026-04-20T13:17:01.298Z",
       "updated_at": "2026-04-20T13:30:33.581Z",
       "commit_hash": "",
-      "notes": "project-change SKILL.md updated in both repos; artifact-first applies to all 4 MCP targets."
+      "notes": "project-change SKILL.md updated in both repos; artifact-first applies to all 4 MCP targets.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-105",
@@ -4297,7 +4505,9 @@
       "created_at": "2026-04-20T13:17:01.298Z",
       "updated_at": "2026-04-20T13:31:54.149Z",
       "commit_hash": "",
-      "notes": "docs/integration.md gained Synthesizer artifact contract (0.1.5+) section + Fallback 0.1.5 typo note. Both grep verification commands pass. Previous process_error occurrence only appears as historical reference in the 0.1.5 note."
+      "notes": "docs/integration.md gained Synthesizer artifact contract (0.1.5+) section + Fallback 0.1.5 typo note. Both grep verification commands pass. Previous process_error occurrence only appears as historical reference in the 0.1.5 note.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-106",
@@ -4352,7 +4562,9 @@
       "created_at": "2026-04-20T13:17:01.298Z",
       "updated_at": "2026-04-20T16:28:44.474Z",
       "commit_hash": "",
-      "notes": "User accepted 2026-04-20 after cnchess end-to-end integration test validated 0.1.5: fixer loop fired on real semantic bug (TASK-004 楚河汉界), shell timeout 2h protocol triggered 5 times with zero false positives, synthesizer zero guardrail_violation across 6 tasks. cnchess game effect confirmed good."
+      "notes": "User accepted 2026-04-20 after cnchess end-to-end integration test validated 0.1.5: fixer loop fired on real semantic bug (TASK-004 楚河汉界), shell timeout 2h protocol triggered 5 times with zero false positives, synthesizer zero guardrail_violation across 6 tasks. cnchess game effect confirmed good.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-107",
@@ -4393,7 +4605,9 @@
       "created_at": "2026-04-21T07:07:55.518Z",
       "updated_at": "2026-04-21T07:15:12.875Z",
       "commit_hash": "",
-      "notes": "discuss_wait.py + 8 tests (7 scenarios + --help smoke). 347 -> 355 pass, ruff clean. Naming: council discussion wait (noun form) to preserve council discuss \"question\" verb-form backward compat. Dual-condition completion: record.status==completed AND summary.md readable. Recursive subcommand allowlist updated to include discussion."
+      "notes": "discuss_wait.py + 8 tests (7 scenarios + --help smoke). 347 -> 355 pass, ruff clean. Naming: council discussion wait (noun form) to preserve council discuss \"question\" verb-form backward compat. Dual-condition completion: record.status==completed AND summary.md readable. Recursive subcommand allowlist updated to include discussion.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-108",
@@ -4432,7 +4646,9 @@
       "created_at": "2026-04-21T07:07:55.519Z",
       "updated_at": "2026-04-21T07:18:02.501Z",
       "commit_hash": "",
-      "notes": "4 skills synced both repos with shell-timeout recovery protocol. NOTE: command name is `council discussion wait` (noun form, mirrors delegation wait) not `council discuss wait` — Typer cannot register both `discuss` as command (existing) AND `discuss` as sub-app (new). All 4 skills reference correct command name. Both repos diff-q identical."
+      "notes": "4 skills synced both repos with shell-timeout recovery protocol. NOTE: command name is `council discussion wait` (noun form, mirrors delegation wait) not `council discuss wait` — Typer cannot register both `discuss` as command (existing) AND `discuss` as sub-app (new). All 4 skills reference correct command name. Both repos diff-q identical.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-109",
@@ -4467,7 +4683,9 @@
       "created_at": "2026-04-21T07:07:55.519Z",
       "updated_at": "2026-04-21T07:20:14.051Z",
       "commit_hash": "",
-      "notes": "docs/integration.md gained Discuss wait (0.1.6+) section after --model override precedence; readme.md gained recovery note in 多模型讨论 section. NOTE: original verification_commands grep'd for \"council discuss wait\" but actual command name is \"council discussion wait\" (noun form, mirrors delegation wait); ran corrected grep at tester stage."
+      "notes": "docs/integration.md gained Discuss wait (0.1.6+) section after --model override precedence; readme.md gained recovery note in 多模型讨论 section. NOTE: original verification_commands grep'd for \"council discuss wait\" but actual command name is \"council discussion wait\" (noun form, mirrors delegation wait); ran corrected grep at tester stage.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-110",
@@ -4517,7 +4735,9 @@
       "created_at": "2026-04-21T07:07:55.519Z",
       "updated_at": "2026-04-21T07:39:02.718Z",
       "commit_hash": "",
-      "notes": "User accepted 2026-04-21. 0.1.6 closes the asymmetric gap between council delegate (had delegation wait since 0.1.0) and council discuss (no recovery path). 355 pytest green, ruff clean, end-to-end smoke verified two-stage recovery."
+      "notes": "User accepted 2026-04-21. 0.1.6 closes the asymmetric gap between council delegate (had delegation wait since 0.1.0) and council discuss (no recovery path). 355 pytest green, ruff clean, end-to-end smoke verified two-stage recovery.",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-111",
@@ -4560,7 +4780,9 @@
       "created_at": "2026-05-12T00:43:26.556Z",
       "updated_at": "2026-05-12T00:53:24.652Z",
       "commit_hash": "",
-      "notes": "ruff + tests/test_discussion_orchestrator.py 全绿；唯一的 test_cli_delegate.py::test_delegate_command_rejects_invalid_input_shape fail 已用 git stash 验证为 pre-existing（与 discussion_orchestrator 无导入关联）。reviewer 5 项全部通过。"
+      "notes": "ruff + tests/test_discussion_orchestrator.py 全绿；唯一的 test_cli_delegate.py::test_delegate_command_rejects_invalid_input_shape fail 已用 git stash 验证为 pre-existing（与 discussion_orchestrator 无导入关联）。reviewer 5 项全部通过。",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-112",
@@ -4598,7 +4820,9 @@
       "created_at": "2026-05-12T01:03:46.218Z",
       "updated_at": "2026-05-12T01:30:11.891Z",
       "commit_hash": "",
-      "notes": "cli/delegate.py 改动验证通过（test_cli_delegate.py 39/39）。全量 pytest 在 TASK-113 同步测试期望后绿。"
+      "notes": "cli/delegate.py 改动验证通过（test_cli_delegate.py 39/39）。全量 pytest 在 TASK-113 同步测试期望后绿。",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-113",
@@ -4641,7 +4865,9 @@
       "created_at": "2026-05-12T01:25:41.413Z",
       "updated_at": "2026-05-12T01:30:12.337Z",
       "commit_hash": "",
-      "notes": "4 个测试文件期望同步至 default-config.yaml 新值；test_cli_discuss warn 路径用 write_project_config 强制 default_models=[] 保留覆盖。reviewer 5 项全过；全量 pytest 365+ 全绿。"
+      "notes": "4 个测试文件期望同步至 default-config.yaml 新值；test_cli_discuss warn 路径用 write_project_config 强制 default_models=[] 保留覆盖。reviewer 5 项全过；全量 pytest 365+ 全绿。",
+      "replacement_task_id": null,
+      "priority": 0
     },
     {
       "id": "TASK-114",
@@ -4692,7 +4918,9 @@
       "created_at": "2026-05-12T01:35:15.525Z",
       "updated_at": "2026-05-12T01:43:49.629Z",
       "commit_hash": "",
-      "notes": "用户手工 sign-off 通过：CouncilFlow 0.1.7 commit 48d220c + tag v0.1.7 已发布到 origin/main。stage_gate 关闭。"
+      "notes": "用户手工 sign-off 通过：CouncilFlow 0.1.7 commit 48d220c + tag v0.1.7 已发布到 origin/main。stage_gate 关闭。",
+      "replacement_task_id": null,
+      "priority": 0
     }
   ]
 }
