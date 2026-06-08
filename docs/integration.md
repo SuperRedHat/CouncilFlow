@@ -284,6 +284,18 @@ Expected machine-readable contract:
   repair task instead of directly performing fixer/tester work inside the gate-closing workflow.
 - If `council delegate` or `council discuss` returns an error, workflows must stop and surface that
   failure instead of silently switching to local execution.
+- Task status from `project-manager` is now a 7-value enum. `cancelled` and `superseded` are
+  **closed-but-not-done** terminal states: they satisfy a DAG predecessor only through the documented
+  `getNextTask` semantics (a `superseded` dependency resolves through its replacement chain; a
+  `cancelled` dependency *blocks* its dependents and is surfaced, never silently treated as
+  satisfied). Closed-but-not-done tasks do **not** contribute to `active_completion_rate` — only
+  `done` does. Workflows must not treat `cancelled` / `superseded` as `done`.
+- `current_focus` returned by `get_project_context` is **auxiliary ops-level state** and may be
+  stale (it carries an `is_stale` hint). It is **not** authoritative task state — task `status`
+  remains the source of truth. Do not gate routing or completion decisions on `current_focus`.
+- Logs now carry a `kind` discriminator (`task_transition` / `ops_event` / `decision` / `note` /
+  `workflow_failure` / `focus_update`) plus `event_type`. Consumers must select log entries by
+  `kind` / `event_type`, not by parsing the human-readable `message` text.
 
 ## Sidecar Isolation Contract
 
@@ -462,6 +474,99 @@ scope does not override it. If you need different MCP paths per project,
 that wins. The manifest applies to the user-scope fallback only — project
 overrides remain under the user's control.
 
+## `project-manager` Task-State Contract
+
+The `project-manager` MCP server is the authoritative store for task status and
+project logs. Workflows that read or mutate task state should rely on the
+following contract.
+
+### Status enum and the forward state machine
+
+Task status is a 7-value enum: `todo`, `in_progress`, `auto_verified`,
+`awaiting_manual_acceptance`, `done`, `cancelled`, `superseded`.
+
+- The forward state machine driven by `update_task_status` is unchanged:
+  `todo -> in_progress -> auto_verified -> {done | awaiting_manual_acceptance}`;
+  `awaiting_manual_acceptance -> {done | in_progress}`. `done` is a terminal that
+  still requires the full verification/review gauntlet.
+- `cancelled` and `superseded` are **terminal management states** with no
+  outbound edges. They are reachable **only** through the `close_task` tool.
+  `update_task_status` now **rejects** them with a "use `close_task`" error — the
+  forward state machine cannot reach them.
+
+### `close_task` management API
+
+`close_task(id, status, reason, replacement_task_id?)` is the **only** path from
+outside the internal forward state machine into `cancelled` / `superseded`. It is
+an audited management bypass, not a workflow-stage action.
+
+- `status` may be only `cancelled` or `superseded`. `close_task` can **never** set
+  a task to `done` (use the forward state machine for that), and it cannot
+  un-complete or reopen a task — it operates only from a **non-terminal** source
+  (you cannot close a task that is already `done` / `cancelled` / `superseded`;
+  there is no reopen in v1).
+- `cancelled` requires `reason`. `superseded` requires `reason` **and**
+  `replacement_task_id` (validated: the replacement must exist, not be the task
+  itself, not already be closed, and not introduce a replacement-chain cycle).
+- `close_task` writes a `task_closed` audit log
+  (`kind = task_transition`, `event_type = task_closed`, `source = close_task`).
+- `superseded` **rewrites every dependent edge** from the closed task to its
+  replacement so the DAG stays runnable. `cancelled` with live dependents instead
+  emits an `ops_event` (`event_type = dependents_blocked_by_cancel`) so the
+  controller can re-point or close those dependents — there is no silent deadlock.
+- **Who calls it:** in normal operation `close_task` is invoked **only** by
+  `project-feedback` (a manual-gate rejection that decides to cancel or supersede)
+  or by an explicit controller / management decision. Role-driven stages
+  (`implementer` / `tester` / `reviewer` / `fixer` / `synthesizer` / `planner` /
+  `architect` / `advisor`) do **not** call `close_task`; they report failures and
+  leave task state to `project-feedback` / the controller. See also the note in
+  the Workflow Failure Report Protocol: a `workflow_failure` log does not
+  authorize `close_task`.
+
+### `get_project_context` (additive, backward compatible)
+
+`get_project_context` now also returns:
+
+- `in_progress_tasks` — the full set of currently in-progress tasks.
+- `tasks_summary.metrics` — `{ total_all, active_total, done, cancelled,
+  superseded, closed_total, raw_completion_rate, active_completion_rate }`. The
+  two rates are distinct: `raw_completion_rate` counts against all tasks, while
+  `active_completion_rate` counts `done` against active (non-closed) tasks only;
+  `cancelled` / `superseded` do not contribute to `active_completion_rate`.
+- `tasks_summary.next_task_blocked_reason` — one of `none`, `all_done`,
+  `blocked_in_progress`, `blocked_by_cancelled_dep`.
+- `current_focus` — the single-slot ops focus snapshot (or `null`, with an
+  `is_stale` hint). Auxiliary ops state only; see Consumption Rules.
+- `schema_version`.
+
+It accepts new optional params:
+
+- `context_mode` (`build` | `ops` | `hybrid`) — a **presentation hint only**. It
+  must **not** be treated as a filter or permission boundary; the task set is
+  identical across all three modes.
+- `max_recent_events`.
+- `include_full_in_progress`.
+
+The legacy `progress` object is preserved unchanged
+(`{ total, done, in_progress, awaiting_acceptance, todo }`) and is now
+**additively** extended with the dual-rate metrics fields above.
+
+`get_current_focus` / `set_current_focus` read and write that single-slot ops
+focus snapshot (stored in `.claude/state/focus.json`). It is auxiliary ops state,
+not task state.
+
+### `add_log` / `get_logs`
+
+- `add_log` now also accepts `kind`
+  (`task_transition` | `ops_event` | `decision` | `note` | `workflow_failure` |
+  `focus_update`), `event_type`, `tags`, `entities`, and `source`; `task_id` may
+  be `null` for a project-level ops event.
+- `get_logs` accepts `{ n/limit, kind, event_type, since }` and **filters before
+  slicing** (a journal view), so a `kind`/`event_type` filter returns the most
+  recent matching entries rather than filtering only within the last `n`.
+- `migrate_tasks_schema` is a v0 -> v1, idempotent migration that **never** changes
+  task status, backfills log `kind` / `event_type`, and stamps `schema_version = 1`.
+
 ## Workflow Failure Report Protocol
 
 Every `role_driven` and `discussion` shared skill must emit the same failure
@@ -498,6 +603,13 @@ all look the same to whoever reads the logs.
 3. **Do not mutate task status toward `done` / `auto_verified`**. The task
    remains `in_progress` (or whatever it was). Let `project-feedback` or a new
    follow-up task pick the repair route.
+   - A `workflow_failure` log does **not** authorize `close_task`. A failed
+     workflow leaves the task in its current state; whether to cancel, supersede,
+     or repair it is a `project-feedback` / controller decision, not something a
+     role-driven stage may perform on its own. Role stages
+     (`implementer` / `tester` / `reviewer` / `fixer` / `synthesizer` / `planner`
+     / `architect` / `advisor`) report the failure and stop; they never call
+     `close_task`.
 
 Classification rule for `council_available`:
 
