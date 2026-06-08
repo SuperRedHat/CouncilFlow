@@ -4,6 +4,33 @@ All notable changes to CouncilFlow are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] — 2026-06-09
+
+Patch release: latent-bug fixes surfaced by a multi-agent code audit (no public
+CLI surface change; full 355-test suite green). Also documents the expanded
+`project-manager` task-state / cross-project integration contract.
+
+### Fixed
+
+- **Provider subprocess no longer leaks on timeout, and a large stdin no longer
+  deadlocks.** `run_monitored_process` (`src/councilflow/providers/base.py`) now
+  writes `stdin` on a separate daemon thread — a payload larger than the OS pipe
+  buffer could otherwise deadlock against the child's stdout/stderr — and always
+  reaps the child in `finally` (poll()-guarded), so no exit path leaks the process.
+- **`.council` state writes are now atomic.** `CouncilStateStore._write_json`
+  (`src/councilflow/state/store.py`) writes a temp sibling then `replace()`s it, so
+  a crash/interrupt mid-write cannot leave a truncated/corrupt JSON file.
+- **`discuss` participant-parse defaults aligned.** `_parse_participant_payload`
+  (`src/councilflow/cli/discuss.py`) had its JSON-path defaults for
+  `supports_current_direction` / `has_new_information` inverted versus the
+  plain-text fallback and the `ParticipantResponse` model defaults; now consistent.
+
+### Docs
+
+- `docs/integration.md` gains the *project-manager Task-State Contract* and
+  cross-project / portfolio sections (companion AutoSkills `project-manager` MCP is
+  at v1.3.0).
+
 ## [0.1.7] — 2026-05-12
 
 Patch release bundling three independent issues that surfaced while
