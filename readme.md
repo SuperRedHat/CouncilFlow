@@ -97,6 +97,8 @@ bootstrap 会：
 
 完成后你就能在任一主控里用 `/project-init`、`/project-plan`、`/project-next` 这些流程化技能，并在需要时无缝触发 CouncilFlow 讨论或委派。
 
+> **project-manager 能力（v1.3.0）**：状态 MCP 已从"线性 build 任务 + 日志"扩展为支持**运营 / 管理 / 跨项目**——任务终态（`cancelled` / `superseded`）配受审计的 `close_task` / `reopen_task`、任务优先级、批量操作、结构化「当前焦点」、富日志（`kind` / `tags`）、双完成率、以及跨项目只读 `project_dir` + `get_portfolio`。它与 CouncilFlow 的集成契约见 [docs/integration.md](docs/integration.md) 的 *project-manager Task-State Contract* 段；完整工具清单见 AutoSkills 的 [mcp/project-manager/README.md](https://github.com/SuperRedHat/AutoSkills/blob/main/mcp/project-manager/README.md)。
+
 ---
 
 ## 常见用法
