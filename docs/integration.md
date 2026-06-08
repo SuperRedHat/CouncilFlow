@@ -493,6 +493,13 @@ Task status is a 7-value enum: `todo`, `in_progress`, `auto_verified`,
   outbound edges. They are reachable **only** through the `close_task` tool.
   `update_task_status` now **rejects** them with a "use `close_task`" error — the
   forward state machine cannot reach them.
+- **Contract version 1.2.0 (additive over 1.1.0):** the terminal states
+  (`done` / `cancelled` / `superseded`) now have exactly **one** audited reverse
+  edge — `reopen_task -> {todo | in_progress}`. This is the single documented
+  exception to "terminal states have no outbound edges" and **supersedes the
+  ADR-001 "no reopen in v1" decision**. Like `close_task`, `reopen_task` is a
+  management bypass: it does **not** travel the forward state machine and is not
+  a role-driven stage action (see **`reopen_task`** below).
 
 ### `close_task` management API
 
@@ -522,6 +529,68 @@ an audited management bypass, not a workflow-stage action.
   leave task state to `project-feedback` / the controller. See also the note in
   the Workflow Failure Report Protocol: a `workflow_failure` log does not
   authorize `close_task`.
+
+### Management and batch tools (1.2.0+)
+
+Five tools are now exposed alongside `close_task`. They are all management
+APIs, not forward-state-machine actions; the boundary rules from `close_task`
+apply unchanged unless noted.
+
+- **`set_task_priority(id, priority)`** — adjust a single task's priority.
+  `priority` is a number; higher means more urgent. See **Task priority and
+  priority-aware `get_next_task`** below for how it influences scheduling.
+- **`update_tasks([{ id, status, notes? }])`** — the **batch** form of
+  `update_task_status` for **forward** transitions only. It is per-item with
+  **partial success**: each entry is still validated independently against the
+  forward state machine, and one rejected item does not roll back the items that
+  succeeded. It does **not** accept `cancelled` / `superseded` (use
+  `close_tasks` for those), exactly as the single-task `update_task_status`
+  rejects them.
+- **`close_tasks([{ id, status, reason, replacement_task_id? }])`** — the
+  **batch** form of `close_task`. Each entry carries the same per-item contract
+  as `close_task` (`status ∈ {cancelled, superseded}`, `reason` required;
+  `superseded` also requires a validated `replacement_task_id`) and is validated
+  and audited individually.
+- **`archive_module(module, reason)`** — bulk-close **every non-terminal task**
+  in a module by issuing `close_task(status = cancelled)` for each. Tasks already
+  in a terminal state (`done` / `cancelled` / `superseded`) are left untouched.
+  This is the management shortcut for retiring a whole module; each cancellation
+  is audited like an ordinary `close_task`, and live cross-module dependents are
+  surfaced via the same `dependents_blocked_by_cancel` `ops_event`.
+- **`reopen_task(id, reason, to_status?)`** — the **audited reverse of
+  `close_task`**. It brings a task that is in a **terminal** state
+  (`done` / `cancelled` / `superseded`) back to `todo` (default) or
+  `in_progress` (`to_status`). `reason` is **required**.
+  - It is a **management bypass** that does **not** use the forward state
+    machine — it is the only edge out of a terminal state (see the state-machine
+    note above; this supersedes ADR-001).
+  - Reopening a **`superseded`** task **clears its `replacement_task_id`**.
+    However, the dependent edges that `close_task` rewired from the closed task
+    onto the replacement at supersede time are **not** auto-restored to the
+    reopened task. The audit log **flags** this so the controller can decide
+    whether to re-point those dependents manually.
+  - It writes an audit log entry mirroring `close_task`
+    (`kind = task_transition`, `source = reopen_task`).
+  - **Who calls it (same boundary as `close_task`):** in normal operation
+    `reopen_task` is invoked **only** by `project-feedback` (e.g. a manual-gate
+    decision to revive a previously-closed task) or by an explicit controller /
+    management decision. Role-driven stages (`implementer` / `tester` /
+    `reviewer` / `fixer` / `synthesizer` / `planner` / `architect` / `advisor`)
+    do **not** call `reopen_task`; they report failures and leave task state to
+    `project-feedback` / the controller.
+
+### Task priority and priority-aware `get_next_task` (1.2.0+)
+
+- Tasks now carry an optional **`priority?: number`** field (default `0`;
+  higher = more urgent), set via `set_task_priority` or at task creation.
+- `get_next_task` now returns the **highest-priority runnable `todo`**. Ties on
+  priority are broken by **creation order** (oldest first), preserving the
+  pre-1.2.0 ordering as the `priority == 0` baseline.
+- Priority **never overrides dependency gating**: a higher-priority task whose
+  predecessors are not satisfied is still not runnable. Priority only re-orders
+  among tasks that are *already* runnable under the existing DAG semantics
+  (`cancelled` dependency blocks; `superseded` dependency resolves through its
+  replacement chain).
 
 ### `get_project_context` (additive, backward compatible)
 
@@ -566,6 +635,20 @@ not task state.
   recent matching entries rather than filtering only within the last `n`.
 - `migrate_tasks_schema` is a v0 -> v1, idempotent migration that **never** changes
   task status, backfills log `kind` / `event_type`, and stamps `schema_version = 1`.
+
+### `verification_profile` validation (1.2.0+)
+
+`verification_profile` names are no longer a hardcoded enum baked into the
+server. They are now validated **at runtime** against the external policy file
+`~/.workflow-core/policies/verification-profiles.json`.
+
+- Adding (or renaming) a profile is an **edit to that JSON file only** — no
+  project-manager code change is required, so the profile set is extensible
+  without a release.
+- An **unknown** profile name is **rejected** when the policy file is present.
+- Validation is **lenient only when the file is missing**: with no policy file
+  to validate against, any name is accepted (so an unprovisioned environment
+  does not hard-fail task creation).
 
 ## Workflow Failure Report Protocol
 
