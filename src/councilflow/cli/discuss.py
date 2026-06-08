@@ -261,8 +261,8 @@ def _parse_participant_payload(content: str) -> dict[str, object]:
         "recommended_decision": _normalize_optional_string(parsed.get("recommended_decision")),
         "next_step": _normalize_optional_string(parsed.get("next_step"))
         or "Controller should review the participant response and continue.",
-        "supports_current_direction": bool(parsed.get("supports_current_direction", True)),
-        "has_new_information": bool(parsed.get("has_new_information", False)),
+        "supports_current_direction": bool(parsed.get("supports_current_direction", False)),
+        "has_new_information": bool(parsed.get("has_new_information", True)),
     }
 
 

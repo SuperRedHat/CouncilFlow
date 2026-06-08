@@ -128,7 +128,10 @@ class CouncilStateStore:
 
     @staticmethod
     def _write_json(path: Path, payload: Mapping[str, Any]) -> None:
-        path.write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
-            encoding="utf-8",
-        )
+        content = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+        # Atomic write: write a temp sibling then replace(), so a crash/interrupt
+        # mid-write cannot leave a truncated/corrupt JSON file (a reader always
+        # sees either the complete old or complete new file).
+        tmp = path.with_name(path.name + ".tmp")
+        tmp.write_text(content, encoding="utf-8")
+        tmp.replace(path)

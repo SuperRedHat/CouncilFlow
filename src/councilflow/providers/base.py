@@ -238,8 +238,25 @@ def run_monitored_process(
         ) from exc
 
     if stdin_payload is not None and process.stdin is not None:
-        process.stdin.write(stdin_payload.decode("utf-8", errors="replace"))
-        process.stdin.close()
+        # Write stdin on a separate daemon thread so a payload larger than the OS
+        # pipe buffer cannot deadlock against the child's stdout/stderr (which we
+        # only begin draining below). The thread closes stdin when finished.
+        def _write_stdin(stream: Any, data: str) -> None:
+            try:
+                stream.write(data)
+            except (BrokenPipeError, OSError):
+                pass
+            finally:
+                try:
+                    stream.close()
+                except OSError:
+                    pass
+
+        threading.Thread(
+            target=_write_stdin,
+            args=(process.stdin, stdin_payload.decode("utf-8", errors="replace")),
+            daemon=True,
+        ).start()
 
     def reader(stream_name: str, stream: Any) -> None:
         try:
@@ -326,6 +343,11 @@ def run_monitored_process(
 
         returncode = process.wait(timeout=1)
     finally:
+        # Always reap the child on any exit path (exception, wait timeout, normal
+        # completion) so a failure can't leak the subprocess. poll() guards
+        # against killing a process that already exited (idempotent).
+        if process.poll() is None:
+            _terminate_process(process)
         for thread in reader_threads:
             thread.join(timeout=0.2)
 
