@@ -650,6 +650,33 @@ server. They are now validated **at runtime** against the external policy file
   to validate against, any name is accepted (so an unprovisioned environment
   does not hard-fail task creation).
 
+### Cross-project / portfolio (read-only, 1.3.0+)
+
+The single-active-project model is unchanged, but **read** tools can now address
+another project without switching the active one.
+
+- Every **read** tool (`get_project_info`, `get_prd`, `get_architecture`,
+  `get_all_tasks`, `get_task_by_id`, `get_next_task`, `get_logs`,
+  `get_project_context`, `get_current_focus`, `get_server_info`) accepts an
+  optional **`project_dir`**. With it, the call reads that project's state via a
+  transient StateManager and **never** reassigns the module-global active project
+  — eliminating the "`set_project_dir` then remember to switch back" hazard.
+  Omitting it = the active project (unchanged behavior). Paths are canonicalized
+  (symlink / Windows case / UNC); a non-project dir returns a classified error
+  (`not_a_project` / `state_unreadable`). `get_server_info` echoes
+  `resolved` / `active_project` for debuggability.
+- **`get_portfolio(project_dirs[])`** is a read-only aggregator returning a
+  per-project summary (name, status, dual-rate metrics, current_focus, next_task,
+  next_task_blocked_reason). It accepts a **per-call list only and never reads a
+  registry** (no implicit context). A bad dir yields a per-entry error without
+  sinking the others.
+- **Deferred (not in 1.3.0):** cross-project **writes** (write tools do not accept
+  `project_dir`; writing another project still requires `set_project_dir`), a
+  portfolio **registry file**, and the cross-project **pointer task type**.
+- **CouncilFlow guidance:** if a workflow needs to look across projects, use the
+  **read-only** `project_dir` / `get_portfolio` surface only — never drive routing
+  or completion off another project's state, and never mutate it.
+
 ## Workflow Failure Report Protocol
 
 Every `role_driven` and `discussion` shared skill must emit the same failure
