@@ -365,6 +365,67 @@ def test_delegate_command_stays_local_when_role_maps_to_controller(tmp_path: Pat
     assert "stays local" in payload["data"]["reason"]
 
 
+@pytest.mark.parametrize(
+    "env, expected_model",
+    [
+        ({"CODEX_SHELL": "1"}, "codex"),
+        (
+            {
+                "CLAUDE_CODE_SHELL": "1",
+                "CODEX_SHELL": None,
+                "CODEX_THREAD_ID": None,
+                "CODEX_INTERNAL_ORIGINATOR_OVERRIDE": None,
+                "GEMINI_CLI": None,
+            },
+            "claude",
+        ),
+        (
+            {
+                "GEMINI_CLI": "1",
+                "CODEX_SHELL": None,
+                "CODEX_THREAD_ID": None,
+                "CODEX_INTERNAL_ORIGINATOR_OVERRIDE": None,
+                "CLAUDECODE": None,
+                "CLAUDE_CODE": None,
+                "CLAUDE_CODE_SHELL": None,
+            },
+            "gemini",
+        ),
+    ],
+)
+def test_delegate_default_controller_sentinel_runs_locally_for_each_controller(
+    tmp_path: Path, env: dict[str, str | None], expected_model: str
+) -> None:
+    # End-to-end: a fresh project gets the shipped default (every role mapped to
+    # the `controller` sentinel) and NO --model is passed, so the full
+    # role_router.resolve -> build_route_decision -> CLI path must keep the
+    # active controller local for codex / claude / gemini alike — and report the
+    # concrete controller model (sentinel resolved), not the literal sentinel.
+    result = runner.invoke(
+        app,
+        [
+            "delegate",
+            "--role",
+            "implementer",
+            "--objective",
+            "Implement locally on the active controller.",
+            "--task-summary",
+            "Default controller sentinel should stay local.",
+            "--project-root",
+            str(tmp_path),
+        ],
+        env=env,
+    )
+
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0, result.output
+    assert payload["error"] is None
+    assert payload["data"]["status"] == "local_execution"
+    assert payload["data"]["via_sidecar"] is False
+    assert payload["data"]["model"] == expected_model
+
+
 def test_delegate_command_normalizes_aliases_for_local_execution(tmp_path: Path) -> None:
     result = runner.invoke(
         app,

@@ -40,6 +40,26 @@ def test_resolve_accepts_string_role_name() -> None:
     assert decision.primary_model == "claude"
 
 
+def test_resolve_resolves_controller_sentinel_to_active_controller() -> None:
+    from councilflow.models.roles import ControllerName
+
+    mapping = RoleMapping.model_validate({"implementer": "controller"})
+    decision = resolve(
+        RoleName.IMPLEMENTER, mapping, task_context={}, controller=ControllerName.CLAUDE
+    )
+    # primary_model (persisted to routing.json / shown by `council status`) is the
+    # concrete active controller; tried_routes keeps the raw configured sentinel.
+    assert decision.primary_model == "claude"
+    assert decision.tried_routes[0].model == "controller"
+
+
+def test_resolve_leaves_controller_sentinel_raw_when_no_controller_supplied() -> None:
+    # Backward compatible: omitting `controller` keeps the sentinel verbatim.
+    mapping = RoleMapping.model_validate({"implementer": "controller"})
+    decision = resolve(RoleName.IMPLEMENTER, mapping, task_context={})
+    assert decision.primary_model == "controller"
+
+
 # ---------------------------------------------------------------------------
 # Expression-based routing — first match wins
 # ---------------------------------------------------------------------------

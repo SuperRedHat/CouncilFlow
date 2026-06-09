@@ -111,6 +111,6 @@ def test_project_local_configs_remain_isolated_between_projects(tmp_path: Path) 
     assert first_loaded.roles.for_role(RoleName.IMPLEMENTER) == "gemini"
     assert first_loaded.discussion.default_models == ["gemini"]
     assert second_loaded.output_language == "zh-CN"
-    assert second_loaded.roles.for_role(RoleName.IMPLEMENTER) == "codex"
+    assert second_loaded.roles.for_role(RoleName.IMPLEMENTER) == "controller"
     assert second_loaded.discussion.default_models == ["codex", "claude"]
     assert second_loaded.discussion.max_rounds == 5

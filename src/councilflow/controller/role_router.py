@@ -23,7 +23,7 @@ from typing import Any
 
 from councilflow.config.when_eval import WhenExpressionError, evaluate
 from councilflow.models.config import RoleMapping, RoleRoute
-from councilflow.models.roles import RoleName
+from councilflow.models.roles import ControllerName, RoleName, is_controller_sentinel
 
 
 class RoutingNoMatchError(Exception):
@@ -165,6 +165,7 @@ def resolve(
     task_context: dict[str, Any] | None = None,
     *,
     log_path: Path | None = None,
+    controller: ControllerName | None = None,
 ) -> RoutingDecision:
     """Pick the first matching route for ``role`` and return a decision.
 
@@ -232,9 +233,16 @@ def resolve(
             )
         )
         if matched:
+            # Resolve the `controller` sentinel to the active controller for the
+            # persisted/observable primary_model, so routing.json and `council
+            # status` show the real model that ran (not the literal sentinel).
+            # tried_routes keeps the raw configured value for audit fidelity.
+            selected_model = route.model
+            if controller is not None and is_controller_sentinel(route.model):
+                selected_model = controller.value
             decision = RoutingDecision(
                 role=role_str,
-                primary_model=route.model,
+                primary_model=selected_model,
                 fallback_chain=list(route.fallback or []),
                 matched_route_index=idx,
                 matched_when_expr=route.when,

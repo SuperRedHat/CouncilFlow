@@ -63,6 +63,11 @@ def test_delegate_from_gemini_to_codex(monkeypatch, tmp_path: Path) -> None:
             "delegate",
             "--role",
             "planner",
+            # Pin a concrete model that differs from the gemini controller so this
+            # stays a delegation test (the shipped `controller` default would
+            # otherwise resolve to the gemini controller and run locally).
+            "--model",
+            "codex",
             "--objective",
             "Plan.",
             "--task-summary",

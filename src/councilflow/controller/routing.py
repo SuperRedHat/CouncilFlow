@@ -6,7 +6,12 @@ from collections.abc import Sequence
 
 from councilflow.config.schema import CouncilConfig
 from councilflow.models.config import DiscussTargetResolution, RouteDecision
-from councilflow.models.roles import ControllerName, RoleName, normalize_model_name
+from councilflow.models.roles import (
+    ControllerName,
+    RoleName,
+    is_controller_sentinel,
+    normalize_model_name,
+)
 
 
 def select_discuss_models(
@@ -96,6 +101,22 @@ def build_route_decision(
     normalized_target = normalize_model_name(target_model)
     if not normalized_target:
         raise ValueError("Route target model cannot be empty.")
+
+    # `controller` sentinel: the role follows whoever is driving CouncilFlow, so
+    # it always resolves to the active controller's own model -> stay local, no
+    # sidecar. Resolve it to the concrete controller model for downstream/emit.
+    if is_controller_sentinel(normalized_target):
+        return RouteDecision(
+            role=role,
+            controller=controller,
+            target_model=controller.value,
+            status="local_execution",
+            via_sidecar=False,
+            reason=(
+                "Role follows the active controller (controller sentinel); "
+                "execution stays local."
+            ),
+        )
 
     if normalized_target == controller.value:
         return RouteDecision(

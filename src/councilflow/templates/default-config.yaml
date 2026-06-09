@@ -45,22 +45,30 @@
 #     - model: gpt
 #       fallback: [claude, codex]
 #
-# The default below keeps the shorthand form so nothing changes for
-# users who do not opt in to dynamic routing.
+# Special value `controller`: a role mapped to `controller` follows whoever is
+# driving CouncilFlow (the active controller — codex / claude / gemini, detected
+# at runtime). Because the role and the controller are then the same model,
+# execution stays LOCAL: the controller runs it directly and NO sidecar is
+# started. This is the shipped default below, so a fresh project runs every role
+# on the active controller out of the box. Pin a concrete model on any role
+# (e.g. `reviewer: codex`) to force delegation to that model's sidecar.
+# Note: a `controller` primary makes any `fallback` list a no-op — local
+# execution has no sidecar to fall back from. `controller` is a roles-only
+# sentinel; do NOT use it in `discussion.default_models` or in a `fallback`.
 # ----------------------------------------------------------------------
 
 config_version: 1
 output_language: zh-CN
 controller_override: null
 roles:
-  planner: codex
-  architect: codex
-  implementer: codex
-  tester: codex
-  reviewer: codex
-  fixer: codex
-  advisor: codex
-  synthesizer: codex
+  planner: controller
+  architect: controller
+  implementer: controller
+  tester: controller
+  reviewer: controller
+  fixer: controller
+  advisor: controller
+  synthesizer: controller
 discussion:
   default_models: [codex,claude]
   min_rounds: 2

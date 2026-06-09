@@ -5,6 +5,7 @@ from pathlib import Path
 import yaml
 
 from councilflow.config.loader import build_default_config, load_config
+from councilflow.config.schema import CouncilConfig
 from councilflow.controller.routing import (
     build_route_decision,
     resolve_discuss_models,
@@ -18,7 +19,7 @@ def test_load_config_returns_defaults_when_file_is_missing(tmp_path: Path) -> No
     config = load_config(tmp_path / "missing-config.yaml")
 
     assert config == build_default_config()
-    assert config.roles.for_role(RoleName.IMPLEMENTER) == "codex"
+    assert config.roles.for_role(RoleName.IMPLEMENTER) == "controller"
 
 
 def test_load_config_validates_custom_role_mapping(tmp_path: Path) -> None:
@@ -120,9 +121,12 @@ def test_route_role_runs_locally_when_target_matches_controller() -> None:
 
 
 def test_route_role_delegates_when_target_differs_from_controller() -> None:
+    # A role pinned to a concrete model that differs from the controller still
+    # delegates (the shipped `controller` default would instead stay local).
+    config = CouncilConfig.model_validate({"roles": {"implementer": "codex"}})
     decision = route_role(
         role=RoleName.IMPLEMENTER,
-        config=build_default_config(),
+        config=config,
         controller=ControllerName.CLAUDE,
     )
 
@@ -161,3 +165,57 @@ def test_select_discuss_models_prefers_explicit_over_project_defaults() -> None:
 
     assert selected == ["claude"]
     assert source == "explicit"
+
+
+def test_build_route_decision_controller_sentinel_stays_local_for_any_controller() -> None:
+    # The `controller` sentinel follows whoever is driving: role and controller
+    # are the same model, so execution stays local for every controller.
+    for controller in (ControllerName.CODEX, ControllerName.CLAUDE, ControllerName.GEMINI):
+        decision = build_route_decision(
+            role=RoleName.IMPLEMENTER,
+            controller=controller,
+            target_model="controller",
+        )
+        assert decision.status == "local_execution"
+        assert decision.via_sidecar is False
+        # sentinel resolves to the concrete controller model for downstream/emit
+        assert decision.target_model == controller.value
+
+
+def test_default_config_roles_follow_controller_locally() -> None:
+    # The shipped default maps every role to `controller`, so a fresh project
+    # runs every role on the active controller — no sidecar — whoever drives.
+    config = build_default_config()
+    for controller in (ControllerName.CODEX, ControllerName.CLAUDE, ControllerName.GEMINI):
+        decision = route_role(
+            role=RoleName.IMPLEMENTER, config=config, controller=controller
+        )
+        assert decision.status == "local_execution"
+        assert decision.via_sidecar is False
+        assert decision.target_model == controller.value
+
+
+def test_role_accepts_controller_sentinel_but_fallback_rejects_it() -> None:
+    import pytest
+    from pydantic import ValidationError
+
+    # A role's primary model may be the `controller` sentinel ...
+    config = CouncilConfig.model_validate({"roles": {"planner": "controller"}})
+    assert config.roles.for_role(RoleName.PLANNER) == "controller"
+    # ... but a fallback must still be a concrete, registered model.
+    with pytest.raises(ValidationError):
+        CouncilConfig.model_validate(
+            {"roles": {"planner": [{"model": "codex", "fallback": ["controller"]}]}}
+        )
+
+
+def test_discussion_default_models_reject_controller_sentinel() -> None:
+    import pytest
+    from pydantic import ValidationError
+
+    # `controller` is a roles-only sentinel; it must not leak into discuss models
+    # (it would otherwise fail late with adapter_missing at discuss time).
+    with pytest.raises(ValidationError):
+        CouncilConfig.model_validate(
+            {"discussion": {"default_models": ["controller", "codex"]}}
+        )

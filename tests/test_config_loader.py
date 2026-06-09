@@ -15,7 +15,7 @@ def test_build_default_config_uses_packaged_template_defaults() -> None:
     config = build_default_config()
 
     assert config.output_language == "zh-CN"
-    assert config.roles.for_role(RoleName.IMPLEMENTER) == "codex"
+    assert config.roles.for_role(RoleName.IMPLEMENTER) == "controller"
     assert config.discussion.default_models == ["codex", "claude"]
     assert config.discussion.min_rounds == 2
     assert config.discussion.max_rounds == 5

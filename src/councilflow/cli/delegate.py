@@ -276,6 +276,7 @@ def delegate(
                 config.roles,
                 task_context=task_context,
                 log_path=routing_log_path,
+                controller=controller_context.controller,
             )
         except RoutingNoMatchError as exc:
             emit_console_text(

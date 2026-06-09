@@ -9,8 +9,10 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from councilflow.models.roles import (
     ControllerName,
     RoleName,
+    is_controller_sentinel,
     normalize_model_name,
     validate_model_name,
+    validate_role_model_name,
 )
 
 
@@ -37,7 +39,9 @@ class RoleRoute(BaseModel):
             raise TypeError("RoleRoute.model must be a string.")
         if not value.strip():
             raise ValueError("RoleRoute.model cannot be empty.")
-        return validate_model_name(value)
+        # Role primary model additionally accepts the `controller` sentinel
+        # (role follows the active controller). Fallbacks below stay concrete.
+        return validate_role_model_name(value)
 
     @field_validator("when", mode="before")
     @classmethod
@@ -232,6 +236,11 @@ class DiscussionSettings(BaseModel):
             normalized = normalize_model_name(item)
             if not normalized:
                 raise ValueError("discussion.default_models cannot contain empty entries.")
+            if is_controller_sentinel(normalized):
+                raise ValueError(
+                    "discussion.default_models cannot contain 'controller' — it is a "
+                    "roles-only sentinel. Pick a concrete model (codex / claude / gemini)."
+                )
             if normalized in seen_models:
                 continue
             seen_models.add(normalized)

@@ -4,6 +4,39 @@ All notable changes to CouncilFlow are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] — 2026-06-10
+
+Minor release: a role can now follow the active controller via the new
+`controller` sentinel, and the shipped default maps every role to it — so a
+fresh project runs every role locally on whoever is driving (codex / claude /
+gemini), no sidecar, instead of defaulting to a fixed `codex` delegation.
+
+### Added
+
+- **`controller` role sentinel.** `roles.<role>: controller` makes a role follow
+  the active controller detected at runtime; role and controller are then the
+  same model, so `council delegate` returns `local_execution` and starts no
+  sidecar — symmetrically for any controller. Resolved to the concrete
+  controller model in `build_route_decision` / `role_router.resolve`
+  (`models/roles.py`, `controller/routing.py`, `controller/role_router.py`).
+
+### Changed
+
+- **Default template roles map to `controller`** instead of `codex`
+  (`templates/default-config.yaml`): a fresh project runs every role on the
+  active controller out of the box (pin a concrete model on a role to force
+  delegation). Existing projects with a materialized `.council/config.yaml` are
+  unaffected; `discussion.default_models` is unchanged (`[codex, claude]`).
+- **`discussion.default_models` rejects the `controller` sentinel at config-load**
+  with an actionable error — it is a roles-only concept (`models/config.py`).
+- **Routing audit fidelity:** `role_router.resolve` resolves the sentinel to the
+  concrete active controller for the persisted `routing.json` `primary_model`
+  and `council status` distribution (tried_routes keeps the raw configured value).
+
+Full suite green; new tests cover the sentinel end-to-end across codex / claude /
+gemini controllers, resolve-with-controller, and config validation (roles accept
+the sentinel; fallback and `discussion.default_models` reject it).
+
 ## [0.1.8] — 2026-06-09
 
 Patch release: latent-bug fixes surfaced by a multi-agent code audit (no public

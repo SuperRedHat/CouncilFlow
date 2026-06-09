@@ -167,3 +167,33 @@ def validate_model_name(value: str) -> str:
             "Supported: codex, claude, gemini (plus gemini-<variant> aliases)."
         )
     return resolved
+
+
+# ---------------------------------------------------------------------------
+# Controller sentinel. A role mapped to the literal `controller` follows
+# whoever is driving CouncilFlow (the active controller). Because the role and
+# the controller are then the same model, execution stays LOCAL — the
+# controller runs it directly and no sidecar is started. The sentinel is
+# resolved to the concrete controller model at routing time
+# (`build_route_decision`), not at config-load time (the controller is a
+# runtime signal). It is a roles-only concept: discuss models, fallbacks, and
+# provider settings keep using `validate_model_name` (concrete models only).
+# ---------------------------------------------------------------------------
+CONTROLLER_SENTINEL = "controller"
+
+
+def is_controller_sentinel(value: str) -> bool:
+    """Return True when `value` is the `controller` sentinel (case-insensitive)."""
+
+    return normalize_model_name(value) == CONTROLLER_SENTINEL
+
+
+def validate_role_model_name(value: str) -> str:
+    """Validate a *role* model name, additionally accepting the `controller`
+    sentinel (role follows the active controller). For role primary models only;
+    fallbacks / discuss models keep requiring a concrete registered model.
+    """
+
+    if is_controller_sentinel(value):
+        return CONTROLLER_SENTINEL
+    return validate_model_name(value)
