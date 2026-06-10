@@ -58,6 +58,11 @@ def _run_help(cli: str) -> str:
             [resolved, "--help"],
             capture_output=True,
             text=True,
+            # TASK-119: without an explicit encoding, text=True decodes with the
+            # locale codec (cp936 on Chinese Windows) and a localized/emoji help
+            # screen raises UnicodeDecodeError PAST the except below.
+            encoding="utf-8",
+            errors="replace",
             timeout=_PROBE_TIMEOUT_SECONDS,
         )
     except (subprocess.TimeoutExpired, OSError) as exc:

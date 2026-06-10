@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -187,8 +189,13 @@ def _run_gemini_streaming_command(
         cwd=cwd,
         env=env,
     )
+    # TASK-119: prefer the last JSON event carrying response text; fall back to
+    # the last JSON-parseable line, then the raw last line — a trailing
+    # plain-text CLI notice can no longer be returned as "the answer".
     lines = [line for line in monitored.stdout.splitlines() if line.strip()]
-    final = lines[-1] if lines else monitored.stdout
+    final = _select_gemini_answer(lines)
+    if final is None:
+        final = monitored.stdout
     metadata = {
         **monitored.metadata,
         "output_format": "gemini-stream-json",
@@ -197,14 +204,51 @@ def _run_gemini_streaming_command(
     return ProviderRunResult(content=final, metadata=metadata)
 
 
+def _select_gemini_answer(lines: list[str]) -> str | None:
+    """Pick the authoritative answer from gemini stream-json output.
+
+    Preference order: last event with a recognizable text payload
+    ({"response": ...} aggregate or {"type": "content"/"message", "text": ...}
+    stream events) → last JSON-parseable line verbatim → last non-empty line.
+    """
+
+    best_text: str | None = None
+    last_json_line: str | None = None
+    for line in lines:
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        last_json_line = line
+        if not isinstance(event, dict):
+            continue
+        value = event.get("response")
+        if isinstance(value, str) and value.strip():
+            best_text = value
+            continue
+        if event.get("type") in {"content", "message", "assistant"}:
+            value = event.get("text") or event.get("content")
+            if isinstance(value, str) and value.strip():
+                best_text = value
+    if best_text is not None:
+        return best_text
+    if last_json_line is not None:
+        return last_json_line
+    return lines[-1] if lines else None
+
+
+# TASK-119: anchored to the CLI's actual retry-notice formats
+# ("Attempt 1 failed: …", "Attempt 2 of 3 …"). A bare startswith("Attempt ")
+# also deleted legitimate answer lines that happened to begin with the word.
+_ATTEMPT_NOTICE_RE = re.compile(r"^Attempt \d+ (?:of \d+\b|failed\b)")
+
+
 def _strip_runtime_notices(content: str) -> str:
     """Remove Gemini CLI runtime notices from the captured model output."""
 
-    ignored_prefixes = (
-        "YOLO mode is enabled.",
-        "Attempt ",
-    )
     cleaned_lines = [
-        line for line in content.splitlines() if not line.startswith(ignored_prefixes)
+        line
+        for line in content.splitlines()
+        if not (line.startswith("YOLO mode is enabled.") or _ATTEMPT_NOTICE_RE.match(line))
     ]
     return "\n".join(cleaned_lines).strip()

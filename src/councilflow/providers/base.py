@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import os
+import signal
 import subprocess
+import sys
 import threading
 import time
 from collections.abc import Callable
@@ -229,6 +231,9 @@ def run_monitored_process(
             bufsize=1,
             cwd=cwd,
             env=env,
+            # TASK-119 (POSIX): own process group so _terminate_process can
+            # killpg the whole tree. No-op on Windows (taskkill /T is used).
+            start_new_session=(sys.platform != "win32"),
         )
     except OSError as exc:
         raise ProviderError(
@@ -376,10 +381,33 @@ def run_monitored_process(
 
 
 def _terminate_process(process: subprocess.Popen[str]) -> None:
-    """Best-effort shutdown for a monitored provider subprocess."""
+    """Best-effort shutdown for a monitored provider subprocess AND its tree.
+
+    TASK-119: the immediate child is frequently a shim (``cmd /c claude.cmd``,
+    ``powershell -File codex.ps1``) whose real worker (node / codex) is a
+    grandchild. ``process.kill()`` alone reaps only the shim and orphans the
+    worker, which keeps running and burning tokens after a timeout. Windows
+    uses ``taskkill /T`` for the whole tree; POSIX kills the process group
+    (children inherit it because Popen uses ``start_new_session=True`` there).
+    """
 
     if process.poll() is not None:
         return
+    if sys.platform == "win32":
+        try:
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(process.pid)],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    else:
+        try:
+            os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+        except (OSError, ProcessLookupError):
+            pass
     try:
         process.kill()
         process.wait(timeout=2)

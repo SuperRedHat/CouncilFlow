@@ -70,14 +70,45 @@ def write_empty_mcp_configs(workspace_path: Path) -> list[Path]:
     """
 
     written: list[Path] = []
-    claude_settings = workspace_path / ".claude" / "settings.json"
-    codex_settings = workspace_path / ".codex" / "settings.json"
-    gemini_settings = workspace_path / ".gemini" / "settings.json"
-
     empty = json.dumps({"mcpServers": {}}, ensure_ascii=False, indent=2)
-    for path in (claude_settings, codex_settings, gemini_settings):
-        _write_settings(path, empty)
-        written.append(path)
+
+    # Claude: project-scope MCP servers come from <root>/.mcp.json, and
+    # settings.json additionally turns off auto-enabling of project servers.
+    # (TASK-119: an empty settings.json mcpServers map alone does not suppress
+    # an inherited .mcp.json.)
+    claude_settings = workspace_path / ".claude" / "settings.json"
+    _write_settings(
+        claude_settings,
+        json.dumps(
+            {"mcpServers": {}, "enableAllProjectMcpServers": False},
+            ensure_ascii=False,
+            indent=2,
+        ),
+    )
+    written.append(claude_settings)
+    mcp_json = workspace_path / ".mcp.json"
+    _write_settings(mcp_json, empty)
+    written.append(mcp_json)
+
+    # Codex: configured via TOML (config.toml), not settings.json. An empty
+    # [mcp_servers] table is written best-effort; the global ~/.codex config
+    # may still win, in which case the protected-path guardrail remains the
+    # enforcing layer. The legacy settings.json is kept for older builds.
+    codex_settings = workspace_path / ".codex" / "settings.json"
+    _write_settings(codex_settings, empty)
+    written.append(codex_settings)
+    codex_toml = workspace_path / ".codex" / "config.toml"
+    _write_settings(
+        codex_toml,
+        "# CouncilFlow MCP deny policy: no MCP servers for this delegated stage.\n"
+        "[mcp_servers]\n",
+    )
+    written.append(codex_toml)
+
+    # Gemini honors project-local .gemini/settings.json.
+    gemini_settings = workspace_path / ".gemini" / "settings.json"
+    _write_settings(gemini_settings, empty)
+    written.append(gemini_settings)
     return written
 
 

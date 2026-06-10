@@ -391,6 +391,13 @@ def test_strip_runtime_notices_removes_gemini_cli_noise() -> None:
     assert cleaned == "hello"
 
 
+def test_strip_runtime_notices_keeps_answer_lines_starting_with_attempt() -> None:
+    # TASK-119: only the CLI's retry notices are stripped — a model answer that
+    # legitimately begins with "Attempt" must survive.
+    cleaned = _strip_runtime_notices("Attempt the migration in two steps.\nok\n")
+    assert cleaned == "Attempt the migration in two steps.\nok"
+
+
 def test_build_sandboxed_env_strips_controller_signals_and_injects_markers(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

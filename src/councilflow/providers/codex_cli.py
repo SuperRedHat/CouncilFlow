@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 from pathlib import Path
@@ -159,13 +160,56 @@ def _run_codex_streaming_command(
         cwd=cwd,
         env=env,
     )
-    # Codex emits one JSON event per line under --json; we keep the last event
-    # body as the authoritative answer and expose event_count in metadata.
+    # TASK-119: codex emits one JSON event per line under --json. Select the
+    # final agent-message event when the shape is recognizable; otherwise fall
+    # back to the last JSON-parseable line so a trailing plain-text CLI notice
+    # (update banner, telemetry warning) can no longer corrupt the answer.
     lines = [line for line in monitored.stdout.splitlines() if line.strip()]
-    final = lines[-1] if lines else monitored.stdout
+    final = _select_codex_answer(lines)
+    if final is None:
+        final = monitored.stdout
     metadata = {
         **monitored.metadata,
         "output_format": "codex-json",
         "event_count": len(lines),
     }
     return ProviderRunResult(content=final, metadata=metadata)
+
+
+def _select_codex_answer(lines: list[str]) -> str | None:
+    """Pick the authoritative answer from codex --json JSONL output.
+
+    Preference order:
+    1. text of the LAST event with a known agent-answer shape
+       (``{"msg": {"type": "agent_message", "message": ...}}`` or
+       ``{"item": {"type": "agent_message"|"assistant_message", "text": ...}}``)
+    2. the last line that parses as JSON, verbatim (pre-TASK-119 behavior,
+       minus trailing non-JSON notices)
+    3. the last non-empty line (no JSON in the output at all)
+    """
+
+    best_text: str | None = None
+    last_json_line: str | None = None
+    for line in lines:
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        last_json_line = line
+        if not isinstance(event, dict):
+            continue
+        msg = event.get("msg")
+        if isinstance(msg, dict) and msg.get("type") in {"agent_message", "task_complete"}:
+            value = msg.get("message") or msg.get("last_agent_message")
+            if isinstance(value, str) and value.strip():
+                best_text = value
+        item = event.get("item")
+        if isinstance(item, dict) and item.get("type") in {"agent_message", "assistant_message"}:
+            value = item.get("text")
+            if isinstance(value, str) and value.strip():
+                best_text = value
+    if best_text is not None:
+        return best_text
+    if last_json_line is not None:
+        return last_json_line
+    return lines[-1] if lines else None

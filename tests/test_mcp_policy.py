@@ -36,17 +36,29 @@ def test_allowed_roles_frozenset_exposes_policy() -> None:
     assert RoleName.IMPLEMENTER not in ROLES_WITH_MCP_ACCESS
 
 
-def test_write_empty_mcp_configs_creates_three_cli_settings(tmp_path: Path) -> None:
+def test_write_empty_mcp_configs_writes_per_cli_real_formats(tmp_path: Path) -> None:
     written = write_empty_mcp_configs(tmp_path)
     paths = [p for p in written]
 
+    # TASK-119: each CLI gets its ACTUAL deny format, not a one-size JSON.
     assert tmp_path / ".claude" / "settings.json" in paths
+    assert tmp_path / ".mcp.json" in paths
     assert tmp_path / ".codex" / "settings.json" in paths
+    assert tmp_path / ".codex" / "config.toml" in paths
     assert tmp_path / ".gemini" / "settings.json" in paths
 
-    for path in paths:
-        content = json.loads(path.read_text(encoding="utf-8"))
-        assert content == {"mcpServers": {}}
+    claude = json.loads((tmp_path / ".claude" / "settings.json").read_text(encoding="utf-8"))
+    assert claude["mcpServers"] == {}
+    assert claude["enableAllProjectMcpServers"] is False
+
+    mcp_json = json.loads((tmp_path / ".mcp.json").read_text(encoding="utf-8"))
+    assert mcp_json == {"mcpServers": {}}
+
+    toml_text = (tmp_path / ".codex" / "config.toml").read_text(encoding="utf-8")
+    assert "[mcp_servers]" in toml_text
+
+    gemini = json.loads((tmp_path / ".gemini" / "settings.json").read_text(encoding="utf-8"))
+    assert gemini == {"mcpServers": {}}
 
 
 def test_build_mcp_denied_env_returns_expected_hints(tmp_path: Path) -> None:
