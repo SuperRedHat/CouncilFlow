@@ -157,11 +157,23 @@ def wait(
     elapsed = time.monotonic() - start
     delegation_status = str(record.get("status") or "unknown")
     error_kind = record.get("error_kind")
+    # TASK-120: a failed attempt that the `delegate` run is retrying on a fallback
+    # model is NOT terminal. The retry executes under a *new* delegation id, so
+    # THIS record never resolves further — surface `retry_pending` (no error,
+    # exit 0) so a controller polling this id does not conclude terminal failure
+    # mid-retry. `retried_with_model` tells it which model the retry is on.
+    retry_pending = delegation_status == "failed" and bool(
+        record.get("fallback_retry_pending")
+    )
+    surfaced_status = "retry_pending" if retry_pending else delegation_status
+    is_terminal_failure = delegation_status == "failed" and not retry_pending
     emit_console_text(
         emit_response(
             data={
                 "delegation_id": delegation_id,
-                "status": delegation_status,
+                "status": surfaced_status,
+                "retry_pending": retry_pending,
+                "retried_with_model": record.get("retried_with_model"),
                 "record": record,
                 "handoff_path": record.get("handoff_path"),
                 "result_path": record.get("result_path"),
@@ -179,12 +191,12 @@ def wait(
                     "error_kind": error_kind or "delegation_failed",
                     "delegation_id": delegation_id,
                 }
-                if delegation_status == "failed"
+                if is_terminal_failure
                 else None
             ),
         )
     )
-    if delegation_status == "failed":
+    if is_terminal_failure:
         raise typer.Exit(code=1)
 
 

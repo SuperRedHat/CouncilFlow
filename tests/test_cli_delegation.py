@@ -22,7 +22,12 @@ def _make_delegation_dir(project_root: Path, delegation_id: str) -> Path:
 
 
 def _write_record(
-    delegation_dir: Path, *, status: str = "completed", error_kind: str | None = None
+    delegation_dir: Path,
+    *,
+    status: str = "completed",
+    error_kind: str | None = None,
+    fallback_retry_pending: bool = False,
+    retried_with_model: str | None = None,
 ) -> None:
     payload = {
         "id": delegation_dir.name,
@@ -40,6 +45,10 @@ def _write_record(
     if error_kind:
         payload["error_kind"] = error_kind
         payload["error"] = "Delegated stage modified protected workflow paths."
+    if fallback_retry_pending:
+        payload["fallback_retry_pending"] = True
+    if retried_with_model:
+        payload["retried_with_model"] = retried_with_model
     (delegation_dir / "record.json").write_text(
         json.dumps(payload), encoding="utf-8"
     )
@@ -100,6 +109,46 @@ def test_wait_reports_failed_record_with_error_metadata(tmp_path: Path) -> None:
     assert payload["data"]["status"] == "failed"
     assert payload["error"]["error_kind"] == "guardrail_violation"
     assert payload["error"]["delegation_id"] == delegation_id
+
+
+def test_wait_reports_retry_pending_not_terminal_failure(tmp_path: Path) -> None:
+    # TASK-120: a failed attempt that `delegate` is retrying on a fallback model
+    # is stamped fallback_retry_pending. `wait` on this id must NOT conclude
+    # terminal failure — it surfaces retry_pending (exit 0, no error) so a polling
+    # controller keeps waiting for the retry instead of giving up.
+    delegation_id = "del_fixture_retrying"
+    delegation_dir = _make_delegation_dir(tmp_path, delegation_id)
+    _write_record(
+        delegation_dir,
+        status="failed",
+        error_kind="idle_timeout",
+        fallback_retry_pending=True,
+        retried_with_model="gpt-5.1-codex",
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "delegation",
+            "wait",
+            delegation_id,
+            "--project-root",
+            str(tmp_path),
+            "--timeout",
+            "5",
+            "--poll-interval",
+            "1",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["error"] is None
+    assert payload["data"]["status"] == "retry_pending"
+    assert payload["data"]["retry_pending"] is True
+    assert payload["data"]["retried_with_model"] == "gpt-5.1-codex"
+    # The raw record still carries the underlying failed attempt for inspection.
+    assert payload["data"]["record"]["status"] == "failed"
 
 
 def test_wait_errors_when_delegation_directory_missing(tmp_path: Path) -> None:

@@ -31,7 +31,6 @@ Policy
 from __future__ import annotations
 
 import json
-from collections.abc import Iterable
 from pathlib import Path
 
 from councilflow.models.roles import RoleName
@@ -149,13 +148,3 @@ def plan_mcp_policy(
         plan["worktree_settings_written"] = True
         plan["env_hints"] = sorted(build_mcp_denied_env(project_root, workspace_path).keys())
     return plan
-
-
-def collect_settings_paths(workspace_path: Path) -> Iterable[Path]:
-    """Return the paths the policy writes, for tests and introspection."""
-
-    return (
-        workspace_path / ".claude" / "settings.json",
-        workspace_path / ".codex" / "settings.json",
-        workspace_path / ".gemini" / "settings.json",
-    )

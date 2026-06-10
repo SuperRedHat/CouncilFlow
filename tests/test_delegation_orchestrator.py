@@ -580,8 +580,13 @@ class FailingMutatingProvider:
         self.project_root = project_root
 
     def ask(self, request: ProviderRequest) -> ProviderResponse:
+        # Corrupt two protected workflow files, then die mid-run.
         (self.project_root / ".council" / "state.json").write_text(
             '{"current_phase":"dirty-from-dying-sidecar"}',
+            encoding="utf-8",
+        )
+        (self.project_root / ".claude" / "state" / "tasks.json").write_text(
+            '{"tasks":"CORRUPTED-BY-DYING-SIDECAR"}',
             encoding="utf-8",
         )
         raise ProviderError("provider timed out mid-run", kind="idle_timeout")
@@ -589,6 +594,16 @@ class FailingMutatingProvider:
 
 def test_failure_path_restores_protected_paths(tmp_path: Path) -> None:
     _write_claude_permission_settings(tmp_path, "python -m pytest")
+    # Seed a protected workflow file under .claude/state — a default protected
+    # path that _persist_failure does NOT rewrite. Asserting THIS file's restore
+    # genuinely exercises _restore_protected_paths (the original test asserted
+    # .council/state.json's current_phase, which _persist_failure overwrites to
+    # "idle" regardless of whether restore ran — tautological).
+    pm_state = tmp_path / ".claude" / "state" / "tasks.json"
+    pm_state.parent.mkdir(parents=True, exist_ok=True)
+    original_tasks = '{"tasks":["PM-001"]}'
+    pm_state.write_text(original_tasks, encoding="utf-8")
+
     store = CouncilStateStore(tmp_path)
     orchestrator = DelegationOrchestrator(
         store=store,
@@ -609,11 +624,15 @@ def test_failure_path_restores_protected_paths(tmp_path: Path) -> None:
             expected_output="Markdown summary with actionable results.",
         )
 
+    assert exc_info.value.error_kind == "idle_timeout"
+    # Load-bearing: the dying sidecar corrupted .claude/state/tasks.json; the
+    # failure-path restore must roll it back to the pre-delegation snapshot.
+    # _persist_failure never touches this file, so this fails if restore regresses.
+    assert pm_state.read_text(encoding="utf-8") == original_tasks
+    # Secondary smoke check on the other protected file.
     state_payload = json.loads(
         (tmp_path / ".council" / "state.json").read_text(encoding="utf-8")
     )
-    assert exc_info.value.error_kind == "idle_timeout"
-    # The dying sidecar's protected-path damage is rolled back.
     assert state_payload["current_phase"] == "idle"
 
 

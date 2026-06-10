@@ -88,28 +88,6 @@ def _infer_topic(question: str) -> str:
     return "other"
 
 
-def _last_external_turn(turns: list[DiscussionTurn]) -> DiscussionTurn | None:
-    """Return the most recent turn from a non-controller participant."""
-
-    for turn in reversed(turns):
-        if turn.speaker_role == "participant":
-            return turn
-    return None
-
-
-def _previous_disagreements_count(turns: list[DiscussionTurn]) -> int:
-    """Sum of disagreements across all but the final external turn.
-
-    Used to detect whether the latest round introduced new disagreements
-    beyond what was already on the table.
-    """
-
-    externals = [t for t in turns if t.speaker_role == "participant"]
-    if len(externals) < 2:
-        return 0
-    return sum(len(t.disagreements) for t in externals[:-1])
-
-
 def _previous_rounds_disagreements_count(turns: list[DiscussionTurn]) -> int:
     """Sum of external disagreements in all rounds BEFORE the latest round.
 

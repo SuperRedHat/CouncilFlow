@@ -69,7 +69,12 @@ def test_discuss_wait_returns_when_completed_and_summary_readable(
             "id": discussion_id,
             "status": "completed",
             "controller": "claude",
-            "rounds_completed": 3,
+            "ended_reason": "converged",
+            "completed_rounds": 3,
+            "participants": ["claude", "codex"],
+            # A full turn transcript that `wait` must NOT echo back (TASK-123:
+            # the controller reads content from summary_path, not the record).
+            "turns": [{"round": 1, "message": "x" * 5000}],
         },
         summary="# Discussion summary\n\n- agreed point\n",
     )
@@ -92,9 +97,17 @@ def test_discuss_wait_returns_when_completed_and_summary_readable(
     assert result.exit_code == 0, result.output
     payload = json.loads(result.output)
     assert payload["error"] is None
-    assert payload["data"]["discussion_id"] == discussion_id
-    assert payload["data"]["status"] == "completed"
-    assert payload["data"]["summary_path"].endswith("summary.md")
+    data = payload["data"]
+    # Outcome fields the controller needs (locks the TASK-123 happy-path shape).
+    assert data["discussion_id"] == discussion_id
+    assert data["status"] == "completed"
+    assert data["ended_reason"] == "converged"
+    assert data["completed_rounds"] == 3
+    assert data["participants"] == ["claude", "codex"]
+    assert data["summary_path"].endswith("summary.md")
+    # The heavy turn transcript is intentionally dropped from the wait response.
+    assert "turns" not in data
+    assert "record" not in data
 
 
 # ---------------------------------------------------------------------------

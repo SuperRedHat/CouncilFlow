@@ -379,7 +379,7 @@ def delegate(
     last_exc: DelegationExecutionError | None = None
     result = None
     attempted_model: str | None = None
-    for candidate_model in models_to_try:
+    for attempt_index, candidate_model in enumerate(models_to_try):
         attempted_model = candidate_model
         try:
             result = orchestrator.run(
@@ -405,11 +405,13 @@ def delegate(
             break  # success
         except DelegationExecutionError as exc:
             last_exc = exc
-            if _is_retryable_with_fallback(exc) and candidate_model != models_to_try[-1]:
+            has_next_model = attempt_index < len(models_to_try) - 1
+            if _is_retryable_with_fallback(exc) and has_next_model:
                 # Try next fallback model. TASK-120: mark this attempt's record
                 # as a retry continuation so wait/recovery readers do not treat
-                # the delegate run as terminally failed mid-retry.
-                next_model = models_to_try[models_to_try.index(candidate_model) + 1]
+                # the delegate run as terminally failed mid-retry. Index by loop
+                # position (not list.index, which mislabels on duplicate models).
+                next_model = models_to_try[attempt_index + 1]
                 _annotate_retry_continuation(store, exc, next_model)
                 continue
             # No more fallbacks (or not retryable) — emit error and exit.
