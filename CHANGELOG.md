@@ -4,6 +4,60 @@ All notable changes to CouncilFlow are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] — 2026-06-10
+
+Patch release: outcome of a two-round multi-agent audit (security / bug / logic
+/ token) with controller verification. No API changes; reliability + correctness
+hardening across providers, controller, IO, and config.
+
+### Security / Fixed
+- **Claude prompt now travels via stdin, never argv (2× high).** On Windows the
+  CLI resolves to `claude.cmd` behind `cmd /c`, where appending the full prompt
+  to argv was both a BatBadBut-class command-injection surface and capped at
+  8191 chars (silently breaking large delegations). Delivered over stdin like the
+  codex/gemini adapters.
+- **Delegation failure path restores protected workflow files.** A provider that
+  failed/timed out after touching protected paths previously left the damage in
+  place (detect+restore ran only on the success path); setup-region exceptions
+  now also clean up and persist a canonical `delegation_setup_failed` record.
+- **`discuss_wait` summary-missing race.** Writer ordered `record.json(completed)`
+  before `summary.md`, so a poller reading in between hard-failed on a normally
+  completing discussion. summary.md is written first + one grace re-poll.
+
+### Fixed
+- **Claude family variants** (`claude-sonnet` / `claude-haiku` / `claude-*`)
+  resolved to `adapter_missing` despite passing config validation — registry now
+  has a `claude-` branch and `ProviderSettings.for_model` inherits family
+  overrides; `o1-*` names pass through honestly.
+- **Process-tree termination** on timeout (taskkill /T on Windows, killpg +
+  start_new_session on POSIX) — killing only the cmd/powershell shim orphaned the
+  real node/codex worker.
+- **Provider robustness** — runtime_probe explicit utf-8 decode (cp936 help text
+  no longer escapes the fallback); codex/gemini streaming select the answer from
+  recognizable events rather than the last stdout line; gemini "Attempt" notice
+  anchored to its real retry format; mcp_policy writes each CLI's actual deny
+  format.
+- **Multi-participant convergence** evaluates all external turns of the latest
+  round (a single agreeing last speaker no longer converges a round in which an
+  earlier participant raised new info); delegate fallback stamps the retried
+  record so a poller does not conclude terminal failure mid-retry.
+- **IO** — uncommitted-rename overlay removes the stale old path; `write_text`
+  is atomic; GBK-console stdout stays valid JSON (`\uXXXX` escapes).
+- **Config** — schema defaults locked in step with the packaged template (was a
+  100× provider-timeout drift), guarded by a test; `output_language` and
+  `discussion.default_models` validated at load; quoted executable paths resolve.
+
+### Changed / Performance
+- **Discussion prompt compaction** — earlier rounds carry only their structured
+  positions + a short summary while the latest round keeps full (capped) messages;
+  measured 32–67% per-call input savings with no observed quality regression
+  (real claude+codex A/B; `docs/token-report-2026-06-10.md`).
+
+### Docs
+- `docs/integration.md` corrected: routing log path is the fixed
+  `.council/runs/routing/routing.json`; the `artifact_kind` / `handoff_schema`
+  contract is marked defined-and-tested-but-not-yet-wired-into-CLI-stdout.
+
 ## [0.2.0] — 2026-06-10
 
 Minor release: a role can now follow the active controller via the new

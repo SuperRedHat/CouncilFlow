@@ -163,7 +163,11 @@ Expected persisted artifact:
 
 - `.council/discuss/<discussion_id>/summary.md`
 
-Expected machine-readable contract:
+Expected machine-readable contract (produced by
+`handoff.summaries.build_discussion_contract`; **defined and tested but
+not yet wired into CLI stdout** — today, consume the persisted
+`summary.md` + the CLI's `{data, meta, error}` envelope rather than
+relying on these field names appearing in stdout):
 
 - `discussion_id`
 - `artifact_kind = discussion_summary`
@@ -229,7 +233,11 @@ Expected persisted artifacts:
 - `.council/delegations/<delegation_id>/handoff.yaml`
 - `.council/delegations/<delegation_id>/result.md`
 
-Expected machine-readable contract:
+Expected machine-readable contract (produced by
+`handoff.packages.build_delegation_contract`; **defined and tested but
+not yet wired into CLI stdout** — today, consume the persisted
+`handoff.yaml` + `result.md` and the CLI's `{data, meta, error}`
+envelope rather than relying on these field names appearing in stdout):
 
 - `artifact_kind = delegation_handoff`
 - `status = delegated`
@@ -819,8 +827,9 @@ crashing.
 `tried_routes` list for full audit.
 
 Every decision (successful match or no-match) is appended to
-`<project_root>/.council/runs/<run_id>/routing.json` as a JSON array
-of records. Each record contains:
+`<project_root>/.council/runs/routing/routing.json` as a JSON array
+of records (a single fixed path; `council status` scans
+`runs/**/routing.json`). Each record contains:
 
 - `timestamp` (UTC ISO)
 - `role`
