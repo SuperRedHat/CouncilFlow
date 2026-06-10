@@ -138,6 +138,39 @@ def test_semantic_does_not_converge_when_new_disagreements_added() -> None:
     assert d.reason == "new_info_or_disagreements_present"
 
 
+def test_semantic_considers_all_participants_in_latest_round() -> None:
+    # TASK-120: gemini agrees and speaks LAST, but codex (earlier in the same
+    # round) introduced new info — convergence must be blocked. The pre-fix
+    # evaluator only looked at the most recent external turn.
+    turns = [
+        _ctrl_turn(1),
+        _ext_turn(1, speaker="codex", introduced_new_info=True, disagreements=["X"]),
+        _ext_turn(1, speaker="gemini", introduced_new_info=False, disagreements=[]),
+        _ctrl_turn(2),
+        _ext_turn(2, speaker="codex", introduced_new_info=True, disagreements=[]),
+        _ext_turn(2, speaker="gemini", introduced_new_info=False, disagreements=[]),
+    ]
+    state = DiscussionState("q", 2, turns, 2)
+    d = evaluate(state, _settings(min_rounds=1, convergence_policy="semantic"))
+    assert d.converged is False
+    assert d.reason == "new_info_or_disagreements_present"
+
+
+def test_semantic_converges_when_whole_round_is_quiet_multi_participant() -> None:
+    turns = [
+        _ctrl_turn(1),
+        _ext_turn(1, speaker="codex", introduced_new_info=True, disagreements=["X"]),
+        _ext_turn(1, speaker="gemini", introduced_new_info=True, disagreements=["Y"]),
+        _ctrl_turn(2),
+        _ext_turn(2, speaker="codex", introduced_new_info=False, disagreements=[]),
+        _ext_turn(2, speaker="gemini", introduced_new_info=False, disagreements=[]),
+    ]
+    state = DiscussionState("q", 2, turns, 2)
+    d = evaluate(state, _settings(min_rounds=1, convergence_policy="semantic"))
+    assert d.converged is True
+    assert d.reason == "no_new_info"
+
+
 def test_semantic_max_rounds_still_caps() -> None:
     turns = [_ctrl_turn(1), _ext_turn(1, introduced_new_info=True)]
     state = DiscussionState("q", 5, turns, 1)

@@ -110,6 +110,24 @@ def _previous_disagreements_count(turns: list[DiscussionTurn]) -> int:
     return sum(len(t.disagreements) for t in externals[:-1])
 
 
+def _previous_rounds_disagreements_count(turns: list[DiscussionTurn]) -> int:
+    """Sum of external disagreements in all rounds BEFORE the latest round.
+
+    TASK-120 multi-participant baseline: with one external turn per round this
+    matches the legacy all-but-last-turn count; with several participants per
+    round it compares round-against-round instead of turn-against-turn.
+    """
+
+    if not turns:
+        return 0
+    max_round = max(t.round_number for t in turns)
+    return sum(
+        len(t.disagreements)
+        for t in turns
+        if t.speaker_role == "participant" and t.round_number < max_round
+    )
+
+
 def _latest_round_externals(turns: list[DiscussionTurn]) -> list[DiscussionTurn]:
     """Return external (non-controller) turns belonging to the highest round."""
 
@@ -194,19 +212,24 @@ def _evaluate_semantic(
             next_action="continue",
         )
 
-    last_external = _last_external_turn(state.turns)
-    if last_external is None:
+    # TASK-120: evaluate ALL external turns of the latest round, not just the
+    # most recent speaker — with 2+ models, an earlier participant's new info
+    # or disagreements in the same round must block convergence too.
+    latest_externals = _latest_round_externals(state.turns)
+    if not latest_externals:
         return ConvergenceDecision(
             converged=False,
             reason="awaiting_external_turn",
             next_action="continue",
         )
 
-    # Semantic signal: no new info + no new disagreements beyond baseline
-    prior_count = _previous_disagreements_count(state.turns)
-    current_count = len(last_external.disagreements)
+    # Semantic signal: no new info + no new disagreements beyond the baseline
+    # accumulated in earlier rounds.
+    prior_count = _previous_rounds_disagreements_count(state.turns)
+    current_count = sum(len(t.disagreements) for t in latest_externals)
     no_new_disagreements = current_count <= prior_count
-    if not last_external.introduced_new_info and no_new_disagreements:
+    introduced_new_info = any(t.introduced_new_info for t in latest_externals)
+    if not introduced_new_info and no_new_disagreements:
         return ConvergenceDecision(
             converged=True,
             reason="no_new_info",

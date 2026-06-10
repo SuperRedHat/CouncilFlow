@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import typer
@@ -162,6 +163,31 @@ def _is_retryable_with_fallback(exc: DelegationExecutionError) -> bool:
     """
 
     return (exc.error_kind or "") in _RETRYABLE_FALLBACK_KINDS
+
+
+def _annotate_retry_continuation(
+    store: CouncilStateStore, exc: DelegationExecutionError, next_model: str
+) -> None:
+    """TASK-120: stamp a failed attempt's record before retrying a fallback.
+
+    A controller that grabbed THIS attempt's delegation id (e.g. from
+    handoff/stderr after a shell timeout) and is polling it via
+    `delegation wait` would otherwise conclude terminal failure while the
+    delegate invocation is still retrying on the next model. Best-effort —
+    annotation failure never blocks the retry itself.
+    """
+
+    try:
+        record_path = store.paths.project_root / exc.record_path
+        record = json.loads(record_path.read_text(encoding="utf-8"))
+        record["fallback_retry_pending"] = True
+        record["retried_with_model"] = next_model
+        record_path.write_text(
+            json.dumps(record, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+    except (OSError, ValueError, AttributeError, TypeError):
+        pass
 
 
 def _build_task_context(
@@ -380,7 +406,11 @@ def delegate(
         except DelegationExecutionError as exc:
             last_exc = exc
             if _is_retryable_with_fallback(exc) and candidate_model != models_to_try[-1]:
-                # Try next fallback model.
+                # Try next fallback model. TASK-120: mark this attempt's record
+                # as a retry continuation so wait/recovery readers do not treat
+                # the delegate run as terminally failed mid-retry.
+                next_model = models_to_try[models_to_try.index(candidate_model) + 1]
+                _annotate_retry_continuation(store, exc, next_model)
                 continue
             # No more fallbacks (or not retryable) — emit error and exit.
             emit_console_text(
