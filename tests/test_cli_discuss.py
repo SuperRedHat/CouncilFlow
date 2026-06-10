@@ -191,7 +191,7 @@ def test_discuss_command_uses_project_default_models_when_option_is_omitted(
     assert payload["data"]["participants"] == ["codex", "gemini"]
     assert payload["data"]["models_source"] == "project_default"
     assert payload["data"]["configured_default_models"] == ["gemini"]
-    assert payload["data"]["effective_min_rounds"] == 1
+    assert payload["data"]["effective_min_rounds"] == 2
     assert payload["data"]["effective_max_rounds"] == 3
 
 
@@ -237,7 +237,7 @@ def test_discuss_command_prefers_explicit_models_over_project_defaults(
     assert payload["data"]["participants"] == ["codex", "claude"]
     assert payload["data"]["models_source"] == "explicit"
     assert payload["data"]["configured_default_models"] == ["gemini"]
-    assert payload["data"]["effective_min_rounds"] == 1
+    assert payload["data"]["effective_min_rounds"] == 2
     assert payload["data"]["effective_max_rounds"] == 4
 
 

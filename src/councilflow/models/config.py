@@ -11,6 +11,7 @@ from councilflow.models.roles import (
     RoleName,
     is_controller_sentinel,
     normalize_model_name,
+    resolve_adapter_model,
     validate_model_name,
     validate_role_model_name,
 )
@@ -199,8 +200,11 @@ class DiscussionSettings(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    default_models: list[str] = Field(default_factory=list)
-    min_rounds: int = Field(default=1, ge=1)
+    # TASK-122: defaults are kept in lockstep with templates/default-config.yaml
+    # (guard test: test_config_defaults_consistency) so a config that omits the
+    # section behaves like a freshly templated project.
+    default_models: list[str] = Field(default_factory=lambda: ["codex", "claude"])
+    min_rounds: int = Field(default=2, ge=1)
     max_rounds: int = Field(default=5, ge=1)
     convergence_policy: Literal["strict_count", "semantic", "hybrid"] = Field(
         default="strict_count",
@@ -241,6 +245,12 @@ class DiscussionSettings(BaseModel):
                     "discussion.default_models cannot contain 'controller' — it is a "
                     "roles-only sentinel. Pick a concrete model (codex / claude / gemini)."
                 )
+            if resolve_adapter_model(normalized) is None:
+                raise ValueError(
+                    f"discussion.default_models entry '{item}' does not resolve to a "
+                    "registered adapter family (codex / claude[-variant] / "
+                    "gemini[-variant] / gpt-*)."
+                )
             if normalized in seen_models:
                 continue
             seen_models.add(normalized)
@@ -249,9 +259,17 @@ class DiscussionSettings(BaseModel):
 
     @model_validator(mode="after")
     def validate_round_bounds(self) -> DiscussionSettings:
-        """Ensure minimum discussion rounds do not exceed the configured maximum."""
+        """Ensure minimum discussion rounds do not exceed the configured maximum.
+
+        TASK-122: a DEFAULTED min_rounds adapts to an explicitly lower
+        max_rounds (legacy configs that only set `max_rounds: 1` keep loading);
+        an EXPLICIT min_rounds > max_rounds is still a config error.
+        """
 
         if self.min_rounds > self.max_rounds:
+            if "min_rounds" not in self.model_fields_set:
+                self.min_rounds = self.max_rounds
+                return self
             raise ValueError("discussion.min_rounds cannot exceed discussion.max_rounds.")
         return self
 
@@ -261,7 +279,9 @@ class ProviderRuntimeSettings(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    total_timeout_seconds: float = Field(default=900.0, gt=0)
+    # TASK-122: 7200s matches base.py's DEFAULT_PROVIDER_TOTAL_TIMEOUT_SECONDS
+    # and the skills-side wait budget; the template carries the same value.
+    total_timeout_seconds: float = Field(default=7200.0, gt=0)
     idle_timeout_seconds: float | None = Field(default=None, gt=0)
 
 
@@ -281,13 +301,13 @@ class ProviderSettings(BaseModel):
 
     default: ProviderRuntimeSettings = Field(
         default_factory=lambda: ProviderRuntimeSettings(
-            total_timeout_seconds=900.0,
+            total_timeout_seconds=7200.0,
             idle_timeout_seconds=None,
         )
     )
     codex: ProviderRuntimeOverrides | None = None
     claude: ProviderRuntimeOverrides = Field(
-        default_factory=lambda: ProviderRuntimeOverrides(idle_timeout_seconds=180.0)
+        default_factory=lambda: ProviderRuntimeOverrides(idle_timeout_seconds=1800.0)
     )
     gemini: ProviderRuntimeOverrides | None = None
 

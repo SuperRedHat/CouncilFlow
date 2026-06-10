@@ -39,7 +39,11 @@ def command_is_available(command: str) -> bool:
     tokens = split_command(command)
     if not tokens:
         return False
-    executable = tokens[0]
+    # TASK-122: posix=False tokenizing keeps surrounding quotes on the token
+    # ("C:/Program Files/x.exe" stays quoted) — strip them before resolving,
+    # or quoted absolute paths false-negative as missing and hard-block tester
+    # delegations.
+    executable = tokens[0].strip('"').strip("'")
     path = Path(executable)
     if path.is_absolute():
         return path.exists()

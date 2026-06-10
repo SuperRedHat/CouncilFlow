@@ -19,10 +19,10 @@ def test_build_default_config_uses_packaged_template_defaults() -> None:
     assert config.discussion.default_models == ["codex", "claude"]
     assert config.discussion.min_rounds == 2
     assert config.discussion.max_rounds == 5
-    assert config.providers.default.total_timeout_seconds == 90000
+    assert config.providers.default.total_timeout_seconds == 7200
     assert config.providers.default.idle_timeout_seconds is None
     assert config.providers.claude is not None
-    assert config.providers.for_model("claude").idle_timeout_seconds == 18000
+    assert config.providers.for_model("claude").idle_timeout_seconds == 1800
 
 
 def test_ensure_config_exists_copies_project_local_default_template(tmp_path: Path) -> None:
@@ -92,9 +92,10 @@ def test_load_config_keeps_backward_compatible_min_rounds_default(tmp_path: Path
     loaded = load_config(config_path)
 
     assert loaded.discussion.default_models == ["gemini"]
+    # TASK-122: defaulted min_rounds clamps to an explicitly lower max_rounds
     assert loaded.discussion.min_rounds == 1
     assert loaded.discussion.max_rounds == 1
-    assert loaded.providers.for_model("claude").idle_timeout_seconds == 180
+    assert loaded.providers.for_model("claude").idle_timeout_seconds == 1800
 
 
 def test_load_config_supports_provider_runtime_overrides(tmp_path: Path) -> None:

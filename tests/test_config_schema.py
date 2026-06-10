@@ -198,8 +198,8 @@ def test_backward_compat_partial_shorthand_uses_template_defaults() -> None:
 
 def test_discussion_settings_backward_compat_defaults() -> None:
     settings = DiscussionSettings.model_validate({})
-    assert settings.default_models == []
-    assert settings.min_rounds == 1
+    assert settings.default_models == ["codex", "claude"]
+    assert settings.min_rounds == 2
     assert settings.max_rounds == 5
     # New 0.1.3 fields default to backward-compatible values
     assert settings.convergence_policy == "strict_count"

@@ -75,7 +75,7 @@ discussion:
   max_rounds: 5
 providers:
   default:
-    total_timeout_seconds: 90000
+    total_timeout_seconds: 7200
     idle_timeout_seconds: null
   claude:
-    idle_timeout_seconds: 18000
+    idle_timeout_seconds: 1800
