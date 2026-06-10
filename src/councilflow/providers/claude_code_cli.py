@@ -160,10 +160,15 @@ def _run_claude_streaming_command(
 ) -> ProviderRunResult:
     """Execute Claude in stream-json mode and keep the subprocess alive while events arrive."""
 
+    # TASK-115: the prompt travels over STDIN (like the codex/gemini adapters),
+    # never argv. On Windows the CLI resolves to claude.cmd behind `cmd /c`,
+    # where an argv prompt is both an injection surface (cmd metacharacters,
+    # %VAR% expansion — BatBadBut-class) and capped at 8191 chars. `claude -p`
+    # with no positional prompt reads the prompt from stdin.
     monitored = run_monitored_process(
         command,
         runtime=runtime,
-        prompt_argument=prompt,
+        stdin_payload=prompt.encode("utf-8"),
         cwd=cwd,
         env=env,
     )

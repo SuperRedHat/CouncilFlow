@@ -118,3 +118,35 @@ def test_ask_preserves_runner_metadata_alongside_variant() -> None:
     response = adapter.ask(ProviderRequest(prompt="hello"))
     assert response.metadata.get("upstream_key") == "upstream_value"
     assert response.metadata.get("claude_variant") == "claude-haiku"
+
+
+# TASK-115: the prompt must travel via STDIN, never argv — on Windows the CLI
+# resolves to claude.cmd behind `cmd /c`, where an argv prompt is a
+# BatBadBut-class injection surface and is capped at 8191 chars.
+def test_streaming_prompt_travels_via_stdin_not_argv(monkeypatch) -> None:
+    from councilflow.providers import claude_code_cli
+    from councilflow.providers.base import MonitoredProcessResult
+
+    captured: dict = {}
+
+    def fake_run(
+        command, runtime=None, prompt_argument=None, stdin_payload=None, cwd=None, env=None
+    ):
+        captured["command"] = list(command)
+        captured["prompt_argument"] = prompt_argument
+        captured["stdin_payload"] = stdin_payload
+        return MonitoredProcessResult(
+            stdout='{"type":"result","result":"ok"}', stderr="", metadata={}
+        )
+
+    monkeypatch.setattr(claude_code_cli, "run_monitored_process", fake_run)
+
+    # 50KB prompt with cmd metacharacters: way past the 8191-char cmd.exe limit
+    # and hostile to cmd parsing if it ever leaked back into argv.
+    hostile = ('payload "%PATH%" & calc.exe ^| ' * 2048)
+    result = claude_code_cli._run_claude_streaming_command(["claude", "-p"], hostile)
+
+    assert captured["prompt_argument"] is None
+    assert captured["stdin_payload"] == hostile.encode("utf-8")
+    assert captured["command"] == ["claude", "-p"]  # argv untouched by the prompt
+    assert result.content == "ok"
