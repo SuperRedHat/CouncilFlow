@@ -568,3 +568,84 @@ def test_delegation_orchestrator_rejects_path_outside_writable_globs(tmp_path: P
     assert result.workspace_manifest[0].rejection_reason is not None
     # Original docs/README.md in host untouched.
     assert (tmp_path / "docs/README.md").read_text(encoding="utf-8") == "old\n"
+
+
+# TASK-118: the failure path must restore protected files and persist a
+# canonical failure record — previously only the success path did.
+class FailingMutatingProvider:
+    """Mutates protected workflow state, then dies like a timed-out CLI."""
+
+    def __init__(self, project_root: Path) -> None:
+        self.model_name = "claude"
+        self.project_root = project_root
+
+    def ask(self, request: ProviderRequest) -> ProviderResponse:
+        (self.project_root / ".council" / "state.json").write_text(
+            '{"current_phase":"dirty-from-dying-sidecar"}',
+            encoding="utf-8",
+        )
+        raise ProviderError("provider timed out mid-run", kind="idle_timeout")
+
+
+def test_failure_path_restores_protected_paths(tmp_path: Path) -> None:
+    _write_claude_permission_settings(tmp_path, "python -m pytest")
+    store = CouncilStateStore(tmp_path)
+    orchestrator = DelegationOrchestrator(
+        store=store,
+        participant_factory=lambda _: FailingMutatingProvider(tmp_path),
+    )
+
+    with pytest.raises(DelegationExecutionError) as exc_info:
+        orchestrator.run(
+            role=RoleName.TESTER,
+            controller="codex",
+            target_model="claude",
+            objective="Run tester verification.",
+            task_summary="Provider dies after touching protected state.",
+            constraints=[],
+            relevant_files=[],
+            inputs={},
+            verification_commands=[VerificationCommand(command="python -m pytest")],
+            expected_output="Markdown summary with actionable results.",
+        )
+
+    state_payload = json.loads(
+        (tmp_path / ".council" / "state.json").read_text(encoding="utf-8")
+    )
+    assert exc_info.value.error_kind == "idle_timeout"
+    # The dying sidecar's protected-path damage is rolled back.
+    assert state_payload["current_phase"] == "idle"
+
+
+def test_setup_failure_is_contained_and_persisted(tmp_path: Path, monkeypatch) -> None:
+    import councilflow.controller.delegation_orchestrator as dorch
+
+    store = CouncilStateStore(tmp_path)
+    orchestrator = DelegationOrchestrator(
+        store=store,
+        participant_factory=lambda _: SuccessfulProvider(),
+    )
+
+    def boom(**kwargs):
+        raise RuntimeError("disk full while materializing")
+
+    monkeypatch.setattr(dorch, "materialize_workspace", boom)
+
+    with pytest.raises(DelegationExecutionError) as exc_info:
+        orchestrator.run(
+            role=RoleName.IMPLEMENTER,
+            controller="codex",
+            target_model="claude",
+            objective="Implement something.",
+            task_summary="Setup explodes before the provider starts.",
+            constraints=[],
+            relevant_files=[],
+            inputs={},
+            expected_output="Markdown summary with actionable results.",
+        )
+
+    error = exc_info.value
+    record = json.loads((tmp_path / error.record_path).read_text(encoding="utf-8"))
+    assert error.error_kind == "delegation_setup_failed"
+    assert record["status"] == "failed"
+    assert "disk full" in record["error"]

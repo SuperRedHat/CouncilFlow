@@ -399,71 +399,102 @@ class DelegationOrchestrator:
             else None
         )
 
-        materialization = materialize_workspace(
-            project_root=self.store.paths.project_root,
-            council_root=self.store.paths.council_root,
-            delegation_id=delegation_id,
-            isolated=package.execution_guardrails.isolated_workspace,
-        )
-        package.execution_guardrails.isolated_workspace = (
-            package.execution_guardrails.isolated_workspace.model_copy(
-                update={
-                    "strategy": materialization.effective_strategy,
-                    "workspace_path": str(
-                        materialization.workspace_path.relative_to(
-                            self.store.paths.project_root
+        # TASK-118: setup failures (workspace materialization, handoff persist,
+        # MCP policy, baseline snapshot) previously escaped as raw exceptions —
+        # no cleanup, no failure record; `delegation wait` then starved on a
+        # record.json frozen at status=running. Contain them like provider
+        # failures.
+        materialization = None
+        try:
+            materialization = materialize_workspace(
+                project_root=self.store.paths.project_root,
+                council_root=self.store.paths.council_root,
+                delegation_id=delegation_id,
+                isolated=package.execution_guardrails.isolated_workspace,
+            )
+            package.execution_guardrails.isolated_workspace = (
+                package.execution_guardrails.isolated_workspace.model_copy(
+                    update={
+                        "strategy": materialization.effective_strategy,
+                        "workspace_path": str(
+                            materialization.workspace_path.relative_to(
+                                self.store.paths.project_root
+                            )
                         )
-                    )
-                    if materialization.workspace_path != self.store.paths.project_root
-                    else None,
-                }
+                        if materialization.workspace_path != self.store.paths.project_root
+                        else None,
+                    }
+                )
             )
-        )
-        # Persist the resolved isolation choice back to handoff.yaml so downstream
-        # consumers see the effective strategy instead of the requested default.
-        save_handoff_package(package, delegation_dir / "handoff.yaml")
+            # Persist the resolved isolation choice back to handoff.yaml so downstream
+            # consumers see the effective strategy instead of the requested default.
+            save_handoff_package(package, delegation_dir / "handoff.yaml")
 
-        # Apply the MCP access policy for this role. Delegated execution roles
-        # (implementer/tester/reviewer/fixer/advisor) get an empty worktree-
-        # local MCP config so they cannot attach the host's project-manager MCP
-        # and silently write `.claude/state/logs.json`. Controller-facing roles
-        # (architect/planner/synthesizer) keep their access because they are
-        # expected to read PRD / task / architecture data.
-        mcp_policy = plan_mcp_policy(
-            role, self.store.paths.project_root, materialization.workspace_path
-        )
-        mcp_env_extra: dict[str, str] = {}
-        if (
-            not role_allows_mcp(role)
-            and materialization.workspace_path != self.store.paths.project_root
-        ):
-            write_empty_mcp_configs(materialization.workspace_path)
-            mcp_env_extra = build_mcp_denied_env(
-                self.store.paths.project_root, materialization.workspace_path
+            # Apply the MCP access policy for this role. Delegated execution roles
+            # (implementer/tester/reviewer/fixer/advisor) get an empty worktree-
+            # local MCP config so they cannot attach the host's project-manager MCP
+            # and silently write `.claude/state/logs.json`. Controller-facing roles
+            # (architect/planner/synthesizer) keep their access because they are
+            # expected to read PRD / task / architecture data.
+            mcp_policy = plan_mcp_policy(
+                role, self.store.paths.project_root, materialization.workspace_path
             )
-            _logger.info(
-                "delegation.mcp_policy id=%s role=%s decision=deny",
-                delegation_id,
-                role.value,
-            )
-        else:
-            _logger.info(
-                "delegation.mcp_policy id=%s role=%s decision=allow",
-                delegation_id,
-                role.value,
+            mcp_env_extra: dict[str, str] = {}
+            if (
+                not role_allows_mcp(role)
+                and materialization.workspace_path != self.store.paths.project_root
+            ):
+                write_empty_mcp_configs(materialization.workspace_path)
+                mcp_env_extra = build_mcp_denied_env(
+                    self.store.paths.project_root, materialization.workspace_path
+                )
+                _logger.info(
+                    "delegation.mcp_policy id=%s role=%s decision=deny",
+                    delegation_id,
+                    role.value,
+                )
+            else:
+                _logger.info(
+                    "delegation.mcp_policy id=%s role=%s decision=allow",
+                    delegation_id,
+                    role.value,
+                )
+
+            # Capture a file-level baseline of the freshly materialized workspace
+            # BEFORE the provider runs so detect_workspace_changes can later report
+            # only the sidecar's own edits. Comparing the post-run workspace to the
+            # host source tree (the pre-TASK-058 behavior) incorrectly flagged
+            # untracked source files as ``deleted`` and imported those deletions
+            # back, destroying user work — see TASK-058 incident log.
+            workspace_baseline = (
+                snapshot_workspace_baseline(materialization.workspace_path)
+                if materialization.workspace_path != self.store.paths.project_root
+                else None
             )
 
-        # Capture a file-level baseline of the freshly materialized workspace
-        # BEFORE the provider runs so detect_workspace_changes can later report
-        # only the sidecar's own edits. Comparing the post-run workspace to the
-        # host source tree (the pre-TASK-058 behavior) incorrectly flagged
-        # untracked source files as ``deleted`` and imported those deletions
-        # back, destroying user work — see TASK-058 incident log.
-        workspace_baseline = (
-            snapshot_workspace_baseline(materialization.workspace_path)
-            if materialization.workspace_path != self.store.paths.project_root
-            else None
-        )
+        except Exception as exc:  # noqa: BLE001 — converted to canonical failure
+            if materialization is not None:
+                cleanup_workspace(
+                    self.store.paths.project_root,
+                    materialization.workspace_path,
+                    materialization.effective_strategy,
+                )
+            setup_error = ProviderError(
+                f"Delegation setup failed before provider start: {exc}",
+                kind="delegation_setup_failed",
+            )
+            raise self._persist_failure(
+                delegation_id=delegation_id,
+                role=role,
+                target_model=target_model,
+                controller=controller,
+                handoff_path=relative_handoff_path,
+                record_path=record_path,
+                error=setup_error,
+                tester_preflight=(
+                    package.tester_preflight if role is RoleName.TESTER else None
+                ),
+            ) from exc
 
         workspace_manifest: list[WorkspaceFileChange] = []
         import_outcome = "none"
@@ -554,6 +585,29 @@ class DelegationOrchestrator:
                         },
                     )
         except ProviderError as exc:
+            # TASK-118: with isolation strategy "none" the sidecar runs directly
+            # in the host tree — a provider that failed/timed out may already
+            # have modified protected workflow files. The success path detects
+            # and restores; the failure path must too.
+            if not package.execution_guardrails.allow_workflow_state_write:
+                changed_paths = _detect_protected_path_changes(
+                    self.store.paths.project_root,
+                    package.execution_guardrails.protected_paths,
+                    protected_snapshot,
+                )
+                if changed_paths:
+                    _logger.warning(
+                        "delegation.guardrail_violation id=%s reason=%s count=%d "
+                        "(restored on failure path)",
+                        delegation_id,
+                        "protected_paths_modified",
+                        len(changed_paths),
+                    )
+                    _restore_protected_paths(
+                        self.store.paths.project_root,
+                        package.execution_guardrails.protected_paths,
+                        protected_snapshot,
+                    )
             cleanup_workspace(
                 self.store.paths.project_root,
                 materialization.workspace_path,
