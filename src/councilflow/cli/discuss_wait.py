@@ -271,13 +271,18 @@ def wait(
                         code=1,
                     )
 
-                # Happy path: dual condition met.
+                # Happy path: dual condition met. TASK-123: the full record —
+                # including every turn's complete message transcript — used to
+                # be dumped here; the controller only needs the outcome fields
+                # plus summary_path (the summary file carries the content).
                 emit_console_text(
                     emit_response(
                         data={
                             "discussion_id": discussion_id,
                             "status": status,
-                            "record": record,
+                            "ended_reason": record.get("ended_reason"),
+                            "completed_rounds": record.get("completed_rounds"),
+                            "participants": record.get("participants"),
                             "summary_path": str(summary_path),
                             "elapsed_seconds": round(elapsed, 3),
                             "polled_iterations": polled_iterations,
