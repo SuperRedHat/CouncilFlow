@@ -173,6 +173,9 @@ def wait(
     effective_interval = max(poll_interval, MIN_POLL_INTERVAL_SECONDS)
     start = time.monotonic()
     polled_iterations = 0
+    # TASK-116: one grace re-poll before declaring summary_missing, so a reader
+    # that lands between the writer's two file writes does not hard-fail.
+    summary_grace_used = False
 
     while True:
         polled_iterations += 1
@@ -238,6 +241,10 @@ def wait(
 
             if status == "completed":
                 if not _summary_readable(summary_path):
+                    if not summary_grace_used:
+                        summary_grace_used = True
+                        time.sleep(min(effective_interval, 2.0))
+                        continue
                     _emit_and_exit(
                         emit_response(
                             data={

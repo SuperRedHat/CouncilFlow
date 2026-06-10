@@ -356,3 +356,48 @@ def test_discussion_wait_help_works() -> None:
     result = runner.invoke(app, ["discussion", "wait", "--help"])
     assert result.exit_code == 0
     assert "Block until discussion record" in result.output
+
+
+# ---------------------------------------------------------------------------
+# TASK-116: writer-order race — a poller that reads record.json(completed)
+# BETWEEN the writer's two file writes gets one grace re-poll instead of a
+# false summary_missing hard failure.
+# ---------------------------------------------------------------------------
+def test_discuss_wait_grace_repoll_survives_writer_order_race(
+    tmp_path: Path, monkeypatch
+) -> None:
+    discussion_id = "disc_test_write_race"
+    discussion_dir = _seed_discussion_dir(
+        tmp_path,
+        discussion_id,
+        record={"id": discussion_id, "status": "completed", "controller": "claude"},
+        summary=None,  # summary.md not on disk yet — mid-write window
+    )
+
+    import councilflow.cli.discuss_wait as dw
+
+    def sleep_writes_summary(_seconds: float) -> None:
+        # The writer finishes during the grace window.
+        (discussion_dir / "summary.md").write_text("# late summary", encoding="utf-8")
+
+    monkeypatch.setattr(dw.time, "sleep", sleep_writes_summary)
+
+    result = runner.invoke(
+        app,
+        [
+            "discussion",
+            "wait",
+            discussion_id,
+            "--project-root",
+            str(tmp_path),
+            "--timeout",
+            "5",
+            "--poll-interval",
+            "1",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["error"] is None
+    assert payload["data"]["status"] == "completed"

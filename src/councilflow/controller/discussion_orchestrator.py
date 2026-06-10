@@ -465,8 +465,12 @@ class DiscussionOrchestrator:
             turns=turns,
             summary_path=relative_summary_path,
         )
-        self.store.save_json(record_path, record.model_dump(mode="json"))
+        # TASK-116: summary.md must land BEFORE record.json flips to completed.
+        # The poller's dual condition reads record.json first; the old order had
+        # a window (record=completed, summary not yet written) that produced a
+        # false `summary_missing` hard failure in discuss_wait.
         self.store.write_text(summary_path, render_discussion_summary(persisted_summary))
+        self.store.save_json(record_path, record.model_dump(mode="json"))
         return persisted_summary
 
     def _persist_record(
