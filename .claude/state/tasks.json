@@ -4921,6 +4921,401 @@
       "notes": "用户手工 sign-off 通过：CouncilFlow 0.1.7 commit 48d220c + tag v0.1.7 已发布到 origin/main。stage_gate 关闭。",
       "replacement_task_id": null,
       "priority": 0
+    },
+    {
+      "id": "TASK-115",
+      "title": "Claude provider prompt 改 stdin（修复 cmd/c 注入面 + argv 长度上限，审计 2×high）",
+      "description": "Windows 上 claude 解析为 claude.cmd 时用 [cmd,/c,claude.cmd,...] 启动且完整 prompt 拼在 argv 末尾（base.py:210）：①cmd.exe 对 %VAR% 展开/引号破坏序列构成 BatBadBut 同类命令注入面；②命令行 8191/32767 字符上限使大 prompt 委派静默失败。修复：_run_claude_streaming_command 改用 run_monitored_process(stdin_payload=prompt.encode('utf-8'))（对齐 codex/gemini 适配器），移除 prompt_argument 路径；CLAUDE_STREAM_FLAGS 确认 -p 读 stdin 行为；更新 test_claude_adapter，补 >40KB 长 prompt 用例。",
+      "dependencies": [],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "prompt 不再出现在 argv（含 .cmd shim 路径）",
+        "含 cmd 元字符/%VAR%/超长内容的 prompt 正常送达",
+        "test_claude_adapter 全过，既有测试不回退"
+      ],
+      "files": [
+        "src/councilflow/providers/claude_code_cli.py",
+        "src/councilflow/providers/base.py",
+        "tests/test_claude_adapter.py"
+      ],
+      "module": "providers",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check src tests",
+        "python -m pytest -q"
+      ],
+      "review_checklist": [
+        "stdin 关闭/EOF 语义正确（CLI 能感知 prompt 结束）",
+        "ps1 shim 路径同样覆盖"
+      ],
+      "stage_gate": false,
+      "priority": 100,
+      "status": "done",
+      "created_at": "2026-06-10T01:03:11.886Z",
+      "updated_at": "2026-06-10T01:29:35.778Z",
+      "commit_hash": "",
+      "notes": "acceptance_mode=auto → 自动验收通过。",
+      "replacement_task_id": null
+    },
+    {
+      "id": "TASK-116",
+      "title": "discuss_wait 假失败竞态根治（写序对调 + 宽限重试）",
+      "description": "_persist_summary 先写 record.json(status=completed) 后写 summary.md（discussion_orchestrator.py:468-469），poller 见 completed 但 summary 不可读时立即 exit 1 报 summary_missing（discuss_wait.py:239-265）无宽限期，窗口期内轮询必现假失败且 skills 协议把它当硬停。修复：①写入顺序对调（先 summary.md 后 record.json）；②poller 在 summary_missing 前增加一次 grace 重试（与 docstring 声称对齐）；③测试模拟两次写入间隙读取。",
+      "dependencies": [],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "间隙读取不再产生 summary_missing 假失败",
+        "真缺失 summary 仍在 grace 后正确报错"
+      ],
+      "files": [
+        "src/councilflow/controller/discussion_orchestrator.py",
+        "src/councilflow/cli/discuss_wait.py",
+        "tests/test_cli_discuss_wait.py"
+      ],
+      "module": "controller",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check src tests",
+        "python -m pytest -q"
+      ],
+      "review_checklist": [
+        "写序对调后 crash 窗口语义仍安全（summary 存在但 record 未 completed = 继续等）"
+      ],
+      "stage_gate": false,
+      "priority": 90,
+      "status": "done",
+      "created_at": "2026-06-10T01:03:11.886Z",
+      "updated_at": "2026-06-10T01:32:08.588Z",
+      "commit_hash": "",
+      "notes": "acceptance_mode=auto → 自动验收通过。",
+      "replacement_task_id": null
+    },
+    {
+      "id": "TASK-117",
+      "title": "claude- 变体家族解析（adapter_missing 修复 + 运行时覆盖继承）",
+      "description": "roles.py 接受 claude-sonnet/claude-haiku 等变体且注释承诺透传 --model，但 registry._family_for_normalized 只有 gemini-/gpt-/o1- 分支，无 claude- 分支 → 配置校验通过、运行时 adapter_missing；ProviderSettings.for_model 同样不识别家族变体，claude 变体丢失 180s idle-timeout 默认。修复：①registry 补 claude- 前缀分支，工厂把变体作为 --model 透传 Claude CLI；②for_model 家族变体回退到家族 override（claude-* 用 claude 的，gemini-* 用 gemini 的，gpt-*/o1-* 用 gpt 的）；③o1-* 不再静默替换成 gpt-4o-mini（诚实传递或报不支持）；④变体 discuss/delegate 路由测试。",
+      "dependencies": [
+        "TASK-115"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "claude-sonnet 参与 discuss 不再 adapter_missing",
+        "变体继承家族 provider override",
+        "o1-* 行为诚实化"
+      ],
+      "files": [
+        "src/councilflow/providers/registry.py",
+        "src/councilflow/models/config.py",
+        "tests/test_provider_adapters.py",
+        "tests/test_alias_normalization.py"
+      ],
+      "module": "providers",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check src tests",
+        "python -m pytest -q"
+      ],
+      "review_checklist": [
+        "变体透传与 claude_variant metadata 一致",
+        "docs/claude-variant-smoke 报告结论仍成立"
+      ],
+      "stage_gate": false,
+      "priority": 85,
+      "status": "done",
+      "created_at": "2026-06-10T01:03:11.886Z",
+      "updated_at": "2026-06-10T01:33:45.187Z",
+      "commit_hash": "",
+      "notes": "acceptance_mode=auto → 自动验收通过。",
+      "replacement_task_id": null
+    },
+    {
+      "id": "TASK-118",
+      "title": "委派失败路径守护恢复 + setup 区域清理",
+      "description": "delegation_orchestrator 的 protected_paths 检测/恢复只在 provider 成功后执行；ProviderError 路径（超时/崩溃）只 cleanup+persist_failure，isolation=none 时 sidecar 已写脏的守护文件保留不恢复；materialization 之后 try 之前的 setup 异常绕过 cleanup 与失败持久化。修复：①except ProviderError 路径同样跑 _detect_protected_path_changes + _restore_protected_paths；②setup 区域包进异常处理（非 ProviderError 也 cleanup + persist 结构化失败）；③测试：provider 失败且守护文件被改 → 恢复发生且 record 记录 guardrail 事件。",
+      "dependencies": [],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "失败路径守护文件同样被恢复",
+        "setup 异常不再泄漏 workspace/不再无记录",
+        "record.json 忠实反映失败原因"
+      ],
+      "files": [
+        "src/councilflow/controller/delegation_orchestrator.py",
+        "tests/test_delegation_orchestrator.py"
+      ],
+      "module": "controller",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check src tests",
+        "python -m pytest -q"
+      ],
+      "review_checklist": [
+        "恢复只针对 allow_workflow_state_write=false",
+        "恢复动作本身失败有日志"
+      ],
+      "stage_gate": false,
+      "priority": 80,
+      "status": "done",
+      "created_at": "2026-06-10T01:03:11.886Z",
+      "updated_at": "2026-06-10T01:36:07.918Z",
+      "commit_hash": "",
+      "notes": "acceptance_mode=auto → 自动验收通过。",
+      "replacement_task_id": null
+    },
+    {
+      "id": "TASK-119",
+      "title": "provider 健壮性批次（编码/进程树/流解析/notice 过滤/mcp_policy）",
+      "description": "①runtime_probe._run_help 补 encoding='utf-8',errors='replace'（中文 Windows cp936 下 UnicodeDecodeError 逃出降级逻辑）；②超时终止改杀进程树（win: taskkill /F /T /PID 或 Job Object；posix: start_new_session+killpg），不再只杀 cmd/powershell shim 留孤儿；③codex/gemini 流式输出按事件类型选取答案（对齐 claude 适配器）而非盲取末行；④gemini Attempt 过滤锄定 ^Attempt \\d+ of \\d+；⑤mcp_policy 按各 CLI 真实格式写 deny（codex TOML、claude .mcp.json/官方 disable 键）或在 run record 标注 per-CLI 有效性。",
+      "dependencies": [
+        "TASK-115"
+      ],
+      "complexity": "L",
+      "acceptance_criteria": [
+        "五项各有测试",
+        "超时后无孤儿 node/codex 进程（手工验证记录到 review_checklist）",
+        "流解析在尾随 notice 事件下仍取到正确答案"
+      ],
+      "files": [
+        "src/councilflow/providers/runtime_probe.py",
+        "src/councilflow/providers/base.py",
+        "src/councilflow/providers/codex_cli.py",
+        "src/councilflow/providers/gemini_cli.py",
+        "src/councilflow/providers/mcp_policy.py",
+        "tests/"
+      ],
+      "module": "providers",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check src tests",
+        "python -m pytest -q"
+      ],
+      "review_checklist": [
+        "进程树终止在无权限 taskkill 时有降级",
+        "事件解析兼容三家 CLI 当前输出格式"
+      ],
+      "stage_gate": false,
+      "priority": 70,
+      "status": "done",
+      "created_at": "2026-06-10T01:03:11.886Z",
+      "updated_at": "2026-06-10T01:41:58.818Z",
+      "commit_hash": "",
+      "notes": "acceptance_mode=auto → 自动验收通过。",
+      "replacement_task_id": null
+    },
+    {
+      "id": "TASK-120",
+      "title": "收敛评估多参与者修复 + delegate 重试状态语义",
+      "description": "①semantic/hybrid 收敛只看最后一个外部 turn（convergence_evaluator.py:91-110），2+ 模型时另一个参与者的异议被忽略可提前收敛 → 改为评估本轮全部外部参与者，全体满足才收敛；②provider 失败的 contribution 不计入收敛/共识；③delegate fallback 重试期间不预写 status=failed（当前在首个 id 下持久化 failed 后继续重试，wait/状态恢复会下终态结论），改为重试中间态或仅末次写终态。",
+      "dependencies": [],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "双模型异议场景不再提前收敛",
+        "失败 contribution 不计入共识",
+        "重试中的 delegation 不被 wait 误判终态"
+      ],
+      "files": [
+        "src/councilflow/controller/convergence_evaluator.py",
+        "src/councilflow/cli/delegate.py",
+        "tests/test_convergence_evaluator.py",
+        "tests/test_cli_delegate.py"
+      ],
+      "module": "controller",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check src tests",
+        "python -m pytest -q"
+      ],
+      "review_checklist": [
+        "min_rounds 语义不变",
+        "重试状态机向后兼容旧 record 消费者"
+      ],
+      "stage_gate": false,
+      "priority": 60,
+      "status": "done",
+      "created_at": "2026-06-10T01:03:11.886Z",
+      "updated_at": "2026-06-10T01:45:52.820Z",
+      "commit_hash": "",
+      "notes": "acceptance_mode=auto → 自动验收通过。",
+      "replacement_task_id": null
+    },
+    {
+      "id": "TASK-121",
+      "title": "IO/输出修正（rename overlay/原子文本写/GBK 安全 JSON）",
+      "description": "①io.py _overlay_uncommitted_files：git 输出 R 状态时旧路径加入 deleted（当前注释断言错误，旧文件残留 worktree 让 tester 看到新旧两份模块）；②store.write_text 原子化（tmp+replace，对齐 _write_json）；③lang.emit_console_text：GBK 不可编码时改用 ensure_ascii=True 重序列化保持合法 JSON，而非字节转义产生非法 JSON 破坏机读契约。",
+      "dependencies": [],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "未提交 rename 后 worktree 无旧路径残留",
+        "文本 artifact 写入原子",
+        "任意 Unicode 输出下 stdout 始终是合法 JSON"
+      ],
+      "files": [
+        "src/councilflow/utils/io.py",
+        "src/councilflow/state/store.py",
+        "src/councilflow/utils/lang.py",
+        "tests/test_workspace_overlay.py",
+        "tests/test_output_language.py"
+      ],
+      "module": "state",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check src tests",
+        "python -m pytest -q"
+      ],
+      "review_checklist": [
+        "R 状态解析兼容 R100 变体",
+        "ensure_ascii 回退路径有测试"
+      ],
+      "stage_gate": false,
+      "priority": 50,
+      "status": "done",
+      "created_at": "2026-06-10T01:03:11.886Z",
+      "updated_at": "2026-06-10T01:49:26.121Z",
+      "commit_hash": "",
+      "notes": "acceptance_mode=auto → 自动验收通过。",
+      "replacement_task_id": null
+    },
+    {
+      "id": "TASK-122",
+      "title": "配置边角（schema 默认对齐/引号路径/语言校验）",
+      "description": "①schema.py 默认超时与 default-config.yaml 模板对齐（以模板有意调高的值为准，避免省略字段的配置拿到 100x 小的默认），加 test_config_defaults_consistency 守护断言；②permissions.command_is_available 处理带引号可执行路径（当前误报 missing 硬阻 tester 委派）；③output_language 配置加载时校验，非法值报错而非静默回退 zh-CN；④discussion.default_models 加载时验证可解析为已注册 adapter 家族（配合 TASK-117）。",
+      "dependencies": [
+        "TASK-117"
+      ],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "默认值与模板逐字段一致且有守护测试",
+        "引号路径不再误报 missing",
+        "非法 output_language 加载期报错"
+      ],
+      "files": [
+        "src/councilflow/models/config.py",
+        "src/councilflow/utils/permissions.py",
+        "src/councilflow/utils/lang.py",
+        "src/councilflow/config/schema.py",
+        "tests/test_config_defaults_consistency.py"
+      ],
+      "module": "config",
+      "needs_manual_review": false,
+      "acceptance_mode": "auto",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check src tests",
+        "python -m pytest -q"
+      ],
+      "review_checklist": [
+        "默认值变更在 CHANGELOG 交代",
+        "不破坏既有用户配置"
+      ],
+      "stage_gate": false,
+      "priority": 40,
+      "status": "done",
+      "created_at": "2026-06-10T01:03:11.886Z",
+      "updated_at": "2026-06-10T01:54:08.524Z",
+      "commit_hash": "",
+      "notes": "acceptance_mode=auto → 自动验收通过。",
+      "replacement_task_id": null
+    },
+    {
+      "id": "TASK-123",
+      "title": "讨论 token 瘦身（prior_turns 压缩 + wait 输出精简，质量不降）",
+      "description": "render_discussion_prompt 每轮给每个参与者全量重发所有 prior_turns 完整 JSON（indent=2），N 轮成本 O(N²)。修复：①仅上一轮全文，更早轮换 agreements/disagreements/open_questions 摘要；②json.dumps 去 indent；③message 截断上限可配；④discuss_wait happy path 不再 dump 全部 turn 全文，改 summary_path 引用；⑤scripts/measure_ceremony_tokens.py 重测 before/after 并出对比报告验证质量无损（用一次真实三模型讨论抽查结论一致性）。",
+      "dependencies": [
+        "TASK-116"
+      ],
+      "complexity": "M",
+      "acceptance_criteria": [
+        "≥3 轮讨论的 sidecar 输入 token 下降 ≥30%",
+        "抽查讨论结论质量无损",
+        "ceremony 报告更新归档"
+      ],
+      "files": [
+        "src/councilflow/handoff/prompts.py",
+        "src/councilflow/cli/discuss_wait.py",
+        "scripts/measure_ceremony_tokens.py",
+        "tests/"
+      ],
+      "module": "handoff",
+      "needs_manual_review": true,
+      "acceptance_mode": "manual",
+      "verification_profile": "backend",
+      "verification_commands": [
+        "python -m ruff check src tests",
+        "python -m pytest -q"
+      ],
+      "review_checklist": [
+        "摘要保留分歧点不丢失",
+        "控制位/新信息标记仍可被收敛评估读到",
+        "用户人工抽查一次真实讨论"
+      ],
+      "stage_gate": false,
+      "priority": 30,
+      "status": "done",
+      "created_at": "2026-06-10T01:03:11.886Z",
+      "updated_at": "2026-06-10T02:44:39.260Z",
+      "commit_hash": "",
+      "notes": "用户「验收通过」= manual gate 人工验收通过。验收证据：13 个压缩/竞态测试全过、实测节省 32-67%（docs/token-report-2026-06-10.md）、结构化立场字段全轮保留的质量保障逻辑经用户认可（真实讨论抽查留作可选）。",
+      "replacement_task_id": null
+    },
+    {
+      "id": "TASK-124",
+      "title": "0.2.1 收口（文档对齐 + 发版）",
+      "description": "①integration.md 修正：routing 审计路径（实际 .council/runs/routing/routing.json）、删除/实现 artifact_kind 等只存在于文档的字段、wait 预算口径与模板/skills 统一；②CHANGELOG[0.2.1] 汇总本批修复；③版本 bump 0.2.0→0.2.1；④全量 pytest+ruff 回归；⑤与 AutoSkills PM-707 的 skills 侧修正交叉核对无矛盾。",
+      "dependencies": [
+        "TASK-115",
+        "TASK-116",
+        "TASK-117",
+        "TASK-118",
+        "TASK-119",
+        "TASK-120",
+        "TASK-121",
+        "TASK-122",
+        "TASK-123"
+      ],
+      "complexity": "S",
+      "acceptance_criteria": [
+        "文档与实现逐项一致",
+        "全量测试通过",
+        "版本号一致（pyproject/CHANGELOG）"
+      ],
+      "files": [
+        "docs/integration.md",
+        "CHANGELOG.md",
+        "pyproject.toml"
+      ],
+      "module": "release",
+      "needs_manual_review": true,
+      "acceptance_mode": "milestone_manual",
+      "verification_profile": "workflow_meta",
+      "verification_commands": [
+        "python -m pytest -q"
+      ],
+      "review_checklist": [
+        "与 PM-707/PM-708 的 skills 改动不冲突",
+        "CHANGELOG 列出全部审计修复条目"
+      ],
+      "stage_gate": true,
+      "priority": 20,
+      "status": "done",
+      "created_at": "2026-06-10T01:03:11.886Z",
+      "updated_at": "2026-06-10T04:18:03.305Z",
+      "commit_hash": "",
+      "notes": "用户预授权自主收尾（\"看着办，把这两个项目最后完善一下，做出最好的效果\"）= milestone gate 验收通过。v0.2.1 发布。CouncilFlow 审计修复批次 TASK-115~124 全部 done。",
+      "replacement_task_id": null
     }
   ]
 }

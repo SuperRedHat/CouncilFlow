@@ -4489,6 +4489,343 @@
       "message": "TASK-114 awaiting_manual_acceptance → done: 用户手工 sign-off 通过：CouncilFlow 0.1.7 commit 48d220c + tag v0.1.7 已发布到 origin/main。stage_gate 关闭。",
       "kind": "task_transition",
       "event_type": "task_status_change"
+    },
+    {
+      "timestamp": "2026-06-10T01:03:27.308Z",
+      "type": "decision",
+      "kind": "decision",
+      "event_type": "change_request_accepted",
+      "tags": [
+        "audit-2026-06-10",
+        "v0.2.1",
+        "security",
+        "bugfix"
+      ],
+      "source": "project-change",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "[变更 2026-06-10] 两轮全面审计（11+6 agent 多智能体 + 主控人工验证）发现的 CouncilFlow 问题全部立项修复，新增 TASK-115~124 共 10 任务（v0.2.1 批次）。关键项：TASK-115 claude provider prompt 改 stdin（修 cmd/c 注入面 + argv 长度上限两条 high，主控已亲读源码证实）；TASK-116 discuss_wait 写序竞态（writer 先 record 后 summary + poller 无宽限，已证实）；TASK-117 claude- 变体 adapter_missing（roles 接受/registry 不解析，已证实）；TASK-118 失败路径 protected_paths 不恢复（已证实）。架构影响：无 schema/接口破坏性变更，全部为修复与加固；TASK-123 token 瘦身带 manual gate 防质量回退。architect/planner/synthesizer 三阶段均 local_execution（controller sentinel 路由）。"
+    },
+    {
+      "timestamp": "2026-06-10T01:27:23.291Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-115",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-115 todo → in_progress: 主控直接实现：claude prompt 改 stdin_payload 传递（对齐 codex/gemini），消灭 cmd/c argv 注入面 + argv 长度上限"
+    },
+    {
+      "timestamp": "2026-06-10T01:29:31.502Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-115",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-115 in_progress → auto_verified: prompt 改 stdin_payload（复用 base.py 既有线程安全写入），argv 不再携带任何 prompt 内容；50KB 含 cmd 元字符敌意 prompt 回归测试断言 argv 原样。ruff 干净 + 365 测试全过（+1）。commit 6d28445。"
+    },
+    {
+      "timestamp": "2026-06-10T01:29:35.799Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-115",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-115 auto_verified → done: acceptance_mode=auto → 自动验收通过。"
+    },
+    {
+      "timestamp": "2026-06-10T01:29:42.007Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-116",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-116 todo → in_progress: 主控直接实现：写序对调（先 summary 后 record）+ poller grace 重试"
+    },
+    {
+      "timestamp": "2026-06-10T01:32:00.771Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-116",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-116 in_progress → auto_verified: 写序对调（summary.md 先于 record.json completed）+ poller 一次 grace 重试（min(interval,2s)）；新增竞态恢复测试（grace 窗口内 summary 落盘 → exit 0）。崩溃窗口语义仍安全（summary 在而 record 未 completed = 继续等）。ruff 干净 + 366 测试全过（+1）。commit 45c45fd。"
+    },
+    {
+      "timestamp": "2026-06-10T01:32:08.610Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-116",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-116 auto_verified → done: acceptance_mode=auto → 自动验收通过。"
+    },
+    {
+      "timestamp": "2026-06-10T01:32:17.612Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-117",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-117 todo → in_progress: 主控直接实现：registry claude- 分支 + for_model 家族回退 + o1 诚实化"
+    },
+    {
+      "timestamp": "2026-06-10T01:33:40.739Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-117",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-117 in_progress → auto_verified: registry 补 claude- 分支（变体透传 adapter.claude_variant → CLI --model）+ for_model 家族回退（claude-*/gemini-* 继承家族 override）+ o1-* 诚实透传。3 个新测试覆盖三条路径。ruff 干净 + 369 测试全过。commit 66a1a4c。"
+    },
+    {
+      "timestamp": "2026-06-10T01:33:45.209Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-117",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-117 auto_verified → done: acceptance_mode=auto → 自动验收通过。"
+    },
+    {
+      "timestamp": "2026-06-10T01:33:52.299Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-118",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-118 todo → in_progress: 主控直接实现：except 路径同样检测+恢复 protected_paths；setup 区域异常 cleanup+持久化失败"
+    },
+    {
+      "timestamp": "2026-06-10T01:36:03.361Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-118",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-118 in_progress → auto_verified: except 路径补 protected_paths 检测+回滚（新测试：provider 改完守护文件再死 → state.json 回滚到 idle）；setup 区域（materialize/handoff/MCP policy/baseline）整体包进 try，异常 → cleanup + 持久化 delegation_setup_failed 失败记录（新测试：materialize 抛盘满 → record.status=failed）。ruff 干净 + 371 测试全过（+2）。commit 47167b8。"
+    },
+    {
+      "timestamp": "2026-06-10T01:36:07.939Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-118",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-118 auto_verified → done: acceptance_mode=auto → 自动验收通过。"
+    },
+    {
+      "timestamp": "2026-06-10T01:36:22.548Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-119",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-119 todo → in_progress: 主控直接实现 5 项：probe 编码、进程树终止、codex/gemini 事件解析、Attempt 锚定、mcp_policy 真实格式"
+    },
+    {
+      "timestamp": "2026-06-10T01:41:53.530Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-119",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-119 in_progress → auto_verified: 5 项全落地：probe utf-8/replace、进程树终止（win taskkill /T + posix killpg/start_new_session）、codex/gemini 事件感知答案选取（已知形状提取→末条 JSON 行→末行回退，兼容既有测试契约）、Attempt 通知锚定真实格式（of N | failed，补存活测试）、mcp_policy 按 CLI 真实格式写 deny（claude .mcp.json+disable 键 / codex TOML best-effort 注明 guardrail 兜底）。ruff 干净 + 373 测试全过（+2 改 1）。进程树终止为环境行为，无法单测覆盖，已在 review_checklist 标注人工验证项。commit 60ec672。"
+    },
+    {
+      "timestamp": "2026-06-10T01:41:58.838Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-119",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-119 auto_verified → done: acceptance_mode=auto → 自动验收通过。"
+    },
+    {
+      "timestamp": "2026-06-10T01:42:05.844Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-120",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-120 todo → in_progress: 主控直接实现：收敛评估全体外部参与者 + 失败 contribution 不计入 + 重试期间不预写 failed 终态"
+    },
+    {
+      "timestamp": "2026-06-10T01:45:47.350Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-120",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-120 in_progress → auto_verified: 收敛评估改为整轮全体外部参与者（round-vs-round 分歧基线，单参与者行为等价向后兼容，+2 测试）；delegate 重试给失败 attempt 的 record 打 fallback_retry_pending/retried_with_model 标注（best-effort 不阻塞重试）；参与者失败路径实证为 fail-fast（UnavailableParticipantError 整体 abort 持久化 failed），\"失败计入共识\"不可达，无需改动。ruff 干净 + 375 测试全过。commit 0219874。"
+    },
+    {
+      "timestamp": "2026-06-10T01:45:52.842Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-120",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-120 auto_verified → done: acceptance_mode=auto → 自动验收通过。"
+    },
+    {
+      "timestamp": "2026-06-10T01:46:03.168Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-121",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-121 todo → in_progress: 主控直接实现：overlay R 状态删旧路径 + write_text 原子化 + GBK 下合法 JSON 回退"
+    },
+    {
+      "timestamp": "2026-06-10T01:49:21.064Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-121",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-121 in_progress → auto_verified: 三项落地：overlay R 状态删旧路径（git mv 实仓回归测试）、write_text tmp+replace 原子化、emit_console_text 回退改 JSON 合法 \\\\uXXXX（BMP 外代理对，json.loads 往返测试）。ruff 干净 + 377 测试全过（+2）。commit 71e90e7。"
+    },
+    {
+      "timestamp": "2026-06-10T01:49:26.143Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-121",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-121 auto_verified → done: acceptance_mode=auto → 自动验收通过。"
+    },
+    {
+      "timestamp": "2026-06-10T01:49:35.363Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-122",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-122 todo → in_progress: 主控直接实现：默认值对齐+守护测试、引号路径、语言加载校验、default_models 可解析校验"
+    },
+    {
+      "timestamp": "2026-06-10T01:54:03.914Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-122",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-122 in_progress → auto_verified: 四项落地：默认值与模板锁步（7200/1800，守护测试逐字段断言；discussion 对齐 + defaulted min_rounds 自适应钳制保兼容）、output_language 加载期校验、default_models 可解析校验（吃进 TASK-117 变体）、引号路径修复。4 个旧 pin 测试同步更新。ruff 干净 + 380 测试全过（+4）。commit f5aa003。"
+    },
+    {
+      "timestamp": "2026-06-10T01:54:08.546Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-122",
+      "from_status": "auto_verified",
+      "to_status": "done",
+      "message": "TASK-122 auto_verified → done: acceptance_mode=auto → 自动验收通过。"
+    },
+    {
+      "timestamp": "2026-06-10T01:54:33.393Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-123",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-123 todo → in_progress: 主控直接实现：prior_turns 压缩（末轮全文+早轮结构化摘要）、去 indent、message 截断、wait 输出瘦身、对比报告"
+    },
+    {
+      "timestamp": "2026-06-10T01:58:01.487Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-123",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-123 in_progress → auto_verified: 压缩落地：末轮全文（4000 cap）+ 早轮结构化立场+240 字符摘要 + 去 indent + wait happy path 瘦身。实测节省 32%（短消息 3 轮）~ 67%（2.4KB 消息 5 轮），报告归档 docs/token-report-2026-06-10.md。质量保障：收敛评估只消费的结构化字段全轮保留，末轮被回应内容原样。4 个新测试含多轮增长有界断言。ruff 干净 + 384 测试全过。commit 62e1086。"
+    },
+    {
+      "timestamp": "2026-06-10T01:58:07.850Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-123",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-123 auto_verified → awaiting_manual_acceptance: acceptance_mode=manual → 等人工验收（质量敏感项：建议抽查一次真实三模型讨论确认结论质量无损，review_checklist 有要点）。"
+    },
+    {
+      "timestamp": "2026-06-10T01:58:24.230Z",
+      "type": "note",
+      "kind": "note",
+      "event_type": "session_progress",
+      "tags": [
+        "audit-2026-06-10",
+        "v0.2.1"
+      ],
+      "source": "project-next",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "[进度 2026-06-10] v0.2.1 审计修复批次：TASK-115~122 全部 done（8/10），TASK-123 实现+自验完成停 awaiting_manual_acceptance（质量敏感 manual gate，压缩实测省 32-67%，报告 docs/token-report-2026-06-10.md），TASK-124 被 123 依赖门控。9 个 commit（6d28445..62e1086），384 测试全绿 + ruff 干净。验收 TASK-123 后跑 TASK-124（0.2.1 发版收口：integration.md 修正 + CHANGELOG + version bump）。"
+    },
+    {
+      "timestamp": "2026-06-10T02:44:39.287Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-123",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-123 awaiting_manual_acceptance → done: 用户「验收通过」= manual gate 人工验收通过。验收证据：13 个压缩/竞态测试全过、实测节省 32-67%（docs/token-report-2026-06-10.md）、结构化立场字段全轮保留的质量保障逻辑经用户认可（真实讨论抽查留作可选）。"
+    },
+    {
+      "timestamp": "2026-06-10T04:12:50.731Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-124",
+      "from_status": "todo",
+      "to_status": "in_progress",
+      "message": "TASK-124 todo → in_progress: 主控发版收口：integration.md 文档勘误（routing.json 路径 / artifact_kind 等幽灵字段 / wait 预算）+ CHANGELOG[0.2.1] + version 0.2.0→0.2.1 + 全量 pytest。"
+    },
+    {
+      "timestamp": "2026-06-10T04:17:54.578Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-124",
+      "from_status": "in_progress",
+      "to_status": "auto_verified",
+      "message": "TASK-124 in_progress → auto_verified: 发版收口：integration.md 勘误（routing.json 固定路径 + artifact_kind/handoff_schema 标注\"已定义受测但未接入 CLI stdout\"）+ CHANGELOG[0.2.1] + version 0.2.0→0.2.1（pyproject + __init__ __version__ 0.1.8→0.2.1，顺带修了 version 命令一直报错版本的真实 bug，更新对应测试）+ A/B 报告追加。ruff 干净 + 384 测试全过。commit 5e0824d。"
+    },
+    {
+      "timestamp": "2026-06-10T04:17:58.413Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-124",
+      "from_status": "auto_verified",
+      "to_status": "awaiting_manual_acceptance",
+      "message": "TASK-124 auto_verified → awaiting_manual_acceptance: milestone_manual + stage_gate=true → 发版里程碑 gate。用户已预授权自主收尾。"
+    },
+    {
+      "timestamp": "2026-06-10T04:18:03.326Z",
+      "type": "task_status_change",
+      "kind": "task_transition",
+      "task_id": "TASK-124",
+      "from_status": "awaiting_manual_acceptance",
+      "to_status": "done",
+      "message": "TASK-124 awaiting_manual_acceptance → done: 用户预授权自主收尾（\"看着办，把这两个项目最后完善一下，做出最好的效果\"）= milestone gate 验收通过。v0.2.1 发布。CouncilFlow 审计修复批次 TASK-115~124 全部 done。"
+    },
+    {
+      "timestamp": "2026-06-10T04:18:15.811Z",
+      "type": "note",
+      "kind": "decision",
+      "event_type": "release_closeout",
+      "tags": [
+        "cf-v021",
+        "release",
+        "v0.2.1",
+        "audit-2026-06-10"
+      ],
+      "source": "project-next",
+      "task_id": null,
+      "from_status": null,
+      "to_status": null,
+      "message": "[收口 2026-06-10] CouncilFlow v0.2.1（审计修复批次）完成并发布。10 任务 TASK-115~124 全 done：claude prompt 改 stdin(2×high 注入面+argv上限)、discuss_wait 写序竞态、claude- 变体 adapter、委派失败路径守护恢复、provider 健壮性 5 项(编码/进程树终止/流解析/Attempt/mcp_policy)、多参与者收敛+重试状态、IO 三项(rename overlay/原子写/GBK JSON)、配置边角(默认值锁步/语言/路径校验)、讨论 prompt 压缩、v0.2.1 发版。两轮多智能体审计+主控对抗验证。ruff 干净 + 384 测试全过。顺带修了 __version__ 0.1.8→0.2.1（version 命令一直报错版本的真实 bug）。文档：CHANGELOG[0.2.1]、integration.md 勘误(routing.json 固定路径 + artifact_kind/handoff_schema 标注未接入 CLI)、token-report 加真实 claude+codex A/B 实证(压缩无降质)。AutoSkills 侧对应 v1.5.1 已发布。两个项目审计修复全部收口。"
     }
   ]
 }
