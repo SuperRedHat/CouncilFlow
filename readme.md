@@ -193,7 +193,7 @@ providers:
   - `discuss_wait` 写序竞态根治（先写 summary 再标 completed + 宽限重试，不再假报 `summary_missing`）
   - 委派失败路径同样恢复受保护工作流文件；setup 异常也持久化失败记录
   - 多模型收敛判定看**整轮全体参与者**（双模型不再被"最后一个发言者同意"提前收敛）
-  - 讨论 prompt 压缩：早轮只携带结构化立场，**每轮 sidecar 输入省 32–67%**（度量见 [docs/token-report-2026-06-10.md](docs/token-report-2026-06-10.md)）
+  - 讨论 prompt 压缩**已试验并撤销**：真实 A/B 显示早轮纯散文细节会丢、答案质量可测下降，故 prior turns 恢复全文发送（A/B 与决策见 [docs/token-report-2026-06-10.md](docs/token-report-2026-06-10.md)）；保留 `discussion wait` 响应瘦身（以 `summary_path` 引用内容）
   - 配置默认值与模板锁步（守护测试钉死），GBK 控制台下 stdout 仍保证合法 JSON
 
 ---

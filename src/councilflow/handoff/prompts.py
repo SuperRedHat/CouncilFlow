@@ -130,50 +130,29 @@ def render_delegation_prompt(package: HandoffPackage) -> str:
     )
 
 
-# TASK-123: prompt-size discipline for multi-round discussions. Re-sending
-# every prior turn's full message made sidecar input grow O(N²) with rounds.
-# The latest round keeps (capped) full messages — that is what participants
-# are asked to respond to — while earlier rounds keep only their structured
-# positions (agreements / disagreements / open questions), which is exactly
-# what the convergence evaluator and the response schema operate on.
-_LATEST_ROUND_MESSAGE_CAP = 4000
-_EARLIER_ROUND_SUMMARY_CAP = 240
+def render_discussion_prompt(request: DiscussionRequest) -> str:
+    """Render a structured prompt for external discussion participants.
 
+    Prior turns are sent in full to every participant each round. An earlier
+    TASK-123 "compaction" that truncated earlier-round messages to 240 chars was
+    reverted in v0.2.1: a real A/B (docs/token-report-2026-06-10.md) showed it
+    measurably degraded answer quality when early-round operational detail lived
+    only in prose, and the token savings did not justify that loss.
+    """
 
-def _cap(text: str, limit: int) -> str:
-    if len(text) <= limit:
-        return text
-    return text[:limit] + " …[truncated]"
-
-
-def _compact_prior_turns(request: DiscussionRequest) -> list[dict[str, object]]:
-    turns = request.prior_turns
-    if not turns:
-        return []
-    latest_round = max(t.round_number for t in turns)
-    compacted: list[dict[str, object]] = []
-    for turn in turns:
-        entry: dict[str, object] = {
+    prior_turns = [
+        {
             "round_number": turn.round_number,
             "speaker_model": turn.speaker_model,
             "speaker_role": turn.speaker_role,
+            "message": turn.message,
             "agreements": turn.agreements,
             "disagreements": turn.disagreements,
             "open_questions": turn.open_questions,
             "responds_to_models": turn.responds_to_models,
         }
-        if turn.round_number == latest_round:
-            entry["message"] = _cap(turn.message, _LATEST_ROUND_MESSAGE_CAP)
-        else:
-            entry["message_summary"] = _cap(turn.message, _EARLIER_ROUND_SUMMARY_CAP)
-        compacted.append(entry)
-    return compacted
-
-
-def render_discussion_prompt(request: DiscussionRequest) -> str:
-    """Render a structured prompt for external discussion participants."""
-
-    prior_turns = _compact_prior_turns(request)
+        for turn in request.prior_turns
+    ]
     if request.participant == request.controller and request.round_number == 0:
         return (
             "You are the controller in a structured multi-model discussion.\n\n"
@@ -204,7 +183,7 @@ def render_discussion_prompt(request: DiscussionRequest) -> str:
             f"Initial Position:\n{request.initial_position or '-'}\n\n"
             f"Current Controller Position:\n{request.current_controller_position or '-'}\n\n"
             "Prior Turns JSON:\n"
-            f"{json.dumps(prior_turns, ensure_ascii=False)}\n\n"
+            f"{json.dumps(prior_turns, ensure_ascii=False, indent=2)}\n\n"
             "Review the external critique, then respond as the controller. Update or defend the "
             "controller position and return raw JSON only with this schema:\n"
             "{\n"
@@ -229,7 +208,7 @@ def render_discussion_prompt(request: DiscussionRequest) -> str:
         f"Initial Controller Position:\n{request.initial_position or '-'}\n\n"
         f"Current Controller Position:\n{request.current_controller_position or '-'}\n\n"
         "Prior Turns JSON:\n"
-        f"{json.dumps(prior_turns, ensure_ascii=False)}\n\n"
+        f"{json.dumps(prior_turns, ensure_ascii=False, indent=2)}\n\n"
         "Comment on the controller position rather than starting from zero. Support, critique, "
         "refine, or challenge it as needed.\n\n"
         "Return raw JSON only with this schema:\n"

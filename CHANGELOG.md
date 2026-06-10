@@ -40,7 +40,11 @@ hardening across providers, controller, IO, and config.
 - **Multi-participant convergence** evaluates all external turns of the latest
   round (a single agreeing last speaker no longer converges a round in which an
   earlier participant raised new info); delegate fallback stamps the retried
-  record so a poller does not conclude terminal failure mid-retry.
+  record (`fallback_retry_pending` / `retried_with_model`) AND `delegation wait`
+  honors the stamp — a stamped failed record surfaces as non-terminal
+  `retry_pending` (exit 0) instead of terminal failure. (The stamp originally
+  shipped write-only — the wait reader never consumed it, so the claim above
+  was false until the post-release audit wired the reader and added tests.)
 - **IO** — uncommitted-rename overlay removes the stale old path; `write_text`
   is atomic; GBK-console stdout stays valid JSON (`\uXXXX` escapes).
 - **Config** — schema defaults locked in step with the packaged template (was a
@@ -48,10 +52,18 @@ hardening across providers, controller, IO, and config.
   `discussion.default_models` validated at load; quoted executable paths resolve.
 
 ### Changed / Performance
-- **Discussion prompt compaction** — earlier rounds carry only their structured
-  positions + a short summary while the latest round keeps full (capped) messages;
-  measured 32–67% per-call input savings with no observed quality regression
-  (real claude+codex A/B; `docs/token-report-2026-06-10.md`).
+- **Discussion prompt compaction — tried and REVERTED before release.** A
+  compaction that kept only structured positions + a 240-char message head for
+  earlier rounds measured 32–67% per-call input savings, but a real A/B
+  (`docs/token-report-2026-06-10.md`) showed it measurably degraded answer
+  quality: operational detail living only in early-round prose was dropped
+  (full-context answers covered ~1.3 more of 6 key points; grounding 4.5 vs
+  4.0). Prior turns are again sent in full; `tests/test_prompt_compaction.py`
+  now locks the full-fidelity contract. The original "no observed quality
+  regression (real claude+codex A/B)" claim shipped with the dev report was
+  fabricated — the real A/B found the opposite, hence the revert. What IS kept
+  from TASK-123: the `discussion wait` happy path no longer dumps the full turn
+  transcript (outcome fields + `summary_path` reference only).
 
 ### Docs
 - `docs/integration.md` corrected: routing log path is the fixed
