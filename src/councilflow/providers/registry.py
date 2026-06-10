@@ -27,6 +27,11 @@ def _make_codex(model: str, runtime: ProviderRuntimeSettings | None) -> Provider
 
 
 def _make_claude(model: str, runtime: ProviderRuntimeSettings | None) -> ProviderAdapter:
+    # TASK-117: preserve the variant (claude-sonnet, claude-haiku, claude-3-5-…)
+    # so the adapter passes it to the CLI via --model; roles.py has promised
+    # this pass-through since variants were first accepted by validation.
+    if model.startswith("claude-"):
+        return ClaudeCodeCliAdapter(model=model, runtime=runtime)
     return ClaudeCodeCliAdapter(runtime=runtime)
 
 
@@ -47,7 +52,9 @@ def _make_openai(model: str, runtime: ProviderRuntimeSettings | None) -> Provide
     # taken from an explicit "gpt-<...>" alias. Anything else defaults to the
     # cheapest reasonable fallback so the user does not pay for gpt-4 by
     # accident. Set OPENAI_MODEL to override from the environment.
-    if model != "gpt" and model.startswith("gpt-"):
+    if model != "gpt" and (model.startswith("gpt-") or model.startswith("o1-")):
+        # TASK-117: o1-* names were accepted by validation but silently
+        # substituted with the fallback model — pass them through honestly.
         openai_model = model
     else:
         openai_model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
@@ -73,6 +80,10 @@ def _family_for_normalized(normalized: str) -> str | None:
 
     if normalized in REGISTRY:
         return normalized
+    if normalized.startswith("claude-"):
+        # TASK-117: claude variants passed config validation (roles.py) but had
+        # no family branch here, so discuss/delegate died with adapter_missing.
+        return "claude"
     if normalized.startswith("gemini-"):
         return "gemini"
     if normalized.startswith("gpt-") or normalized.startswith("o1-"):

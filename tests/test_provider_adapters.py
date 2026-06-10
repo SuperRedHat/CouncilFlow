@@ -457,3 +457,42 @@ def test_parse_claude_stream_json_prefers_final_result() -> None:
     assert metadata["output_format"] == "stream-json"
     assert metadata["event_count"] == 2
     assert metadata["terminal_reason"] == "completed"
+
+
+# TASK-117: claude variants must resolve to the claude family (they passed
+# config validation but died at runtime with adapter_missing), inherit the
+# family runtime override, and keep the variant for the CLI --model flag.
+def test_resolve_adapter_serves_claude_variants() -> None:
+    from councilflow.providers.claude_code_cli import ClaudeCodeCliAdapter
+    from councilflow.providers.registry import resolve_adapter
+
+    adapter = resolve_adapter("claude-sonnet")
+    assert isinstance(adapter, ClaudeCodeCliAdapter)
+    assert adapter.claude_variant == "claude-sonnet"
+
+    plain = resolve_adapter("claude")
+    assert isinstance(plain, ClaudeCodeCliAdapter)
+    assert plain.claude_variant is None
+
+
+def test_resolve_adapter_passes_o1_models_through() -> None:
+    from councilflow.providers.openai_api import OpenAIChatAdapter
+    from councilflow.providers.registry import resolve_adapter
+
+    adapter = resolve_adapter("o1-preview")
+    assert isinstance(adapter, OpenAIChatAdapter)
+    assert adapter.openai_model == "o1-preview"
+
+
+def test_provider_settings_for_model_family_variants() -> None:
+    from councilflow.models.config import ProviderRuntimeOverrides, ProviderSettings
+
+    settings = ProviderSettings(
+        claude=ProviderRuntimeOverrides(idle_timeout_seconds=123.0),
+        gemini=ProviderRuntimeOverrides(total_timeout_seconds=456.0),
+    )
+    assert settings.for_model("claude-sonnet").idle_timeout_seconds == 123.0
+    assert settings.for_model("claude-haiku").idle_timeout_seconds == 123.0
+    assert settings.for_model("gemini-2.5-pro").total_timeout_seconds == 456.0
+    # exact family names keep working
+    assert settings.for_model("claude").idle_timeout_seconds == 123.0

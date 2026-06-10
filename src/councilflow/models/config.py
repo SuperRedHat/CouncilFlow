@@ -296,9 +296,17 @@ class ProviderSettings(BaseModel):
 
         runtime = self.default.model_copy(deep=True)
         normalized = normalize_model_name(model)
+        # TASK-117: family variants (claude-sonnet, gemini-2.5-pro, …) inherit
+        # their family's override — previously they silently fell back to the
+        # defaults and e.g. lost claude's intentional idle-timeout setting.
+        family = normalized
+        if normalized.startswith("claude-"):
+            family = "claude"
+        elif normalized.startswith("gemini-"):
+            family = "gemini"
         override = (
-            getattr(self, normalized, None)
-            if normalized in {"codex", "claude", "gemini"}
+            getattr(self, family, None)
+            if family in {"codex", "claude", "gemini"}
             else None
         )
         if override is None:
