@@ -284,12 +284,19 @@ def _overlay_uncommitted_files(
         #   A  added in index (overlay — not yet committed at HEAD)
         #   T  type changed (overlay as modified)
         #   D  deleted in working tree (remove from worktree copy of HEAD)
-        #   R  rename — last path is the new name; the old path is gone at
-        #      HEAD in the new worktree already, so we only need to overlay
-        #      the new path. git emits `R100\told\tnew`; take parts[-1].
+        #   R  rename — git emits `R100<TAB>old<TAB>new`. The fresh worktree is
+        #      checked out from HEAD, which STILL CONTAINS the old path (the
+        #      rename is uncommitted), so the old path must be deleted and the
+        #      new one overlaid — otherwise the sidecar sees both files
+        #      (TASK-121; the previous comment claimed the old path was
+        #      already gone, which was wrong).
         #   C  copy — overlay the new path.
         if status_code.startswith("D"):
             deleted.append(parts[-1])
+        elif status_code.startswith("R"):
+            if len(parts) >= 3:
+                deleted.append(parts[1])
+            modified.append(parts[-1])
         else:
             modified.append(parts[-1])
 

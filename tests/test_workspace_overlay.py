@@ -278,3 +278,30 @@ def test_overlay_copies_many_untracked_paths(tmp_path: Path, sub: str) -> None:
         assert (workspace_path / sub).is_file()
     finally:
         cleanup_workspace(source, workspace_path, "git_worktree")
+
+
+def test_uncommitted_rename_removes_old_path_from_worktree(tmp_path: Path) -> None:
+    """TASK-121: `git mv old new` (uncommitted) — HEAD still contains the old
+    path, so the worktree checkout must have it REMOVED and the new path
+    overlaid; otherwise the sidecar sees both modules side by side."""
+
+    source = tmp_path / "repo"
+    source.mkdir()
+    _init_git_repo(source)
+    _write(source / "src" / "old_name.ts", "export const v = 1;\n")
+    _write(source / "README.md", "# base\n")
+    _commit_all(source, "chore: baseline")
+
+    subprocess.run(
+        ["git", "-C", str(source), "mv", "src/old_name.ts", "src/new_name.ts"],
+        check=True,
+        capture_output=True,
+    )
+
+    council_root = source / ".council"
+    workspace_path = _materialize_git_worktree(source, council_root, "del_rename")
+    try:
+        assert not (workspace_path / "src" / "old_name.ts").exists()
+        assert (workspace_path / "src" / "new_name.ts").is_file()
+    finally:
+        cleanup_workspace(source, workspace_path, "git_worktree")

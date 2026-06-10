@@ -39,15 +39,37 @@ def emit_response(
     return json.dumps(payload, ensure_ascii=False, indent=2)
 
 
+def _json_safe_escape(ch: str) -> str:
+    """JSON-string-valid escape for one char (surrogate pair above the BMP)."""
+
+    code = ord(ch)
+    if code <= 0xFFFF:
+        return f"\\u{code:04x}"
+    code -= 0x10000
+    high = 0xD800 + (code >> 10)
+    low = 0xDC00 + (code & 0x3FF)
+    return f"\\u{high:04x}\\u{low:04x}"
+
+
 def emit_console_text(text: str) -> None:
-    """Echo text safely even when the active console encoding is not UTF-8."""
+    """Echo text safely even when the active console encoding is not UTF-8.
+
+    TASK-121: the old ``backslashreplace`` fallback produced ``\\xNN`` /
+    ``\\UXXXXXXXX`` sequences, which are NOT valid JSON escapes — the
+    machine-readable stdout contract broke exactly on non-GBK-encodable
+    output. Unencodable characters are now replaced with JSON-valid
+    ``\\uXXXX`` escapes (non-ASCII only ever occurs inside JSON strings).
+    """
 
     try:
         typer.echo(text)
     except UnicodeEncodeError:
         encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
-        fallback = text.encode(encoding, errors="backslashreplace").decode(
-            encoding,
-            errors="replace",
-        )
-        typer.echo(fallback)
+        out: list[str] = []
+        for ch in text:
+            try:
+                ch.encode(encoding)
+                out.append(ch)
+            except UnicodeEncodeError:
+                out.append(_json_safe_escape(ch))
+        typer.echo("".join(out))

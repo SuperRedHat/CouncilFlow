@@ -116,10 +116,16 @@ class CouncilStateStore:
         return path
 
     def write_text(self, path: Path, content: str) -> Path:
-        """Persist a UTF-8 text artifact relative to the project root."""
+        """Persist a UTF-8 text artifact relative to the project root.
+
+        TASK-121: atomic like _write_json (tmp sibling + replace) so a crash
+        mid-write cannot leave a truncated summary/result artifact.
+        """
 
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content, encoding="utf-8")
+        tmp = path.with_name(path.name + ".tmp")
+        tmp.write_text(content, encoding="utf-8")
+        tmp.replace(path)
         return path
 
     @staticmethod
